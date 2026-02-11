@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:kaminari/src/ui/pages/home_page.dart';
 
 import 'src/config/theme.dart';
-import 'src/screens/home_screen.dart';
 
 class KaminariApp extends StatelessWidget {
   const KaminariApp({super.key});
@@ -12,7 +12,7 @@ class KaminariApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Kaminari Browser',
       theme: KaminariTheme.theme,
-      home: const HomeScreen(),
+      home: const HomePage(),
     );
   }
 }

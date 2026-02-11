@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kaminari/src/config/theme.dart';
-import 'package:kaminari/src/widgets/backdrop_filter.dart';
-import 'package:kaminari/src/widgets/lightning_effect.dart';
+import 'package:kaminari/src/ui/units/backdrop_filter.dart';
+import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 
 class LightningCard extends StatelessWidget {
   const LightningCard({
@@ -11,7 +11,7 @@ class LightningCard extends StatelessWidget {
     this.innerShadow, // Optional parameter
   });
 
-  final LightningEffectType type;
+  final LightningBorderEffectType type;
   final Widget? child;
   final List<BoxShadow>? innerShadow;
 
@@ -21,11 +21,14 @@ class LightningCard extends StatelessWidget {
     final borderRadius = BorderRadius.circular(KaminariTheme.borderRadius);
 
     return ClipRRect(
-      child: Card(
-        margin: EdgeInsets.zero,
-        elevation: 0,
-        color: Colors.transparent, // Allow BgFilter to show
-        shape: type.into(),
+      borderRadius: borderRadius,
+      child: DecoratedBox(
+        position: .foreground,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          border: type.border(),
+          borderRadius: borderRadius,
+        ),
         child: BgFilter(
           innerShadow: innerShadow,
           borderRadius: borderRadius,

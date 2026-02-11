@@ -3,7 +3,6 @@ import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
-import 'package:kaminari/src/ui/widgets/bottom_nav.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
 
@@ -12,121 +11,107 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            LightningAppBar(),
-            Padding(
-              padding: const .symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _InfoTile("DAILY STREAK", ("12", "days")),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          LightningAppBar(),
+          Padding(
+            padding: const .symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: _InfoTile("DAILY STREAK", ("12", "days"))),
+                    SizedBox(width: 16),
+                    Expanded(child: _InfoTile("WORDS LEARNED", ("842", ""))),
+                  ],
+                ),
+                SizedBox(height: 32),
+                _BookCard(),
+                SizedBox(height: 32),
+                Row(
+                  children: [
+                    LightningIcon(
+                      Icons.insert_chart_outlined_rounded,
+                      type: .golden,
+                    ),
+                    SizedBox(width: 8),
+                    CustomText("Mastery", .headlineMedium),
+                  ],
+                ),
+                SizedBox(height: 16),
+                _MasteryCard(
+                  title: "Kana",
+                  subTitle: "Hiragana & Katakana",
+                  percent: 0.9,
+                  type: .glowing,
+                ),
+                SizedBox(height: 16),
+                _MasteryCard(
+                  title: "Kanji",
+                  subTitle: "JLPT N2 Level Focus",
+                  percent: 0.4,
+                  type: .thin,
+                ),
+                SizedBox(height: 32),
+                LightningCard(
+                  type: .striking,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: AlignmentGeometry.centerLeft,
+                        end: AlignmentGeometry.centerRight,
+                        colors: [
+                          KaminariTheme.surfaceTint.withAlpha(25),
+                          Colors.transparent,
+                        ],
                       ),
-                      SizedBox(width: 16),
-                      Expanded(child: _InfoTile("WORDS LEARNED", ("842", ""))),
-                    ],
-                  ),
-                  SizedBox(height: 32),
-                  _BookCard(),
-                  SizedBox(height: 32),
-                  Row(
-                    children: [
-                      LightningIcon(
-                        Icons.insert_chart_outlined_rounded,
-                        type: .golden,
-                      ),
-                      SizedBox(width: 8),
-                      CustomText("Mastery", .headlineMedium),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  _MasteryCard(
-                    title: "Kana",
-                    subTitle: "Hiragana & Katakana",
-                    percent: 0.9,
-                    type: .glowing,
-                  ),
-                  SizedBox(height: 16),
-                  _MasteryCard(
-                    title: "Kanji",
-                    subTitle: "JLPT N2 Level Focus",
-                    percent: 0.4,
-                    type: .thin,
-                  ),
-                  SizedBox(height: 32),
-                  LightningCard(
-                    type: .striking,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: AlignmentGeometry.centerLeft,
-                          end: AlignmentGeometry.centerRight,
-                          colors: [
-                            KaminariTheme.surfaceTint.withAlpha(25),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                      child: Padding(
-                        padding: .all(24),
-                        child: Column(
-                          crossAxisAlignment: .start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: .spaceBetween,
-                              children: [
-                                CustomText(
-                                  "KANJI OF THE DAY",
-                                  .labelSmall,
-                                  colorOverride: KaminariTheme.textTitle,
-                                ),
-                                CustomText("ONYOMI", .labelSmall),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: .spaceBetween,
-                              crossAxisAlignment: .start,
-                              children: [
-                                CustomText(
-                                  "電",
-                                  .bodyLarge,
-                                  fontSizeOverride: 42,
-                                ),
-                                CustomText(
-                                  "デン (Den)",
-                                  .bodyLarge,
-                                  colorOverride: KaminariTheme.textTitle,
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 4),
-                            Divider(thickness: 0.5),
-                            SizedBox(height: 12),
-                            CustomText("Electricity, Lightning", .bodyMedium),
-                            SizedBox(height: 12),
-                          ],
-                        ),
+                    ),
+                    child: Padding(
+                      padding: .all(24),
+                      child: Column(
+                        crossAxisAlignment: .start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: .spaceBetween,
+                            children: [
+                              CustomText(
+                                "KANJI OF THE DAY",
+                                .labelSmall,
+                                colorOverride: KaminariTheme.textTitle,
+                              ),
+                              CustomText("ONYOMI", .labelSmall),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: .spaceBetween,
+                            crossAxisAlignment: .start,
+                            children: [
+                              CustomText("電", .bodyLarge, fontSizeOverride: 42),
+                              CustomText(
+                                "デン (Den)",
+                                .bodyLarge,
+                                colorOverride: KaminariTheme.textTitle,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 4),
+                          Divider(thickness: 0.5),
+                          SizedBox(height: 12),
+                          CustomText("Electricity, Lightning", .bodyMedium),
+                          SizedBox(height: 12),
+                        ],
                       ),
                     ),
                   ),
-                  SizedBox(height: 32),
-                ],
-              ),
+                ),
+                SizedBox(height: 32),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      bottomNavigationBar: LightningBottomNav([
-        LightningBottomNavItem(Icons.home, "Home", active: true),
-        LightningBottomNavItem(Icons.explore_outlined, "Discover"),
-        LightningBottomNavItem(Icons.bookmark_border_rounded, "Favorites"),
-        LightningBottomNavItem(Icons.history, "History"),
-      ]),
     );
   }
 }
