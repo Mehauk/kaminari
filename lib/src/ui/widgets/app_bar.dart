@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
@@ -28,15 +29,12 @@ class LightningAppBar extends StatelessWidget {
             children: [
               LightningIcon(Icons.bolt, type: .glowing),
               CustomText(
-                "Kaminar Browser",
+                "Kaminari Browser",
                 .headlineMedium,
                 colorOverride: KaminariTheme.textTitle,
               ),
               Expanded(child: SizedBox.shrink()),
-              IconButton(
-                onPressed: () => print(1),
-                icon: LightningIcon(Icons.settings_outlined),
-              ),
+              LightningIcon(CupertinoIcons.person_alt_circle),
             ],
           ),
         ),

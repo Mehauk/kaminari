@@ -27,13 +27,13 @@ class CustomText extends StatelessWidget {
     this.text,
     this.type, {
     super.key,
-    this.fontSizeOverride,
+    this.fontSize,
     this.colorOverride,
   });
 
   final String text;
   final TextType type;
-  final double? fontSizeOverride;
+  final double? fontSize;
   final Color? colorOverride;
 
   @override
@@ -42,7 +42,7 @@ class CustomText extends StatelessWidget {
       text,
       style: type
           .style(context)
-          ?.copyWith(fontSize: fontSizeOverride, color: colorOverride),
+          ?.copyWith(fontSize: fontSize, color: colorOverride),
     );
   }
 }

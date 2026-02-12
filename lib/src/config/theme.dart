@@ -4,10 +4,12 @@ class KaminariTheme {
   const KaminariTheme._();
 
   static const double borderRadius = 16.0;
+  static const double altBorderRadius = 8.0;
 
   static const Color background = Color(0xFF15130B);
   static const Color surface = Color(0xFF222017);
   static const Color surfaceVariant = Color(0xFF37352B);
+  static const Color surfaceContainerLow = Color(0xFF1E1C13);
   static const Color gold = Color(0xFFAA9601);
   static const Color goldSoft = Color(0xFFD5C789);
   static const Color bronze = Color(0xFF524918);
@@ -17,6 +19,7 @@ class KaminariTheme {
   static const Color textTitle = Color(0xFFFBE359);
   static const Color surfaceTint = Color(0xFFDDC73F);
   static const Color card = Color(0x991E1E1E);
+  static const Color error = Colors.red;
 
   static final ColorScheme colorScheme = ColorScheme.dark(
     surface: surface,
@@ -24,7 +27,7 @@ class KaminariTheme {
     primary: Colors.white,
     onPrimary: const Color(0xFF383000),
     primaryContainer: const Color(0xFFFBE359),
-    onPrimaryContainer: const Color(0xFF726400),
+    onPrimaryContainer: const Color(0xFF322400),
     secondary: goldSoft,
     onSecondary: const Color(0xFF383002),
     secondaryContainer: bronze,
@@ -47,6 +50,12 @@ class KaminariTheme {
       fontSize: 32,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.02,
+      color: textPrimary,
+    ),
+    titleMedium: const TextStyle(
+      fontFamily: 'Noto Sans JP',
+      fontSize: 18,
+      fontWeight: FontWeight.w500,
       color: textPrimary,
     ),
     headlineLarge: const TextStyle(
@@ -110,12 +119,30 @@ class KaminariTheme {
     textTheme: textTheme,
     iconTheme: IconThemeData(color: colorScheme.onSurface, size: 25),
     primaryIconTheme: IconThemeData(color: colorScheme.onSurface, size: 25),
+    iconButtonTheme: IconButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStatePropertyAll(colorScheme.primaryContainer),
+        foregroundColor: WidgetStatePropertyAll(colorScheme.onPrimaryContainer),
+        overlayColor: WidgetStatePropertyAll(
+          colorScheme.primaryContainer.withAlpha(50),
+        ),
+        shape: const WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadiusGeometry.all(
+              Radius.circular(borderRadius),
+            ),
+          ),
+        ),
+      ),
+    ),
     progressIndicatorTheme: ProgressIndicatorThemeData(
       color: colorScheme.primaryContainer,
       linearTrackColor: bronze.withAlpha(70),
       circularTrackColor: bronze.withAlpha(70),
       refreshBackgroundColor: surfaceVariant,
     ),
+    splashColor: colorScheme.tertiaryContainer.withAlpha(50),
+    highlightColor: colorScheme.tertiaryContainer.withAlpha(30),
     cardTheme: const CardThemeData(
       color: Color(0x2E222017),
       elevation: 0,
@@ -203,6 +230,70 @@ class KaminariTheme {
         ),
       ),
     ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        padding: WidgetStatePropertyAll(
+          .symmetric(vertical: 12, horizontal: 24),
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return colorScheme.primaryContainer;
+          }
+          return surfaceContainerLow;
+        }),
+        foregroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.black;
+          }
+          return textPrimary;
+        }),
+        overlayColor: WidgetStatePropertyAll(
+          colorScheme.primaryContainer.withAlpha(50),
+        ),
+        side: WidgetStatePropertyAll(
+          BorderSide(color: colorScheme.outline.withAlpha(120), width: 1),
+        ),
+        shape: const WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(altBorderRadius)),
+          ),
+        ),
+        textStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(
+              fontFamily: 'Space Grotesk',
+              fontSize: 18,
+              fontWeight: FontWeight.w400,
+              color: Colors.black,
+            );
+          }
+          return const TextStyle(
+            fontFamily: 'Space Grotesk',
+            fontSize: 18,
+            fontWeight: FontWeight.w400,
+            color: textSecondary,
+          );
+        }),
+      ),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return colorScheme.primaryContainer;
+        }
+        return textPrimary;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return colorScheme.primaryContainer.withAlpha(140);
+        }
+        return textSecondary.withAlpha(120);
+      }),
+      overlayColor: WidgetStatePropertyAll(
+        colorScheme.primaryContainer.withAlpha(50),
+      ),
+      splashRadius: 22,
+    ),
     chipTheme: ChipThemeData(
       backgroundColor: colorScheme.primaryContainer,
       disabledColor: surfaceVariant.withAlpha(180),
@@ -221,24 +312,54 @@ class KaminariTheme {
         color: colorScheme.primaryContainer.withAlpha(140),
         width: 1,
       ),
+      checkmarkColor: Colors.black87,
     ),
     inputDecorationTheme: InputDecorationTheme(
+      errorStyle: textTheme.bodyLarge?.copyWith(
+        color: error,
+        fontWeight: .w300,
+      ),
+      hintStyle: textTheme.bodyLarge?.copyWith(fontWeight: .w300),
+      helperStyle: textTheme.bodyLarge?.copyWith(fontWeight: .w300),
+      labelStyle: textTheme.bodyLarge?.copyWith(fontWeight: .w300),
+      floatingLabelStyle: textTheme.bodyLarge?.copyWith(
+        fontSize: 12,
+        fontWeight: .w300,
+      ),
+      prefixStyle: textTheme.bodyLarge?.copyWith(fontWeight: .w300),
+      prefixIconColor: textSecondary,
+      suffixStyle: textTheme.bodyLarge?.copyWith(fontWeight: .w300),
+      suffixIconColor: textSecondary,
       filled: true,
-      fillColor: const Color(0x1F222017),
+      fillColor: surfaceContainerLow,
+      focusColor: surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: const UnderlineInputBorder(
-        borderSide: BorderSide(color: Color(0x595C6B7C)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(altBorderRadius),
+          topRight: Radius.circular(altBorderRadius),
+        ),
+        borderSide: BorderSide(
+          color: colorScheme.outline.withAlpha(70),
+          width: 2,
+        ),
       ),
-      enabledBorder: const UnderlineInputBorder(
-        borderSide: BorderSide(color: Color(0x595C6B7C)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(altBorderRadius),
+          topRight: Radius.circular(altBorderRadius),
+        ),
+        borderSide: BorderSide(
+          color: colorScheme.outline.withAlpha(70),
+          width: 2,
+        ),
       ),
-      focusedBorder: const UnderlineInputBorder(
-        borderSide: BorderSide(color: Color(0xE6AA9601)),
-      ),
-      hintStyle: TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 16,
-        color: textSecondary.withAlpha(191),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(altBorderRadius),
+          topRight: Radius.circular(altBorderRadius),
+        ),
+        borderSide: BorderSide(color: colorScheme.outline, width: 2),
       ),
     ),
   );

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kaminari/src/ui/pages/home_page.dart';
+import 'package:kaminari/src/ui/pages/home/home_page.dart';
 
 import 'src/config/theme.dart';
 
