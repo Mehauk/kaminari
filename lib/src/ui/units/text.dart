@@ -7,6 +7,7 @@ enum TextType {
   bodyLarge,
   headlineMedium,
   headlineLarge,
+  titleMedium,
   displayLarge,
 }
 
@@ -18,6 +19,7 @@ extension on TextType {
     TextType.bodyLarge => TextTheme.of(context).bodyLarge,
     TextType.headlineMedium => TextTheme.of(context).headlineMedium,
     TextType.headlineLarge => TextTheme.of(context).headlineLarge,
+    TextType.titleMedium => TextTheme.of(context).titleMedium,
     TextType.displayLarge => TextTheme.of(context).displayLarge,
   };
 }
@@ -28,13 +30,15 @@ class CustomText extends StatelessWidget {
     this.type, {
     super.key,
     this.fontSize,
-    this.colorOverride,
+    this.color,
+    this.fontWeight,
   });
 
   final String text;
   final TextType type;
   final double? fontSize;
-  final Color? colorOverride;
+  final Color? color;
+  final FontWeight? fontWeight;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +46,8 @@ class CustomText extends StatelessWidget {
       text,
       style: type
           .style(context)
-          ?.copyWith(fontSize: fontSize, color: colorOverride),
+          ?.copyWith(fontSize: fontSize, color: color, fontWeight: fontWeight),
+      maxLines: 2,
     );
   }
 }

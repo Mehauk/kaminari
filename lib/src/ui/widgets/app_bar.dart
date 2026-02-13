@@ -31,7 +31,7 @@ class LightningAppBar extends StatelessWidget {
               CustomText(
                 "Kaminari Browser",
                 .headlineMedium,
-                colorOverride: KaminariTheme.textTitle,
+                color: KaminariTheme.textTitle,
               ),
               Expanded(child: SizedBox.shrink()),
               LightningIcon(CupertinoIcons.person_alt_circle),
