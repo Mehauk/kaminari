@@ -41,10 +41,7 @@ class HistoryScreen extends StatelessWidget {
                       const SizedBox(height: 32),
                       Column(
                         spacing: 16,
-                        children: const [
-                          LastReadBookCard(),
-                          LastReadBookCard(),
-                        ],
+                        children: const [HistoryBookCard(), HistoryBookCard()],
                       ),
                       const SizedBox(height: 56),
                     ],
