@@ -35,7 +35,7 @@ class LightningBottomNav extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.only(
+          borderRadius: .only(
             topLeft: Radius.circular(KaminariTheme.borderRadius),
             topRight: Radius.circular(KaminariTheme.borderRadius),
           ),
@@ -43,7 +43,7 @@ class LightningBottomNav extends StatelessWidget {
             bgColor: KaminariTheme.surfaceVariant.withAlpha(200),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: .only(
                   topLeft: Radius.circular(KaminariTheme.borderRadius),
                   topRight: Radius.circular(KaminariTheme.borderRadius),
                 ),
@@ -80,7 +80,7 @@ class LightningBottomNavItem extends StatelessWidget {
           padding: .fromLTRB(4, 18, 4, 16),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(KaminariTheme.borderRadius),
+              borderRadius: .circular(KaminariTheme.borderRadius),
               color: active ? KaminariTheme.textTitle.withAlpha(50) : null,
             ),
             child: Padding(

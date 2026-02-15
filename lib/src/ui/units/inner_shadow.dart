@@ -9,7 +9,7 @@ class InnerShadow extends StatelessWidget {
     super.key,
     required this.child,
     this.shadows,
-    this.borderRadius = BorderRadius.zero,
+    this.borderRadius = .zero,
   });
 
   @override

@@ -147,9 +147,7 @@ class KaminariTheme {
       color: Color(0x2E222017),
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(24)),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: .all(Radius.circular(24))),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
@@ -168,7 +166,7 @@ class KaminariTheme {
         ),
         shape: const WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            borderRadius: .all(Radius.circular(borderRadius)),
           ),
         ),
         textStyle: const WidgetStatePropertyAll(
@@ -194,7 +192,7 @@ class KaminariTheme {
         ),
         shape: const WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            borderRadius: .all(Radius.circular(borderRadius)),
           ),
         ),
         textStyle: const WidgetStatePropertyAll(
@@ -218,7 +216,7 @@ class KaminariTheme {
         ),
         shape: const WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            borderRadius: .all(Radius.circular(borderRadius)),
           ),
         ),
         textStyle: const WidgetStatePropertyAll(
@@ -255,7 +253,7 @@ class KaminariTheme {
         ),
         shape: const WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(altBorderRadius)),
+            borderRadius: .all(Radius.circular(altBorderRadius)),
           ),
         ),
         textStyle: WidgetStateProperty.resolveWith((states) {
@@ -335,7 +333,7 @@ class KaminariTheme {
       focusColor: surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.only(
+        borderRadius: .only(
           topLeft: Radius.circular(altBorderRadius),
           topRight: Radius.circular(altBorderRadius),
         ),
@@ -345,7 +343,7 @@ class KaminariTheme {
         ),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.only(
+        borderRadius: .only(
           topLeft: Radius.circular(altBorderRadius),
           topRight: Radius.circular(altBorderRadius),
         ),
@@ -355,7 +353,7 @@ class KaminariTheme {
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.only(
+        borderRadius: .only(
           topLeft: Radius.circular(altBorderRadius),
           topRight: Radius.circular(altBorderRadius),
         ),

@@ -29,18 +29,22 @@ class Grid extends StatelessWidget {
     for (var e in children) {
       size += e.$1;
 
-      Widget flex = SizedBox(width: e.$1 * baseWidth, child: e.$2);
+      Widget child = SizedBox(
+        width: e.$1 * baseWidth + ((e.$1 - 1) * spacing),
+        child: e.$2,
+      );
 
       if (size > columns) {
         size = e.$1;
-        rows.add([flex]);
+        rows.add([child]);
       } else {
-        rows.last.add(flex);
+        rows.last.add(child);
       }
     }
 
     return Column(
       spacing: runSpacing,
+      crossAxisAlignment: .center,
       children: rows.map((r) => Row(spacing: spacing, children: r)).toList(),
     );
   }
