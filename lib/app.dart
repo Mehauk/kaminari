@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kaminari/src/ui/pages/book_details/book_details_page.dart';
 import 'package:kaminari/src/ui/pages/home/home_page.dart';
+import 'package:kaminari/src/ui/pages/webview/import_webview_page.dart';
 
 import 'src/config/theme.dart';
 
@@ -17,6 +18,9 @@ class KaminariApp extends StatelessWidget {
       routes: {
         '/': (_) => const HomePage(),
         '/book-details': (_) => const BookDetailsPage(),
+        '/import-view': (context) => ImportWebviewPage(
+          initialUrl: ModalRoute.of(context)?.settings.arguments as String?,
+        ),
       },
     );
   }

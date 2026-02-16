@@ -1,21 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-enum BookType {
-  all("All"),
-  webNovel("Web Novels"),
-  lightNovel("Light Novels"),
-  shortStory("Short Stories");
-
-  final String text;
-  const BookType(this.text);
-
-  String get short => switch (this) {
-    BookType.all => text,
-    BookType.webNovel => "WEB",
-    BookType.lightNovel => "LN",
-    BookType.shortStory => "SS",
-  };
-}
+import 'package:kaminari/src/data/models/book.dart';
 
 class DiscoverState {
   const DiscoverState({this.filter = BookType.all, this.query = ''});

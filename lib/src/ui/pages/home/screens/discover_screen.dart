@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/bloc/home/screens/discover_cubit.dart';
 import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
 import 'package:kaminari/src/ui/widgets/book_cards.dart';
@@ -9,6 +10,15 @@ import 'package:kaminari/src/ui/widgets/grid.dart';
 
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
+
+  void importFromContext(BuildContext context) {
+    final query = context.read<DiscoverCubit>().state.query;
+    // If it's a URL, go there, otherwise search
+    final url = query.startsWith('http')
+        ? query
+        : 'https://www.google.com/search?q=$query';
+    Navigator.of(context).pushNamed('/import-view', arguments: url);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +51,7 @@ class DiscoverScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           IconButton.filled(
-                            onPressed: () {},
+                            onPressed: () => importFromContext(context),
                             icon: const Icon(Icons.add),
                           ),
                         ],
