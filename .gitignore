@@ -44,5 +44,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# AI-DLC
-.aidlc/
+# Generated
+*.freezed.dart

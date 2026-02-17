@@ -90,7 +90,7 @@ class __ImportWebviewPageState extends State<_ImportWebviewPage> {
               ),
               Column(
                 children: [
-                  _WebAddressBar(controller: _controller, state: state),
+                  _WebAddressBar(controller: _controller),
                   if (state.isLoading)
                     LinearProgressIndicator(
                       value: state.progress,
@@ -122,12 +122,12 @@ class __ImportWebviewPageState extends State<_ImportWebviewPage> {
 }
 
 class _WebAddressBar extends StatelessWidget {
-  const _WebAddressBar({required this.controller, required this.state});
+  const _WebAddressBar({required this.controller});
   final WebViewController controller;
-  final WebviewState state;
 
   @override
   Widget build(BuildContext context) {
+    final url = context.select<WebviewCubit, String>((c) => c.state.url);
     return ClipRRect(
       child: BgFilter(
         bgColor: KaminariTheme.background.withAlpha(220),
@@ -168,7 +168,7 @@ class _WebAddressBar extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: CustomText(
-                            state.url,
+                            url,
                             TextType.labelSmall,
                             fontSize: 12,
                             color: KaminariTheme.textSecondary,
