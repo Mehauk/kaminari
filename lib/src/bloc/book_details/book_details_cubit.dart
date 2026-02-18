@@ -1,25 +1,19 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/models/book.dart';
+
+part 'book_details_cubit.freezed.dart';
 
 // ──────────────────────────────────────────────────────
 // State — wraps the data model and adds pure-UI flags
 // ──────────────────────────────────────────────────────
 
-class BookDetailsState {
-  const BookDetailsState({
-    required this.book,
-    this.synopsisExpanded = false,
-  });
-
-  final BookDetails book;
-  final bool synopsisExpanded;
-
-  BookDetailsState copyWith({bool? synopsisExpanded}) {
-    return BookDetailsState(
-      book: book,
-      synopsisExpanded: synopsisExpanded ?? this.synopsisExpanded,
-    );
-  }
+@freezed
+abstract class BookDetailsState with _$BookDetailsState {
+  const factory BookDetailsState({
+    required BookDetails book,
+    @Default(false) bool synopsisExpanded,
+  }) = _BookDetailsState;
 }
 
 // ──────────────────────────────────────────────────────

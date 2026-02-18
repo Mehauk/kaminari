@@ -46,3 +46,7 @@ app.*.map.json
 
 # Generated
 *.freezed.dart
+
+# Model files
+*.task
+*.gguf

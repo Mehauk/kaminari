@@ -1,18 +1,15 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/models/book.dart';
 
-class DiscoverState {
-  const DiscoverState({this.filter = BookType.all, this.query = ''});
+part 'discover_cubit.freezed.dart';
 
-  final BookType filter;
-  final String query;
-
-  DiscoverState copyWith({BookType? filter, String? query}) {
-    return DiscoverState(
-      filter: filter ?? this.filter,
-      query: query ?? this.query,
-    );
-  }
+@freezed
+abstract class DiscoverState with _$DiscoverState {
+  const factory DiscoverState({
+    @Default(BookType.all) BookType filter,
+    @Default('') String query,
+  }) = _DiscoverState;
 }
 
 class DiscoverCubit extends Cubit<DiscoverState> {
