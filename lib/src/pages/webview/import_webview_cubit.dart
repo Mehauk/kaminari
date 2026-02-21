@@ -6,7 +6,7 @@ import 'package:kaminari/src/data/constants/javascript.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-part 'webview_cubit.freezed.dart';
+part 'import_webview_cubit.freezed.dart';
 
 @freezed
 abstract class WebviewState with _$WebviewState {
@@ -145,10 +145,26 @@ class WebviewCubit extends Cubit<WebviewState> {
   }
 
   Map<String, String> _parseLlmJson(String response) {
-    // Gemma often wraps JSON in markdown code blocks ```json ... ```
-    final cleanJson = response.replaceAll(RegExp(r'```json|```'), '').trim();
-    print(cleanJson);
-    return Map<String, String>.from(jsonDecode(cleanJson));
+    // Gemini often wraps JSON in markdown code blocks or adds conversational filler.
+    // We attempt to extract the JSON block.
+    try {
+      final startIndex = response.indexOf('{');
+      final endIndex = response.lastIndexOf('}');
+
+      if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+        final jsonString = response.substring(startIndex, endIndex + 1);
+        print("Cleaned JSON: $jsonString");
+        return Map<String, String>.from(jsonDecode(jsonString));
+      }
+
+      // Fallback to previous logic if braces not found
+      final cleanJson = response.replaceAll(RegExp(r'```json|```'), '').trim();
+      return Map<String, String>.from(jsonDecode(cleanJson));
+    } catch (e) {
+      print("JSON Parsing Error: $e");
+      print("Original Response: $response");
+      rethrow;
+    }
   }
 
   Future<Map<String, String>> _extractBookMetadata(

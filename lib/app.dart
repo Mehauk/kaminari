@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kaminari/src/bloc/llm/llm_initialization_cubit.dart';
-import 'package:kaminari/src/data/services/llm_service.dart';
-import 'package:kaminari/src/ui/pages/book_details/book_details_page.dart';
-import 'package:kaminari/src/ui/pages/home/home_page.dart';
-import 'package:kaminari/src/ui/pages/webview/import_webview_page.dart';
+import 'package:kaminari/src/pages/book_details/book_details_page.dart';
+import 'package:kaminari/src/pages/home/home_page.dart';
+import 'package:kaminari/src/pages/webview/import_webview_page.dart';
 
 import 'src/config/theme.dart';
 
@@ -13,21 +10,18 @@ class KaminariApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => LlmInitializationCubit(LlmService()),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Kaminari Browser',
-        theme: KaminariTheme.theme,
-        initialRoute: '/',
-        routes: {
-          '/': (_) => const HomePage(),
-          '/book-details': (_) => const BookDetailsPage(),
-          '/import-view': (context) => ImportWebviewPage(
-            initialUrl: ModalRoute.of(context)?.settings.arguments as String?,
-          ),
-        },
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Kaminari Browser',
+      theme: KaminariTheme.theme,
+      initialRoute: '/',
+      routes: {
+        '/': (_) => const HomePage(),
+        '/book-details': (_) => const BookDetailsPage(),
+        '/import-view': (context) => ImportWebviewPage(
+          initialUrl: ModalRoute.of(context)?.settings.arguments as String?,
+        ),
+      },
     );
   }
 }

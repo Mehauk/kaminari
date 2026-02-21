@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kaminari/src/bloc/book_details/book_details_cubit.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/pages/book_details/book_details_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
@@ -147,13 +147,13 @@ class _BookHeader extends StatelessWidget {
       children: [
         // Japanese title
         CustomText(state.book.title, .titleMedium, fontSize: 22),
-        const SizedBox(height: 4),
-        // Romanized title
-        CustomText(
-          state.book.titleRomaji,
-          .headlineMedium,
-          color: KaminariTheme.textTitle,
-        ),
+        // const SizedBox(height: 4),
+        // // Romanized title
+        // CustomText(
+        //   state.book.titleRomaji,
+        //   .headlineMedium,
+        //   color: KaminariTheme.textTitle,
+        // ),
         const SizedBox(height: 8),
         // Author
         Row(
@@ -174,7 +174,7 @@ class _BookHeader extends StatelessWidget {
         Row(
           children: [
             Chip(
-              label: Text(state.book.bookType),
+              label: Text(state.book.bookType.text),
               labelStyle: const TextStyle().copyWith(
                 color: KaminariTheme.textSecondary,
               ),
@@ -256,7 +256,7 @@ class _ProgressSection extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: CustomText(
-                    state.book.currentChapter,
+                    state.book.chapters[state.book.currentChapter].title,
                     .bodyMedium,
                     fontSize: 13,
                   ),
@@ -265,7 +265,7 @@ class _ProgressSection extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             CustomText(
-              'Page ${state.book.currentPage} of ${state.book.totalPages}',
+              'Chapter ${state.book.currentChapter} of ${state.book.chapters.length}',
               .labelSmall,
             ),
             const SizedBox(height: 16),
@@ -294,15 +294,15 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<BookDetailsCubit>().state;
-    final hours = state.book.estimatedMinutes ~/ 60;
-    final mins = state.book.estimatedMinutes % 60;
+    final hours = 0 ~/ 60;
+    final mins = 0 % 60;
     final timeLabel = hours > 0 ? '${hours}h ${mins}m' : '${mins}m';
 
     return Row(
       children: [
         _StatTile(
           icon: Icons.text_fields_rounded,
-          value: '${(state.book.totalWordCount / 1000).toStringAsFixed(1)}k',
+          value: '${(0 / 1000).toStringAsFixed(1)}k',
           label: 'Words',
         ),
         const SizedBox(width: 12),
@@ -475,8 +475,7 @@ class _ChapterList extends StatelessWidget {
               for (int i = 0; i < state.book.chapters.length; i++) ...[
                 _ChapterTile(
                   chapter: state.book.chapters[i],
-                  isCurrent:
-                      state.book.chapters[i].title == state.book.currentChapter,
+                  current: state.book.currentChapter,
                 ),
                 if (i < state.book.chapters.length - 1)
                   Divider(
@@ -493,13 +492,14 @@ class _ChapterList extends StatelessWidget {
 }
 
 class _ChapterTile extends StatelessWidget {
-  const _ChapterTile({required this.chapter, required this.isCurrent});
+  const _ChapterTile({required this.chapter, required this.current});
 
   final ChapterInfo chapter;
-  final bool isCurrent;
+  final int current;
 
   @override
   Widget build(BuildContext context) {
+    final bool isCurrent = current == chapter.number;
     return InkWell(
       onTap: () {},
       child: Padding(
@@ -529,36 +529,13 @@ class _ChapterTile extends StatelessWidget {
                     fontSize: 14,
                     color: isCurrent ? KaminariTheme.textPrimary : null,
                   ),
-                  if (chapter.wordCount > 0) ...[
-                    const SizedBox(height: 2),
-                    CustomText(
-                      '~${(chapter.wordCount / 1000).toStringAsFixed(1)}k words',
-                      .labelSmall,
-                      fontSize: 11,
-                    ),
-                  ],
                 ],
               ),
             ),
             const SizedBox(width: 8),
             if (isCurrent)
-              Container(
-                padding: const .symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: KaminariTheme.textTitle.withAlpha(30),
-                  borderRadius: .circular(6),
-                  border: Border.all(
-                    color: KaminariTheme.textTitle.withAlpha(80),
-                  ),
-                ),
-                child: CustomText(
-                  'CURRENT',
-                  .labelSmall,
-                  fontSize: 9,
-                  color: KaminariTheme.textTitle,
-                ),
-              )
-            else if (chapter.isRead)
+              Icon(Icons.circle, size: 16, color: KaminariTheme.textTitle)
+            else if (chapter.number < current)
               Icon(
                 Icons.check_circle_rounded,
                 size: 16,

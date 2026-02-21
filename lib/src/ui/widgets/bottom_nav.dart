@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kaminari/src/bloc/home/home_nav_cubit.dart';
 import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/pages/home/home_nav_cubit.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/utils/string_extensions.dart';
