@@ -52,3 +52,4 @@ flutter:
 
   assets:
     - .env
+    - assets/images/placeholder_book.png

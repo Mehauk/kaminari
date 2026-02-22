@@ -94,9 +94,16 @@ class _CoverAppBar extends StatelessWidget {
           fit: .expand,
           children: [
             Image.network(
-              state.book.coverUrl,
+              state.book.coverUrl ?? '',
               fit: .cover,
               alignment: const Alignment(0, -0.2),
+              errorBuilder: (context, error, stackTrace) => Image.asset(
+                'assets/images/placeholder_book.png',
+                alignment: Alignment(0, -0.2),
+                fit: BoxFit.cover,
+                width: double.maxFinite,
+                height: 192,
+              ),
             ),
 
             // Bottom gradient fade
@@ -181,7 +188,7 @@ class _BookHeader extends StatelessWidget {
               color: const WidgetStatePropertyAll(KaminariTheme.surfaceVariant),
             ),
             const SizedBox(width: 8),
-            _JlptBadge(level: state.book.jlptLevel),
+            _JlptBadge(level: state.book.jlptLevel ?? 'N/A'),
           ],
         ),
       ],
@@ -314,7 +321,7 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 12),
         _StatTile(
           icon: Icons.translate_rounded,
-          value: state.book.jlptLevel,
+          value: state.book.jlptLevel ?? 'N/A',
           label: 'JLPT',
           valueColor: KaminariTheme.cyan,
         ),

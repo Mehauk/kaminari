@@ -8,9 +8,12 @@ import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
+import 'package:kaminari/src/utils/date_extensions.dart';
 
 class LastReadBookCard extends StatelessWidget {
-  const LastReadBookCard({super.key});
+  const LastReadBookCard(this.book, {super.key});
+
+  final BookDetails book;
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +34,18 @@ class LastReadBookCard extends StatelessWidget {
               alignment: AlignmentGeometry.bottomStart,
               children: [
                 Image.network(
-                  "https://lh3.googleusercontent.com/aida-public/AB6AXuAsmvERQIxb69zOnC3qKBAhy-utzthLY4MKFP6Cna6vzDRyZBZRGPp2J6WEUCiRmVJL-f3q2U3jq1A94N7GbNG3lKuNOP9CoN5kzB2SMJh-62WJUjTsxlLAUiFfA4Oc-9CXr8VrJJ_7iBjGaP2xwIK-h5_sXYSqlGgJJz-vDvP_qe_Db6Kcw4Be4OxX-g07-ucZwCrxxAsUIzSZPGD5_LpXQjO7HHu3StMKAjIa_bubKQA88L9z9RYqn8yjJO7xGXByqLQbGV4DKjVI",
+                  book.coverUrl ?? '',
                   alignment: Alignment(0, -0.2),
                   fit: BoxFit.cover,
                   width: double.maxFinite,
                   height: 192,
+                  errorBuilder: (context, error, stackTrace) => Image.asset(
+                    'assets/images/placeholder_book.png',
+                    alignment: Alignment(0, -0.2),
+                    fit: BoxFit.cover,
+                    width: double.maxFinite,
+                    height: 192,
+                  ),
                 ),
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -54,11 +64,11 @@ class LastReadBookCard extends StatelessWidget {
                 Positioned(
                   left: 20,
                   top: 12,
-                  child: Chip(label: Text("NOVEL")),
+                  child: Chip(label: Text(book.bookType.text)),
                 ),
                 Padding(
                   padding: const .symmetric(horizontal: 24, vertical: 4),
-                  child: CustomText("Overlord: Volume 14", .headlineMedium),
+                  child: CustomText(book.title, .headlineMedium),
                 ),
               ],
             ),
@@ -68,7 +78,7 @@ class LastReadBookCard extends StatelessWidget {
                 crossAxisAlignment: .start,
                 children: [
                   CustomText(
-                    "Chapter 3: The Witch of the Falling Kingdom",
+                    book.chapters[book.currentChapter].title,
                     .bodyLarge,
                   ),
                   SizedBox(height: 20),
@@ -91,14 +101,14 @@ class LastReadBookCard extends StatelessWidget {
                                 SizedBox(width: 8),
 
                                 CustomText(
-                                  "68%",
+                                  "${(book.progress * 100).toInt()}%",
                                   .labelSmall,
                                   color: KaminariTheme.textTitle,
                                 ),
                               ],
                             ),
                             SizedBox(height: 8),
-                            LinearProgressIndicator(value: 0.68),
+                            LinearProgressIndicator(value: book.progress),
                           ],
                         ),
                       ),
@@ -120,7 +130,9 @@ class LastReadBookCard extends StatelessWidget {
 }
 
 class HistoryBookCard extends StatelessWidget {
-  const HistoryBookCard({super.key});
+  const HistoryBookCard(this.book, {super.key});
+
+  final BookDetails book;
 
   @override
   Widget build(BuildContext context) {
@@ -142,10 +154,16 @@ class HistoryBookCard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: .circular(KaminariTheme.borderRadius),
                   child: Image.network(
+                    book.coverUrl ?? '',
                     width: 64,
                     height: 80,
                     fit: .cover,
-                    "https://lh3.googleusercontent.com/aida-public/AB6AXuBfYT489cK1M-YKRsuBsboDbV29o05OtNYm5Y7qLYFxl0-kDxkSJ5-OoUPSNDWQOXgwRiEWtqvR-OWbARrcvsZOmWFVgauGZPs-d-3eeNyTyTGGOddWTVUPXVglwi5b__NpqBSGbINqP0tqnPVTKszK3ifTfCSKdJ3oBVvuZs9h7nJVz8_kpCmCVu8lyibhuLG291Pnf1m_dH9UBysxfC-UZ3j24_nVDCD0WZW8ZQ778kof2lCFHhAs4q5CMBY0W9SZcGe4AB_tZX5U",
+                    errorBuilder: (context, error, stackTrace) => Image.asset(
+                      'assets/images/placeholder_book.png',
+                      width: 64,
+                      height: 80,
+                      fit: .cover,
+                    ),
                   ),
                 ),
               ),
@@ -153,13 +171,16 @@ class HistoryBookCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: .start,
                   children: [
-                    CustomText("ノルウェイの森(Norwegian Wood)", .titleMedium),
+                    CustomText(book.title, .titleMedium),
                     SizedBox(height: 4),
                     Row(
                       children: [
                         Icon(Icons.access_time, size: 14),
                         SizedBox(width: 4),
-                        CustomText("2 hours ago", .labelSmall),
+                        CustomText(
+                          book.accessedDate.toDateStringPrefRelative,
+                          .labelSmall,
+                        ),
                       ],
                     ),
                     SizedBox(height: 4),
@@ -167,7 +188,10 @@ class HistoryBookCard extends StatelessWidget {
                       children: [
                         Icon(CupertinoIcons.book, size: 14),
                         SizedBox(width: 4),
-                        CustomText("page 156 / 200", .labelSmall),
+                        CustomText(
+                          "chapter ${book.currentChapter} / ${book.chapters.length}",
+                          .labelSmall,
+                        ),
                       ],
                     ),
                     SizedBox(height: 12),
@@ -192,7 +216,9 @@ class HistoryBookCard extends StatelessWidget {
 }
 
 class DiscoverableBookCard extends StatelessWidget {
-  const DiscoverableBookCard({super.key});
+  const DiscoverableBookCard(this.book, {super.key});
+
+  final BookDetails book;
 
   @override
   Widget build(BuildContext context) {
@@ -205,11 +231,18 @@ class DiscoverableBookCard extends StatelessWidget {
             Stack(
               children: [
                 Image.network(
-                  "https://lh3.googleusercontent.com/aida-public/AB6AXuBAM6pilxIHDQ86aOPcfulMu3N0-G1_l52Tgpg_BrlXJnoetaNnvL-mVe_ZU7hDQwYQKEZTlTcNVzylERI2NudXlw2xHYcODehuVjneis4WJBnZJKHFdYgk8HaSoI1p5lhWJcJZsSJsoEmqKBlNAQ_Dqsuuo61OkKmvGdtLsJRotAMor-JJ3pHoJKYyYHFwQ6MCMQVfBKVP-znV0DyALYccVmAzd7MPkgwtLqeCUnUooY0OPuw3HTNCh18GhQuHqc0a2aj3nowh4QEm",
+                  book.coverUrl ?? '',
                   alignment: Alignment(0, -0.2),
                   fit: BoxFit.cover,
                   width: double.maxFinite,
                   height: 192,
+                  errorBuilder: (context, error, stackTrace) => Image.asset(
+                    'assets/images/placeholder_book.png',
+                    alignment: Alignment(0, -0.2),
+                    fit: BoxFit.cover,
+                    width: double.maxFinite,
+                    height: 192,
+                  ),
                 ),
                 Padding(
                   padding: .all(12),
@@ -220,7 +253,7 @@ class DiscoverableBookCard extends StatelessWidget {
                       child: Padding(
                         padding: .symmetric(horizontal: 24, vertical: 4),
                         child: Text(
-                          BookType.lightNovel.short,
+                          book.bookType.short,
                           style: TextStyle().copyWith(
                             fontSize: 14,
                             color: KaminariTheme.textSecondary,
@@ -238,7 +271,7 @@ class DiscoverableBookCard extends StatelessWidget {
                 crossAxisAlignment: .start,
                 children: [
                   CustomText(
-                    "The Electric Blade of Edo",
+                    book.title,
                     .headlineMedium,
                     fontSize: 14,
                     color: Colors.white,
@@ -246,7 +279,7 @@ class DiscoverableBookCard extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
                   CustomText(
-                    "Kento Sato",
+                    book.author,
                     .titleMedium,
                     fontSize: 12,
                     fontWeight: .w300,
