@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/constants/javascript.dart';
+import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -124,10 +126,13 @@ class WebviewCubit extends Cubit<WebviewState> {
       print(prompt);
 
       // 3. Get LLM Response (accumulate stream)
-      String fullResponse = "";
-      await for (final chunk in llmService.streamResponse(prompt)) {
-        fullResponse += chunk;
-      }
+      // String fullResponse = "";
+      // await for (final chunk in llmService.streamResponse(prompt)) {
+      //   fullResponse += chunk;
+      // }
+
+      String fullResponse =
+          '{"\$schema": "https://json-schema.org/draft/2020-12/schema", "title": ".p-novel__title", "author": ".p-novel__author > a", "coverUrl": "N/A", "jlptLevel": "N/A", "synopsis": "#novel_ex.p-novel__summary", "firstPageUrl": ".c-pager__item--first", "nextPageUrl": ".c-pager__item--next", "chapter": ".p-eplist__sublist", "chapterDetails": {"url": "a.p-eplist__subtitle", "title": "a.p-eplist__subtitle", "updatedDate": ".p-eplist__update"}}';
 
       // 4. Parse Selectors from JSON
       final selectors = _parseLlmJson(fullResponse);
@@ -136,15 +141,15 @@ class WebviewCubit extends Cubit<WebviewState> {
       final bookData = await _extractBookMetadata(selectors);
 
       // 6. Navigate to Details or Save to DB (Next step)
-      print("Extracted Book: ${bookData['title']}");
+      print("Extracted Book: ${bookData.title}");
       emit(state.copyWith(isImporting: false));
-    } catch (e) {
-      print("Extraction Error: $e");
+    } on Error catch (e) {
+      print("Extraction Error: $e\n${e.stackTrace}");
       emit(state.copyWith(isImporting: false, extractionFailed: true));
     }
   }
 
-  Map<String, String> _parseLlmJson(String response) {
+  BookDetailsExtractor _parseLlmJson(String response) {
     // Gemini often wraps JSON in markdown code blocks or adds conversational filler.
     // We attempt to extract the JSON block.
     try {
@@ -153,13 +158,15 @@ class WebviewCubit extends Cubit<WebviewState> {
 
       if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
         final jsonString = response.substring(startIndex, endIndex + 1);
-        print("Cleaned JSON: $jsonString");
-        return Map<String, String>.from(jsonDecode(jsonString));
+        final jsonMap = Map<String, dynamic>.from(jsonDecode(jsonString));
+        print("JSON: $jsonMap");
+        return BookDetailsExtractor.fromJson(jsonMap);
       }
 
       // Fallback to previous logic if braces not found
       final cleanJson = response.replaceAll(RegExp(r'```json|```'), '').trim();
-      return Map<String, String>.from(jsonDecode(cleanJson));
+      final jsonMap = Map<String, dynamic>.from(jsonDecode(cleanJson));
+      return BookDetailsExtractor.fromJson(jsonMap);
     } catch (e) {
       print("JSON Parsing Error: $e");
       print("Original Response: $response");
@@ -167,21 +174,81 @@ class WebviewCubit extends Cubit<WebviewState> {
     }
   }
 
-  Future<Map<String, String>> _extractBookMetadata(
-    Map<String, String> selectors,
+  Future<BookDetails> _extractBookMetadata(
+    BookDetailsExtractor selectors,
   ) async {
-    // Run a small JS script to grab text content using the discovered selectors
-    final results = await controller.runJavaScriptReturningResult("""
-      (function() {
-        return {
-          title: document.querySelector('${selectors['title']}')?.innerText || '',
-          author: document.querySelector('${selectors['author']}')?.innerText || '',
-          synopsis: document.querySelector('${selectors['synopsis']}')?.innerText || '',
-        };
-      })()
-    """);
+    final jsonMap = selectors.toJson();
+    final reMap = {};
 
-    print(results);
-    return Map<String, String>.from(results as Map);
+    final jsonCMap = selectors.chapterDetails.toJson();
+    final reCMap = {};
+
+    final firstPageSelector = jsonMap["firstPageUrl"] as String;
+    final nextPageSelector = jsonMap["nextPageUrl"] as String;
+
+    for (var ckey in jsonCMap.keys) {
+      String selector = jsonCMap[ckey];
+      if (["null", "n/a", "none"].contains(selector.toLowerCase())) continue;
+
+      if (ckey == "url") {
+        reCMap[ckey] = "e.querySelector('$selector').href";
+        continue;
+      }
+
+      reCMap[ckey] = "e.querySelector('$selector').textContent.trim()";
+    }
+
+    reCMap["number"] = "0";
+
+    reMap["url"] = "document.location.href";
+    for (var key in jsonMap.keys) {
+      if (key == "url") {
+        continue;
+      } else if ([
+        "chapterDetails",
+        "nextPageUrl",
+        "firstPageUrl",
+      ].contains(key)) {
+        continue;
+      }
+
+      String selector = jsonMap[key];
+      if (["null", "n/a", "none"].contains(selector.toLowerCase())) continue;
+
+      if (key == "chapter") {
+        reMap["chapters"] = null;
+      } else {
+        reMap[key] =
+            "document.body.querySelector('$selector').textContent.trim()";
+      }
+    }
+
+    final js =
+        """
+      (async () => {
+        const data = $reMap;
+        data.chapters = await ${cheaptersLoadingIIFE(jsonMap["chapter"], selectors.chapterDetails, firstPageSelector, nextPageSelector)};
+        return JSON.stringify(data);
+      })()
+    """;
+    print("js");
+    debugPrint(js);
+    print("js");
+
+    // Run a small JS script to grab text content using the discovered selectors
+    final resultString = await controller.runJavaScriptReturningResult(js);
+
+    print(resultString);
+    // resultString is a String like "\"{\\\"title\\\": ...}\""
+    // sometimes with extra quotes depending on the platform/WebView version
+    final cleanJson = resultString
+        .toString()
+        .replaceAll(RegExp(r'^"|"$'), '')
+        .replaceAll('\\"', '"');
+
+    // Decode the string into a Map
+    final Map<String, dynamic> response = jsonDecode(cleanJson);
+
+    return BookDetails.fromJson(response);
   }
 }

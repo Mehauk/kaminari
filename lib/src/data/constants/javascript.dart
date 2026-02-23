@@ -3,13 +3,46 @@ import 'package:kaminari/src/data/models/book.dart';
 String buildDiscoveryPrompt(String miniTree) {
   return """
 Analyze this minified DOM tree and identify the most likely CSS selectors for book metadata.
+I will use these selectors to run querySelector qrquerySelectorAll.
+Remember that url are most likely to be a tags.
 Tree: $miniTree
 
 Return ONLY a single JSON object for the following schema:
-${BookDetailsBase.schema}
-${ChapterInfoBase.schema}
+${BookDetailsExtractor.schema}
+${ChapterInfoExtractor.schema}
 
 JSON:
+""";
+}
+
+String cheaptersLoadingIIFE(
+  String chapterSelector,
+  ChapterInfoExtractor detailsSelector,
+  String firstPageSelector,
+  String nextPageSelector,
+) {
+  return """
+  (async () => {
+    let chapters = [];
+    let i = -1;
+    let nextUrl = document.querySelector('$firstPageSelector').href ?? document.location.href;
+    while (nextUrl) {
+      const html = await (await fetch(nextUrl)).text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const pageChapters = Array.from(doc.querySelectorAll('$chapterSelector')).map(e => {
+      i += 1;
+      return ({
+        url: e.querySelector('${detailsSelector.url}')?.href,
+        title: e.querySelector('${detailsSelector.title}')?.textContent.trim(),
+        updatedDate: e.querySelector('${detailsSelector.updatedDate}')?.textContent.trim(),
+        number: i
+      })});
+      chapters = chapters.concat(pageChapters);
+      const nextBtn = doc.querySelector('$nextPageSelector');
+      nextUrl = (nextBtn && nextBtn.href !== document.location.href) ? nextBtn.href : null;
+    }
+    return chapters;
+  })()
 """;
 }
 

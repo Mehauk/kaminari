@@ -23,18 +23,17 @@ enum BookType {
 }
 
 @freezed
-abstract class ChapterInfoBase with _$ChapterInfoBase {
-  const factory ChapterInfoBase({
+abstract class ChapterInfoExtractor with _$ChapterInfoExtractor {
+  const factory ChapterInfoExtractor({
     required String url,
-    required int number,
     required String title,
     String? updatedDate,
-  }) = _ChapterInfoBase;
+  }) = _ChapterInfoExtractor;
 
-  factory ChapterInfoBase.fromJson(Map<String, dynamic> json) =>
-      _$ChapterInfoBaseFromJson(json);
+  factory ChapterInfoExtractor.fromJson(Map<String, dynamic> json) =>
+      _$ChapterInfoExtractorFromJson(json);
 
-  static const schema = _$_ChapterInfoBaseJsonSchema;
+  static const schema = _$_ChapterInfoExtractorJsonSchema;
 }
 
 @freezed
@@ -51,24 +50,25 @@ abstract class ChapterInfo with _$ChapterInfo {
 }
 
 @freezed
-abstract class BookDetailsBase with _$BookDetailsBase {
-  const BookDetailsBase._();
+abstract class BookDetailsExtractor with _$BookDetailsExtractor {
+  const BookDetailsExtractor._();
 
-  const factory BookDetailsBase({
-    required String url,
+  const factory BookDetailsExtractor({
+    String? firstPageUrl,
     String? nextPageUrl,
     required String title,
     required String author,
     required String coverUrl,
     required String jlptLevel,
     required String synopsis,
-    required List<ChapterInfoBase> chapters,
-  }) = _BookDetailsBase;
+    required String chapter,
+    required ChapterInfoExtractor chapterDetails,
+  }) = _BookDetailsExtractor;
 
-  factory BookDetailsBase.fromJson(Map<String, dynamic> json) =>
-      _$BookDetailsBaseFromJson(json);
+  factory BookDetailsExtractor.fromJson(Map<String, dynamic> json) =>
+      _$BookDetailsExtractorFromJson(json);
 
-  static const schema = _$_BookDetailsBaseJsonSchema;
+  static const schema = _$_BookDetailsExtractorJsonSchema;
 }
 
 @freezed
