@@ -154,8 +154,8 @@ class WebviewCubit extends Cubit<WebviewState> {
       // 6. Navigate to Details or Save to DB (Next step)
       print("Extracted Book: ${bookData.title}");
       emit(state.copyWith(isImporting: false));
-    } on Error catch (e) {
-      print("Extraction Error: $e\n${e.stackTrace}");
+    } catch (e, stack) {
+      print("Extraction Error: $e\n$stack");
       emit(state.copyWith(isImporting: false, extractionFailed: true));
     }
   }
@@ -237,9 +237,13 @@ class WebviewCubit extends Cubit<WebviewState> {
     final js =
         """
       (async () => {
-        const data = $reMap;
-        data.chapters = await ${cheaptersLoadingIIFE(jsonMap["chapter"], selectors.chapterDetails, firstPageSelector, nextPageSelector)};
-        ExtractionChannel.postMessage(JSON.stringify(data));
+        try {
+          const data = $reMap;
+          data.chapters = await ${cheaptersLoadingIIFE(jsonMap["chapter"], selectors.chapterDetails, firstPageSelector, nextPageSelector)};
+          ExtractionChannel.postMessage(JSON.stringify(data));
+        } catch (e) {
+          ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
+        }
       })()
     """;
     print("js");
@@ -249,13 +253,24 @@ class WebviewCubit extends Cubit<WebviewState> {
     // Run a small JS script to grab text content using the discovered selectors
     _extractionCompleter = Completer<String>();
     await controller.runJavaScript(js);
-    final resultString = await _extractionCompleter!.future;
 
-    print(resultString);
-    // resultString is a String like "{\"title\": ...}"
-    // since it's coming from postMessage, it's usually already a clean string
-    final Map<String, dynamic> response = jsonDecode(resultString);
+    try {
+      final resultString = await _extractionCompleter!.future.timeout(
+        const Duration(minutes: 5),
+      );
 
-    return BookDetails.fromJson(response);
+      print(resultString);
+      final Map<String, dynamic> response = jsonDecode(resultString);
+
+      if (response.containsKey('error')) {
+        throw Exception("JS Extraction Error: ${response['error']}");
+      }
+
+      return BookDetails.fromJson(response);
+    } on TimeoutException {
+      throw Exception("Extraction timed out after 5 minutes");
+    } finally {
+      _extractionCompleter = null;
+    }
   }
 }
