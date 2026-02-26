@@ -37,12 +37,24 @@ abstract class ChapterInfoExtractor with _$ChapterInfoExtractor {
 }
 
 @freezed
+abstract class ChapterExtractor with _$ChapterExtractor {
+  const factory ChapterExtractor({required String contentSection}) =
+      _ChapterExtractor;
+
+  factory ChapterExtractor.fromJson(Map<String, dynamic> json) =>
+      _$ChapterExtractorFromJson(json);
+
+  static const schema = _$_ChapterExtractorJsonSchema;
+}
+
+@freezed
 abstract class ChapterInfo with _$ChapterInfo {
   const factory ChapterInfo({
     required String url,
     required int number,
     required String title,
     String? updatedDate,
+    List<String>? content,
   }) = _ChapterInfo;
 
   factory ChapterInfo.fromJson(Map<String, dynamic> json) =>

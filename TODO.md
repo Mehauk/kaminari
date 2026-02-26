@@ -4,3 +4,4 @@
 - [ ] cache selector scripts to reuse -> fallback to gemini on fail
 - [ ] confirmation step to set booktype and whatnot
 - [ ] extractAsShortStory on failure? (https://ncode.syosetu.com/n9674md/)
+- [ ] BUG: you dont get all the chapters if you dont start on the first page.

@@ -30,6 +30,7 @@ class WebviewCubit extends Cubit<WebviewState> {
   final LlmService llmService;
   WebViewController controller = WebViewController();
   Completer<String>? _extractionCompleter;
+  Completer<void>? _pageLoadCompleter;
 
   WebviewCubit(String? initialUrl, this.llmService)
     : super(const WebviewState()) {
@@ -57,6 +58,11 @@ class WebviewCubit extends Cubit<WebviewState> {
             final title = await controller.getTitle();
             final canBack = await controller.canGoBack();
             final canForward = await controller.canGoForward();
+
+            if (_pageLoadCompleter != null &&
+                !_pageLoadCompleter!.isCompleted) {
+              _pageLoadCompleter!.complete();
+            }
 
             updateNavigation(
               back: canBack,
@@ -146,7 +152,10 @@ class WebviewCubit extends Cubit<WebviewState> {
           '{"\$schema": "https://json-schema.org/draft/2020-12/schema", "title": ".p-novel__title", "author": ".p-novel__author > a", "coverUrl": "N/A", "jlptLevel": "N/A", "synopsis": "#novel_ex.p-novel__summary", "firstPageUrl": ".c-pager__item--first", "nextPageUrl": ".c-pager__item--next", "chapter": ".p-eplist__sublist", "chapterDetails": {"url": "a.p-eplist__subtitle", "title": "a.p-eplist__subtitle", "updatedDate": ".p-eplist__update"}}';
 
       // 4. Parse Selectors from JSON
-      final selectors = _parseLlmJson(fullResponse);
+      final selectors = _extractJsonFromResponse(
+        fullResponse,
+        BookDetailsExtractor.fromJson,
+      );
 
       // 5. Use selectors to grab real data from the page
       final bookData = await _extractBookMetadata(selectors);
@@ -160,7 +169,10 @@ class WebviewCubit extends Cubit<WebviewState> {
     }
   }
 
-  BookDetailsExtractor _parseLlmJson(String response) {
+  T _extractJsonFromResponse<T>(
+    String response,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
     // Gemini often wraps JSON in markdown code blocks or adds conversational filler.
     // We attempt to extract the JSON block.
     try {
@@ -171,13 +183,13 @@ class WebviewCubit extends Cubit<WebviewState> {
         final jsonString = response.substring(startIndex, endIndex + 1);
         final jsonMap = Map<String, dynamic>.from(jsonDecode(jsonString));
         print("JSON: $jsonMap");
-        return BookDetailsExtractor.fromJson(jsonMap);
+        return fromJson(jsonMap);
       }
 
       // Fallback to previous logic if braces not found
       final cleanJson = response.replaceAll(RegExp(r'```json|```'), '').trim();
       final jsonMap = Map<String, dynamic>.from(jsonDecode(cleanJson));
-      return BookDetailsExtractor.fromJson(jsonMap);
+      return fromJson(jsonMap);
     } catch (e) {
       print("JSON Parsing Error: $e");
       print("Original Response: $response");
@@ -266,7 +278,102 @@ class WebviewCubit extends Cubit<WebviewState> {
         throw Exception("JS Extraction Error: ${response['error']}");
       }
 
-      return BookDetails.fromJson(response);
+      // AI DO THIS:
+      // navigate to first chapter
+      // do chapter extraction prompt once
+      // extract the first 3 chapters
+      final List chapters = response['chapters'] ?? [];
+      if (chapters.isNotEmpty) {
+        final firstChapterUrl = chapters[0]['url'];
+        if (firstChapterUrl != null) {
+          // 1. Navigate to first chapter to find content selector
+          _pageLoadCompleter = Completer<void>();
+          await controller.loadRequest(Uri.parse(firstChapterUrl));
+          await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
+          _pageLoadCompleter = null;
+
+          // 2. Extract DOM tree of chapter page
+          final dynamic chapterTreeRaw = await controller
+              .runJavaScriptReturningResult(minTreeExtFn);
+          final String chapterTree = chapterTreeRaw as String;
+
+          // 3. Get selector from LLM
+          final chapterPrompt = buildChapterExtractionPrompt(chapterTree);
+          // String chapterLlmResponse = "";
+          // await for (final chunk in llmService.streamResponse(chapterPrompt)) {
+          //   chapterLlmResponse += chunk;
+          // }
+
+          final String chapterLlmResponse =
+              '{"contentSection": "div.js-novel-text.p-novel__text"}';
+
+          print('chapterLlmResponse');
+          print(chapterLlmResponse);
+          print('chapterLlmResponse');
+
+          final chapterExtractor = _extractJsonFromResponse(
+            chapterLlmResponse,
+            ChapterExtractor.fromJson,
+          );
+
+          // 4. Use selector to fetch content for first 3 chapters
+          final urlsToExtract = chapters
+              .take(3)
+              .map((c) => c['url'] as String)
+              .toList();
+          final contentJs =
+              """
+            (async () => {
+              try {
+                const urls = ${jsonEncode(urlsToExtract)};
+                const selector = ${jsonEncode(chapterExtractor.contentSection)};
+                const results = [];
+                for (const url of urls) {
+                  const res = await fetch(url);
+                  const html = await res.text();
+                  const doc = new DOMParser().parseFromString(html, 'text/html');
+                  const el = doc.querySelector(selector);
+                  if (el) {
+                    const lines = Array.from(el.children)
+                      .map(c => c.textContent.trim())
+                      .filter(t => t.length > 0);
+                    if (lines.length === 0 && el.textContent.trim().length > 0) {
+                      lines.push(el.textContent.trim());
+                    }
+                    results.push(lines);
+                  } else {
+                    results.push([]);
+                  }
+                }
+                ExtractionChannel.postMessage(JSON.stringify({ "contents": results }));
+              } catch (e) {
+                ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
+              }
+            })()
+          """;
+
+          _extractionCompleter = Completer<String>();
+          await controller.runJavaScript(contentJs);
+          final contentResultString = await _extractionCompleter!.future
+              .timeout(const Duration(minutes: 2));
+          final contentResponse = jsonDecode(contentResultString);
+
+          if (contentResponse.containsKey('error')) {
+            print("Content Extraction Error: ${contentResponse['error']}");
+          } else {
+            final List contents = contentResponse['contents'];
+            for (int i = 0; i < contents.length; i++) {
+              chapters[i]['content'] = List<String>.from(contents[i]);
+            }
+          }
+        }
+      }
+
+      final book = BookDetails.fromJson(response);
+
+      print(book.chapters.first);
+
+      return book;
     } on TimeoutException {
       throw Exception("Extraction timed out after 5 minutes");
     } finally {
