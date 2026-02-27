@@ -4,25 +4,51 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:kaminari/src/data/constants/javascript.dart';
+import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/data/constants/prompt.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 part 'import_webview_cubit.freezed.dart';
+
+enum ImportStatus {
+  notImported,
+  importedSuccessfully,
+  importing,
+  importFailure;
+
+  IconData get icon => switch (this) {
+    ImportStatus.notImported => Icons.download_outlined,
+    ImportStatus.importedSuccessfully => Icons.download_done,
+    ImportStatus.importing => Icons.downloading,
+    ImportStatus.importFailure => Icons.cancel,
+  };
+
+  String get label => switch (this) {
+    ImportStatus.notImported => "IMPORT",
+    ImportStatus.importedSuccessfully => "IMPORTED",
+    ImportStatus.importing => "IMPORTING",
+    ImportStatus.importFailure => "FAILED TO IMPORT",
+  };
+
+  Color get color => switch (this) {
+    ImportStatus.notImported => KaminariTheme.textTitle,
+    ImportStatus.importedSuccessfully => KaminariTheme.success,
+    ImportStatus.importing => KaminariTheme.textPrimary,
+    ImportStatus.importFailure => KaminariTheme.error,
+  };
+}
 
 @freezed
 abstract class WebviewState with _$WebviewState {
   const factory WebviewState({
     @Default('') String url,
     @Default('Loading...') String title,
-    @Default(0.0) double progress,
     @Default(true) bool isLoading,
-    @Default(false) bool canGoBack,
-    @Default(false) bool canGoForward,
-    @Default(false) bool isImporting,
     @Default(false) bool hasAppliedPadding,
-    @Default(false) bool extractionFailed,
+    @Default(ImportStatus.notImported) ImportStatus importStatus,
   }) = _WebviewState;
 }
 
@@ -39,37 +65,27 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (progress) {
-            updateProgress(progress);
-
             if (progress >= 30 && !state.hasAppliedPadding) {
-              setPaddingApplied(true); // Update Cubit immediately
+              emit(state.copyWith(hasAppliedPadding: true));
               controller.runJavaScript(
                 "document.body.style.paddingTop = '120px'",
               );
             }
           },
-          onPageStarted: (url) => resetForNewPage(),
+          onPageStarted: (_) => resetForNewPage(),
           onPageFinished: (url) async {
-            // Re-apply on finish just in case the site cleared it
             controller.runJavaScript(
               "document.body.style.paddingTop = '120px'",
             );
 
             final title = await controller.getTitle();
-            final canBack = await controller.canGoBack();
-            final canForward = await controller.canGoForward();
 
             if (_pageLoadCompleter != null &&
                 !_pageLoadCompleter!.isCompleted) {
               _pageLoadCompleter!.complete();
             }
 
-            updateNavigation(
-              back: canBack,
-              forward: canForward,
-              url: url,
-              title: title,
-            );
+            updateNavigation(url: url, title: title);
           },
         ),
       )
@@ -85,51 +101,22 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..loadRequest(Uri.parse(initialUrl ?? 'https://syosetu.com/'));
   }
 
-  void setExtractionFailed(bool failed) {
-    emit(state.copyWith(extractionFailed: failed, isImporting: false));
-  }
-
-  void updateProgress(int progress) {
-    emit(state.copyWith(progress: progress / 100, isLoading: progress < 100));
-  }
-
-  void setPaddingApplied(bool applied) {
-    emit(state.copyWith(hasAppliedPadding: applied));
-  }
-
   void resetForNewPage() {
     emit(
       state.copyWith(
-        progress: 0,
         isLoading: true,
         hasAppliedPadding: false,
-        extractionFailed: false,
+        importStatus: .notImported,
       ),
     );
   }
 
-  void updateNavigation({
-    required bool back,
-    required bool forward,
-    String? url,
-    String? title,
-  }) {
-    emit(
-      state.copyWith(
-        canGoBack: back,
-        canGoForward: forward,
-        url: url ?? state.url,
-        title: title ?? state.title,
-      ),
-    );
-  }
-
-  void setImporting(bool importing) {
-    emit(state.copyWith(isImporting: importing));
+  void updateNavigation({String? url, String? title}) {
+    emit(state.copyWith(url: url ?? state.url, title: title ?? state.title));
   }
 
   Future<void> handleImport() async {
-    emit(state.copyWith(isImporting: true, extractionFailed: false));
+    emit(state.copyWith(importStatus: .importing));
 
     try {
       // 1. Extract Minified DOM via JS
@@ -139,7 +126,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       final String miniTree = rawTree as String;
 
       // 2. Build Prompt
-      final prompt = buildDiscoveryPrompt(miniTree);
+      final prompt = buildDiscoveryAIPrompt(miniTree);
       print(prompt);
 
       // 3. Get LLM Response (accumulate stream)
@@ -160,12 +147,14 @@ class WebviewCubit extends Cubit<WebviewState> {
       // 5. Use selectors to grab real data from the page
       final bookData = await _extractBookMetadata(selectors);
 
-      // 6. Navigate to Details or Save to DB (Next step)
+      // 6. Save to DB
       print("Extracted Book: ${bookData.title}");
-      emit(state.copyWith(isImporting: false));
+      await DatabaseService().saveBook(bookData);
+
+      emit(state.copyWith(importStatus: .importedSuccessfully));
     } catch (e, stack) {
       print("Extraction Error: $e\n$stack");
-      emit(state.copyWith(isImporting: false, extractionFailed: true));
+      emit(state.copyWith(importStatus: .importFailure));
     }
   }
 
@@ -224,6 +213,7 @@ class WebviewCubit extends Cubit<WebviewState> {
     reCMap["number"] = "0";
 
     reMap["url"] = "document.location.href";
+    reMap["source"] = "document.location.origin";
     for (var key in jsonMap.keys) {
       if (key == "url") {
         continue;
@@ -246,18 +236,16 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
     }
 
-    final js =
-        """
-      (async () => {
-        try {
-          const data = $reMap;
-          data.chapters = await ${cheaptersLoadingIIFE(jsonMap["chapter"], selectors.chapterDetails, firstPageSelector, nextPageSelector)};
-          ExtractionChannel.postMessage(JSON.stringify(data));
-        } catch (e) {
-          ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
-        }
-      })()
-    """;
+    final js = generateBookExtrationJSPrompt(
+      reMap,
+      cheaptersLoadingIIFE(
+        jsonMap["chapter"],
+        selectors.chapterDetails,
+        firstPageSelector,
+        nextPageSelector,
+      ),
+    );
+
     print("js");
     debugPrint(js);
     print("js");
@@ -298,7 +286,8 @@ class WebviewCubit extends Cubit<WebviewState> {
           final String chapterTree = chapterTreeRaw as String;
 
           // 3. Get selector from LLM
-          final chapterPrompt = buildChapterExtractionPrompt(chapterTree);
+          final chapterPrompt = buildChapterExtractionAIPrompt(chapterTree);
+          print(chapterPrompt);
           // String chapterLlmResponse = "";
           // await for (final chunk in llmService.streamResponse(chapterPrompt)) {
           //   chapterLlmResponse += chunk;
@@ -321,36 +310,10 @@ class WebviewCubit extends Cubit<WebviewState> {
               .take(3)
               .map((c) => c['url'] as String)
               .toList();
-          final contentJs =
-              """
-            (async () => {
-              try {
-                const urls = ${jsonEncode(urlsToExtract)};
-                const selector = ${jsonEncode(chapterExtractor.contentSection)};
-                const results = [];
-                for (const url of urls) {
-                  const res = await fetch(url);
-                  const html = await res.text();
-                  const doc = new DOMParser().parseFromString(html, 'text/html');
-                  const el = doc.querySelector(selector);
-                  if (el) {
-                    const lines = Array.from(el.children)
-                      .map(c => c.textContent.trim())
-                      .filter(t => t.length > 0);
-                    if (lines.length === 0 && el.textContent.trim().length > 0) {
-                      lines.push(el.textContent.trim());
-                    }
-                    results.push(lines);
-                  } else {
-                    results.push([]);
-                  }
-                }
-                ExtractionChannel.postMessage(JSON.stringify({ "contents": results }));
-              } catch (e) {
-                ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
-              }
-            })()
-          """;
+          final contentJs = generateContentExtractionJSPrompt(
+            jsonEncode(urlsToExtract),
+            jsonEncode(chapterExtractor.contentSection),
+          );
 
           _extractionCompleter = Completer<String>();
           await controller.runJavaScript(contentJs);

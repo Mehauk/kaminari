@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/pages/home/screens/bloc/discover_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
+import 'package:kaminari/src/ui/widgets/book_cards.dart';
 import 'package:kaminari/src/ui/widgets/grid.dart';
 
 class DiscoverScreen extends StatelessWidget {
@@ -12,7 +14,6 @@ class DiscoverScreen extends StatelessWidget {
 
   void importFromContext(BuildContext context) {
     final query = context.read<DiscoverCubit>().state.query;
-    // If it's a URL, go there, otherwise search
     final url = query.startsWith('http')
         ? query
         : 'https://www.google.com/search?q=$query';
@@ -22,7 +23,7 @@ class DiscoverScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => DiscoverCubit(),
+      create: (_) => DiscoverCubit(dbService: context.read<DatabaseService>()),
       child: BlocBuilder<DiscoverCubit, DiscoverState>(
         builder: (context, state) {
           return SingleChildScrollView(
@@ -71,7 +72,9 @@ class DiscoverScreen extends StatelessWidget {
                             totalWidth: constraints.maxWidth,
                             spacing: 12,
                             runSpacing: 12,
-                            children: [],
+                            children: state.books
+                                .map((b) => (1, DiscoverableBookCard(b)))
+                                .toList(),
                           );
                         },
                       ),

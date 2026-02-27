@@ -1,6 +1,6 @@
 import 'package:kaminari/src/data/models/book.dart';
 
-String buildDiscoveryPrompt(String miniTree) {
+String buildDiscoveryAIPrompt(String miniTree) {
   return """
 Analyze this minified DOM tree and identify the most likely CSS selectors for book metadata.
 I will use these selectors to run querySelector qrquerySelectorAll.
@@ -15,7 +15,7 @@ JSON:
 """;
 }
 
-String buildChapterExtractionPrompt(String miniTree) {
+String buildChapterExtractionAIPrompt(String miniTree) {
   return """
 Analyze this minified DOM tree and identify the most likely CSS selectors for the chapter's content.
 
@@ -158,3 +158,47 @@ const minTreeExtFn = '''
 
 
 ''';
+
+String generateBookExtrationJSPrompt(Map reMap, String iIFE) =>
+    """
+    (async () => {
+      try {
+        const data = $reMap;
+        data.chapters = await $iIFE;
+        ExtractionChannel.postMessage(JSON.stringify(data));
+      } catch (e) {
+        ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
+      }
+    })()
+  """;
+
+String generateContentExtractionJSPrompt(String urls, String selector) =>
+    """
+      (async () => {
+        try {
+          const urls = $urls;
+          const selector = $selector;
+          const results = [];
+          for (const url of urls) {
+            const res = await fetch(url);
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const el = doc.querySelector(selector);
+            if (el) {
+              const lines = Array.from(el.children)
+                .map(c => c.textContent.trim())
+                .filter(t => t.length > 0);
+              if (lines.length === 0 && el.textContent.trim().length > 0) {
+                lines.push(el.textContent.trim());
+              }
+              results.push(lines);
+            } else {
+              results.push([]);
+            }
+          }
+          ExtractionChannel.postMessage(JSON.stringify({ "contents": results }));
+        } catch (e) {
+          ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
+        }
+      })()
+    """;

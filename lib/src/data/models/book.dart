@@ -23,6 +23,26 @@ enum BookType {
 }
 
 @freezed
+abstract class BookDetailsExtractor with _$BookDetailsExtractor {
+  const factory BookDetailsExtractor({
+    String? firstPageUrl,
+    String? nextPageUrl,
+    required String title,
+    required String author,
+    required String coverUrl,
+    required String jlptLevel,
+    required String synopsis,
+    required String chapter,
+    required ChapterInfoExtractor chapterDetails,
+  }) = _BookDetailsExtractor;
+
+  factory BookDetailsExtractor.fromJson(Map<String, dynamic> json) =>
+      _$BookDetailsExtractorFromJson(json);
+
+  static const schema = _$_BookDetailsExtractorJsonSchema;
+}
+
+@freezed
 abstract class ChapterInfoExtractor with _$ChapterInfoExtractor {
   const factory ChapterInfoExtractor({
     required String url,
@@ -48,47 +68,12 @@ abstract class ChapterExtractor with _$ChapterExtractor {
 }
 
 @freezed
-abstract class ChapterInfo with _$ChapterInfo {
-  const factory ChapterInfo({
-    required String url,
-    required int number,
-    required String title,
-    String? updatedDate,
-    List<String>? content,
-  }) = _ChapterInfo;
-
-  factory ChapterInfo.fromJson(Map<String, dynamic> json) =>
-      _$ChapterInfoFromJson(json);
-}
-
-@freezed
-abstract class BookDetailsExtractor with _$BookDetailsExtractor {
-  const BookDetailsExtractor._();
-
-  const factory BookDetailsExtractor({
-    String? firstPageUrl,
-    String? nextPageUrl,
-    required String title,
-    required String author,
-    required String coverUrl,
-    required String jlptLevel,
-    required String synopsis,
-    required String chapter,
-    required ChapterInfoExtractor chapterDetails,
-  }) = _BookDetailsExtractor;
-
-  factory BookDetailsExtractor.fromJson(Map<String, dynamic> json) =>
-      _$BookDetailsExtractorFromJson(json);
-
-  static const schema = _$_BookDetailsExtractorJsonSchema;
-}
-
-@freezed
 abstract class BookDetails with _$BookDetails {
   const BookDetails._();
 
   const factory BookDetails({
     required String url,
+    required String source,
     required String title,
     required String author,
     required String synopsis,
@@ -107,4 +92,18 @@ abstract class BookDetails with _$BookDetails {
 
   double get progress =>
       chapters.isEmpty ? 0 : currentChapter / chapters.length;
+}
+
+@freezed
+abstract class ChapterInfo with _$ChapterInfo {
+  const factory ChapterInfo({
+    required String url,
+    required int number,
+    required String title,
+    String? updatedDate,
+    List<String>? content,
+  }) = _ChapterInfo;
+
+  factory ChapterInfo.fromJson(Map<String, dynamic> json) =>
+      _$ChapterInfoFromJson(json);
 }
