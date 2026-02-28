@@ -10,12 +10,15 @@ abstract class DiscoverState with _$DiscoverState {
   const factory DiscoverState({
     @Default(BookType.all) BookType filter,
     @Default('') String query,
+    @Default([]) List<BookDetails> books,
   }) = _DiscoverState;
 }
 
 class DiscoverCubit extends Cubit<DiscoverState> {
   final DatabaseService dbService;
-  DiscoverCubit({required this.dbService}) : super(const DiscoverState());
+  DiscoverCubit({required this.dbService}) : super(const DiscoverState()) {
+    dbService.getBooks().then((books) => emit(state.copyWith(books: books)));
+  }
 
   void setFilter(BookType filter) {
     emit(state.copyWith(filter: filter));

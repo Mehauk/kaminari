@@ -77,7 +77,7 @@ class DatabaseService {
     // We fetch books and all their chapters in one query
     final rows = await db.rawQuery('''
       SELECT b.*, c.id AS ch_id, c.url AS ch_url, c.title AS ch_title, 
-             c.chapterNumber AS ch_number, c.updatedDate AS ch_updated
+             c.chapterNumber AS ch_number
       FROM BookDetails b
       LEFT JOIN ChapterInfo c ON b.id = c.book_id
       ORDER BY b.id, c.chapterNumber ASC
@@ -88,22 +88,21 @@ class DatabaseService {
     for (final row in rows) {
       final bookId = row['id'] as int;
 
-      // Initialize book if not in map
-      if (!booksMap.containsKey(bookId)) {
-        booksMap[bookId] = BookDetails.fromJson({
-          ...row,
-          'chapters': <ChapterInfo>[],
-        });
-      }
+      final chapters = <Map<String, dynamic>>[];
 
       // Add chapter if it exists
       if (row['ch_id'] != null) {
-        final chapter = ChapterInfo(
-          url: row['ch_url'] as String,
-          number: row['ch_number'] as int,
-          title: row['ch_title'] as String,
-        );
-        booksMap[bookId]!.chapters.add(chapter);
+        final chapter = {
+          "url": row['ch_url'] as String,
+          "number": row['ch_number'] as int,
+          "title": row['ch_title'] as String,
+        };
+        chapters.add(chapter);
+      }
+
+      // Initialize book if not in map
+      if (!booksMap.containsKey(bookId)) {
+        booksMap[bookId] = BookDetails.fromJson({...row, 'chapters': chapters});
       }
     }
     return booksMap.values.toList();
