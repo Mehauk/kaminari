@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kaminari/src/config/theme.dart';
-import 'package:kaminari/src/pages/book_details/book_details_cubit.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
-import 'package:kaminari/src/ui/widgets/book_cards.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
 
@@ -30,7 +28,7 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 32),
-                LastReadBookCard(mockBookDetails),
+                // LastReadBookCard(mockBookDetails),
                 SizedBox(height: 32),
                 Row(
                   children: [

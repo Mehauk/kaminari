@@ -72,6 +72,7 @@ abstract class BookDetails with _$BookDetails {
   const BookDetails._();
 
   const factory BookDetails({
+    int? id,
     required String url,
     required String source,
     required String title,

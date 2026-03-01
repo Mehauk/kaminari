@@ -23,6 +23,9 @@ class DatabaseService {
       path,
       version: 1, // Incremented version
       onCreate: _createTables,
+      onConfigure: (db) async {
+        await db.execute('PRAGMA foreign_keys = ON'); // Crucial
+      },
     );
   }
 
@@ -83,12 +86,15 @@ class DatabaseService {
       ORDER BY b.id, c.chapterNumber ASC
     ''');
 
-    final Map<int, BookDetails> booksMap = {};
+    final Map<int, Map<String, dynamic>> booksMap = {};
 
     for (final row in rows) {
       final bookId = row['id'] as int;
 
-      final chapters = <Map<String, dynamic>>[];
+      // Initialize book if not in map
+      if (!booksMap.containsKey(bookId)) {
+        booksMap[bookId] = {...row, 'chapters': []};
+      }
 
       // Add chapter if it exists
       if (row['ch_id'] != null) {
@@ -97,15 +103,10 @@ class DatabaseService {
           "number": row['ch_number'] as int,
           "title": row['ch_title'] as String,
         };
-        chapters.add(chapter);
-      }
-
-      // Initialize book if not in map
-      if (!booksMap.containsKey(bookId)) {
-        booksMap[bookId] = BookDetails.fromJson({...row, 'chapters': chapters});
+        booksMap[bookId]!["chapters"].add(chapter);
       }
     }
-    return booksMap.values.toList();
+    return booksMap.values.map((m) => BookDetails.fromJson(m)).toList();
   }
 
   /// Fetch a specific chapter with all its content sections

@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/pages/book_details/book_details_page.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
@@ -225,7 +226,9 @@ class DiscoverableBookCard extends StatelessWidget {
     return LightningCard(
       type: .thin,
       child: InkWell(
-        onTap: () => Navigator.of(context).pushNamed('/book-details'),
+        onTap: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => BookDetailsPage(book))),
         child: Column(
           children: [
             Stack(
