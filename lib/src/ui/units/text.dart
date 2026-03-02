@@ -32,6 +32,7 @@ class CustomText extends StatelessWidget {
     this.fontSize,
     this.color,
     this.fontWeight,
+    this.maxLines = 2,
   });
 
   final String text;
@@ -39,6 +40,7 @@ class CustomText extends StatelessWidget {
   final double? fontSize;
   final Color? color;
   final FontWeight? fontWeight;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +49,7 @@ class CustomText extends StatelessWidget {
       style: type
           .style(context)
           ?.copyWith(fontSize: fontSize, color: color, fontWeight: fontWeight),
-      maxLines: 2,
+      maxLines: maxLines,
     );
   }
 }
