@@ -99,6 +99,7 @@ class DatabaseService {
       // Add chapter if it exists
       if (row['ch_id'] != null) {
         final chapter = {
+          "id": row['ch_id'] as int,
           "url": row['ch_url'] as String,
           "number": row['ch_number'] as int,
           "title": row['ch_title'] as String,
@@ -115,7 +116,7 @@ class DatabaseService {
 
     final rows = await db.rawQuery(
       '''
-      SELECT c.*, s.content
+      SELECT c.id, c.book_id, c.title, c.url, c.chapterNumber AS number, s.content
       FROM ChapterInfo c
       LEFT JOIN ChapterSection s ON c.id = s.chapter_id
       WHERE c.id = ?

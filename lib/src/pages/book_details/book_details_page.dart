@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/pages/book_details/book_details_cubit.dart';
 import 'package:kaminari/src/pages/reading/reading.dart';
 import 'package:kaminari/src/ui/units/text.dart';
@@ -305,7 +306,20 @@ class _ProgressSection extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: () {},
+                onPressed: () async {
+                  final fullChapter = await context
+                      .read<DatabaseService>()
+                      .getChapterWithContent(
+                        cubit.book.chapters[cubit.book.currentChapter].id!,
+                      );
+                  if (context.mounted) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ReadingPage(fullChapter!),
+                      ),
+                    );
+                  }
+                },
                 icon: const Icon(Icons.play_arrow_rounded, size: 20),
                 label: const Text('CONTINUE READING'),
               ),
@@ -508,9 +522,16 @@ class _ChapterTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isCurrent = current == chapter.number;
     return InkWell(
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => ReadingPage(chapter))),
+      onTap: () async {
+        final fullChapter = await context
+            .read<DatabaseService>()
+            .getChapterWithContent(chapter.id!);
+        if (context.mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => ReadingPage(fullChapter!)),
+          );
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
