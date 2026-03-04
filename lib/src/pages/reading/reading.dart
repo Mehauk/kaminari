@@ -55,11 +55,13 @@ class ReadingPage extends StatelessWidget {
                           onPressed: () => Navigator.of(context).pop(),
                         ),
 
-                        CustomText(
-                          chapter.title,
-                          .labelMedium,
-                          fontSize: 18,
-                          color: KaminariTheme.textSecondary,
+                        Expanded(
+                          child: CustomText(
+                            chapter.title,
+                            .labelMedium,
+                            fontSize: 18,
+                            color: KaminariTheme.textSecondary,
+                          ),
                         ),
                       ],
                     ),

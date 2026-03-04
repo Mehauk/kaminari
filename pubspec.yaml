@@ -22,6 +22,7 @@ dependencies:
   sqflite: ^2.4.2+1
   path: ^1.9.1
   shared_preferences: ^2.5.5
+  mecab_for_dart: ^2.0.3
 
 dev_dependencies:
   flutter_test:

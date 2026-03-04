@@ -1,10 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageService {
-  // Private constructor
-  LocalStorageService._();
-
-  static final LocalStorageService instance = LocalStorageService._();
+  static final LocalStorageService _instance = LocalStorageService._internal();
+  factory LocalStorageService() => _instance;
+  LocalStorageService._internal();
 
   SharedPreferences? _preferences;
 
