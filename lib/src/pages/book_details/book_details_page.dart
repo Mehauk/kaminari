@@ -5,7 +5,7 @@ import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/pages/book_details/book_details_cubit.dart';
-import 'package:kaminari/src/pages/reading/reading.dart';
+import 'package:kaminari/src/pages/reader/reader.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
@@ -315,7 +315,7 @@ class _ProgressSection extends StatelessWidget {
                   if (context.mounted) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => ReadingPage(fullChapter!),
+                        builder: (context) => ReaderPage(fullChapter!),
                       ),
                     );
                   }
@@ -528,7 +528,7 @@ class _ChapterTile extends StatelessWidget {
             .getChapterWithContent(chapter.id!);
         if (context.mounted) {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => ReadingPage(fullChapter!)),
+            MaterialPageRoute(builder: (context) => ReaderPage(fullChapter!)),
           );
         }
       },

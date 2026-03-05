@@ -1,0 +1,1135 @@
+[
+    [
+        {
+            "kana": "ア",
+            "hira": "あ",
+            "eng": "a"
+        },
+        {
+            "kana": "イ",
+            "hira": "い",
+            "eng": "i"
+        },
+        {
+            "kana": "ウ",
+            "hira": "う",
+            "eng": "u"
+        },
+        {
+            "kana": "エ",
+            "hira": "え",
+            "eng": "e"
+        },
+        {
+            "kana": "オ",
+            "hira": "お",
+            "eng": "o"
+        }
+    ],
+    [
+        {
+            "kana": "カ",
+            "hira": "か",
+            "eng": "ka"
+        },
+        {
+            "kana": "キ",
+            "hira": "き",
+            "eng": "ki"
+        },
+        {
+            "kana": "ク",
+            "hira": "く",
+            "eng": "ku"
+        },
+        {
+            "kana": "ケ",
+            "hira": "け",
+            "eng": "ke"
+        },
+        {
+            "kana": "コ",
+            "hira": "こ",
+            "eng": "ko"
+        }
+    ],
+    [
+        {
+            "kana": "サ",
+            "hira": "さ",
+            "eng": "sa"
+        },
+        {
+            "kana": "シ",
+            "hira": "し",
+            "eng": "shi"
+        },
+        {
+            "kana": "ス",
+            "hira": "す",
+            "eng": "su"
+        },
+        {
+            "kana": "セ",
+            "hira": "せ",
+            "eng": "se"
+        },
+        {
+            "kana": "ソ",
+            "hira": "そ",
+            "eng": "so"
+        }
+    ],
+    [
+        {
+            "kana": "タ",
+            "hira": "た",
+            "eng": "ta"
+        },
+        {
+            "kana": "チ",
+            "hira": "ち",
+            "eng": "chi"
+        },
+        {
+            "kana": "ツ",
+            "hira": "つ",
+            "eng": "tsu"
+        },
+        {
+            "kana": "テ",
+            "hira": "て",
+            "eng": "te"
+        },
+        {
+            "kana": "ト",
+            "hira": "と",
+            "eng": "to"
+        }
+    ],
+    [
+        {
+            "kana": "ナ",
+            "hira": "な",
+            "eng": "na"
+        },
+        {
+            "kana": "ニ",
+            "hira": "に",
+            "eng": "ni"
+        },
+        {
+            "kana": "ヌ",
+            "hira": "ぬ",
+            "eng": "nu"
+        },
+        {
+            "kana": "ネ",
+            "hira": "ね",
+            "eng": "ne"
+        },
+        {
+            "kana": "ノ",
+            "hira": "の",
+            "eng": "no"
+        }
+    ],
+    [
+        {
+            "kana": "ハ",
+            "hira": "は",
+            "eng": "ha"
+        },
+        {
+            "kana": "ヒ",
+            "hira": "ひ",
+            "eng": "hi"
+        },
+        {
+            "kana": "フ",
+            "hira": "ふ",
+            "eng": "fu"
+        },
+        {
+            "kana": "ヘ",
+            "hira": "へ",
+            "eng": "he"
+        },
+        {
+            "kana": "ホ",
+            "hira": "ほ",
+            "eng": "ho"
+        }
+    ],
+    [
+        {
+            "kana": "マ",
+            "hira": "ま",
+            "eng": "ma"
+        },
+        {
+            "kana": "ミ",
+            "hira": "み",
+            "eng": "mi"
+        },
+        {
+            "kana": "ム",
+            "hira": "む",
+            "eng": "mu"
+        },
+        {
+            "kana": "メ",
+            "hira": "め",
+            "eng": "me"
+        },
+        {
+            "kana": "モ",
+            "hira": "も",
+            "eng": "mo"
+        }
+    ],
+    [
+        {
+            "kana": "ヤ",
+            "hira": "や",
+            "eng": "ya"
+        },
+        {
+            "kana": "ユ",
+            "hira": "ゆ",
+            "eng": "yu"
+        },
+        {
+            "kana": "ヨ",
+            "hira": "よ",
+            "eng": "yo"
+        }
+    ],
+    [
+        {
+            "kana": "ラ",
+            "hira": "ら",
+            "eng": "ra"
+        },
+        {
+            "kana": "リ",
+            "hira": "り",
+            "eng": "ri"
+        },
+        {
+            "kana": "ル",
+            "hira": "る",
+            "eng": "ru"
+        },
+        {
+            "kana": "レ",
+            "hira": "れ",
+            "eng": "re"
+        },
+        {
+            "kana": "ロ",
+            "hira": "ろ",
+            "eng": "ro"
+        }
+    ],
+    [
+        {
+            "kana": "ワ",
+            "hira": "わ",
+            "eng": "wa"
+        },
+        {
+            "kana": "ヲ",
+            "hira": "を",
+            "eng": "wo"
+        }
+    ],
+    [
+        {
+            "kana": "ガ",
+            "hira": "が",
+            "eng": "ga"
+        },
+        {
+            "kana": "ギ",
+            "hira": "ぎ",
+            "eng": "gi"
+        },
+        {
+            "kana": "グ",
+            "hira": "ぐ",
+            "eng": "gu"
+        },
+        {
+            "kana": "ゲ",
+            "hira": "げ",
+            "eng": "ge"
+        },
+        {
+            "kana": "ゴ",
+            "hira": "ご",
+            "eng": "go"
+        }
+    ],
+    [
+        {
+            "kana": "ザ",
+            "hira": "ざ",
+            "eng": "za"
+        },
+        {
+            "kana": "ジ",
+            "hira": "じ",
+            "eng": "ji"
+        },
+        {
+            "kana": "ズ",
+            "hira": "ず",
+            "eng": "zu"
+        },
+        {
+            "kana": "ゼ",
+            "hira": "ぜ",
+            "eng": "ze"
+        },
+        {
+            "kana": "ゾ",
+            "hira": "ぞ",
+            "eng": "zo"
+        },
+        {
+            "kana": "ヂ",
+            "hira": "ぢ",
+            "eng": "ji"
+        },
+        {
+            "kana": "ヅ",
+            "hira": "づ",
+            "eng": "zu"
+        }
+    ],
+    [
+        {
+            "kana": "ダ",
+            "hira": "だ",
+            "eng": "da"
+        },
+        {
+            "kana": "デ",
+            "hira": "で",
+            "eng": "de"
+        },
+        {
+            "kana": "ド",
+            "hira": "ど",
+            "eng": "do"
+        }
+    ],
+    [
+        {
+            "kana": "バ",
+            "hira": "ば",
+            "eng": "ba"
+        },
+        {
+            "kana": "ビ",
+            "hira": "び",
+            "eng": "bi"
+        },
+        {
+            "kana": "ブ",
+            "hira": "ぶ",
+            "eng": "bu"
+        },
+        {
+            "kana": "ベ",
+            "hira": "べ",
+            "eng": "be"
+        },
+        {
+            "kana": "ボ",
+            "hira": "ぼ",
+            "eng": "bo"
+        }
+    ],
+    [
+        {
+            "kana": "パ",
+            "hira": "ぱ",
+            "eng": "pa"
+        },
+        {
+            "kana": "ピ",
+            "hira": "ぴ",
+            "eng": "pi"
+        },
+        {
+            "kana": "プ",
+            "hira": "ぷ",
+            "eng": "pu"
+        },
+        {
+            "kana": "ペ",
+            "hira": "ぺ",
+            "eng": "pe"
+        },
+        {
+            "kana": "ポ",
+            "hira": "ぽ",
+            "eng": "po"
+        }
+    ],
+    [
+        {
+            "kana": "ン",
+            "hira": "ん",
+            "eng": "n"
+        },
+        {
+            "kana": "ッ",
+            "hira": "っ",
+            "eng": "**"
+        }
+    ],
+    [
+        {
+            "kana": "イェ",
+            "hira": "いぇ",
+            "eng": "ie"
+        },
+        {
+            "kana": "ウァ",
+            "hira": "うぁ",
+            "eng": "ua"
+        },
+        {
+            "kana": "ウィ",
+            "hira": "うぃ",
+            "eng": "ui"
+        },
+        {
+            "kana": "ウェ",
+            "hira": "うぇ",
+            "eng": "ue"
+        },
+        {
+            "kana": "ウォ",
+            "hira": "うぉ",
+            "eng": "uo"
+        }
+    ],
+    [
+        {
+            "kana": "キィ",
+            "hira": "きぃ",
+            "eng": "kii"
+        },
+        {
+            "kana": "キェ",
+            "hira": "きぇ",
+            "eng": "kie"
+        },
+        {
+            "kana": "キャ",
+            "hira": "きゃ",
+            "eng": "kya"
+        },
+        {
+            "kana": "キュ",
+            "hira": "きゅ",
+            "eng": "kyu"
+        },
+        {
+            "kana": "キョ",
+            "hira": "きょ",
+            "eng": "kyo"
+        },
+        {
+            "kana": "クァ",
+            "hira": "くぁ",
+            "eng": "kua"
+        },
+        {
+            "kana": "クィ",
+            "hira": "くぃ",
+            "eng": "kui"
+        },
+        {
+            "kana": "クゥ",
+            "hira": "くぅ",
+            "eng": "kuu"
+        },
+        {
+            "kana": "クェ",
+            "hira": "くぇ",
+            "eng": "kue"
+        },
+        {
+            "kana": "クォ",
+            "hira": "くぉ",
+            "eng": "kuo"
+        }
+    ],
+    [
+        {
+            "kana": "シィ",
+            "hira": "しぃ",
+            "eng": "shii"
+        },
+        {
+            "kana": "シェ",
+            "hira": "しぇ",
+            "eng": "shie"
+        },
+        {
+            "kana": "シャ",
+            "hira": "しゃ",
+            "eng": "sha"
+        },
+        {
+            "kana": "シュ",
+            "hira": "しゅ",
+            "eng": "shu"
+        },
+        {
+            "kana": "ショ",
+            "hira": "しょ",
+            "eng": "sho"
+        },
+        {
+            "kana": "スァ",
+            "hira": "すぁ",
+            "eng": "sua"
+        },
+        {
+            "kana": "スィ",
+            "hira": "すぃ",
+            "eng": "sui"
+        },
+        {
+            "kana": "スゥ",
+            "hira": "すぅ",
+            "eng": "suu"
+        },
+        {
+            "kana": "スェ",
+            "hira": "すぇ",
+            "eng": "sue"
+        },
+        {
+            "kana": "スォ",
+            "hira": "すぉ",
+            "eng": "suo"
+        }
+    ],
+    [
+        {
+            "kana": "チィ",
+            "hira": "ちぃ",
+            "eng": "chii"
+        },
+        {
+            "kana": "チェ",
+            "hira": "ちぇ",
+            "eng": "che"
+        },
+        {
+            "kana": "チャ",
+            "hira": "ちゃ",
+            "eng": "cha"
+        },
+        {
+            "kana": "チュ",
+            "hira": "ちゅ",
+            "eng": "chu"
+        },
+        {
+            "kana": "チョ",
+            "hira": "ちょ",
+            "eng": "cho"
+        },
+        {
+            "kana": "ツァ",
+            "hira": "つぁ",
+            "eng": "tsua"
+        },
+        {
+            "kana": "ツィ",
+            "hira": "つぃ",
+            "eng": "tsui"
+        },
+        {
+            "kana": "ツゥ",
+            "hira": "つぅ",
+            "eng": "tsuu"
+        },
+        {
+            "kana": "ツェ",
+            "hira": "つぇ",
+            "eng": "tsue"
+        },
+        {
+            "kana": "ツォ",
+            "hira": "つぉ",
+            "eng": "tsuo"
+        },
+        {
+            "kana": "ティ",
+            "hira": "てぃ",
+            "eng": "tei"
+        },
+        {
+            "kana": "テェ",
+            "hira": "てぇ",
+            "eng": "tee"
+        },
+        {
+            "kana": "テャ",
+            "hira": "てゃ",
+            "eng": "teya"
+        },
+        {
+            "kana": "テュ",
+            "hira": "てゅ",
+            "eng": "teyu"
+        },
+        {
+            "kana": "テョ",
+            "hira": "てょ",
+            "eng": "teyo"
+        },
+        {
+            "kana": "トァ",
+            "hira": "とぁ",
+            "eng": "toa"
+        },
+        {
+            "kana": "トィ",
+            "hira": "とぃ",
+            "eng": "toi"
+        },
+        {
+            "kana": "トゥ",
+            "hira": "とぅ",
+            "eng": "tou"
+        },
+        {
+            "kana": "トェ",
+            "hira": "とぇ",
+            "eng": "toe"
+        },
+        {
+            "kana": "トォ",
+            "hira": "とぉ",
+            "eng": "too"
+        }
+    ],
+    [
+        {
+            "kana": "ニィ",
+            "hira": "にぃ",
+            "eng": "nii"
+        },
+        {
+            "kana": "ニェ",
+            "hira": "にぇ",
+            "eng": "nie"
+        },
+        {
+            "kana": "ニャ",
+            "hira": "にゃ",
+            "eng": "nya"
+        },
+        {
+            "kana": "ニュ",
+            "hira": "にゅ",
+            "eng": "nyu"
+        },
+        {
+            "kana": "ニョ",
+            "hira": "にょ",
+            "eng": "nyo"
+        },
+        {
+            "kana": "ヌァ",
+            "hira": "ぬぁ",
+            "eng": "nua"
+        },
+        {
+            "kana": "ヌィ",
+            "hira": "ぬぃ",
+            "eng": "nui"
+        },
+        {
+            "kana": "ヌゥ",
+            "hira": "ぬぅ",
+            "eng": "nuu"
+        },
+        {
+            "kana": "ヌェ",
+            "hira": "ぬぇ",
+            "eng": "nue"
+        },
+        {
+            "kana": "ヌォ",
+            "hira": "ぬぉ",
+            "eng": "nuo"
+        }
+    ],
+    [
+        {
+            "kana": "ヒィ",
+            "hira": "ひぃ",
+            "eng": "hii"
+        },
+        {
+            "kana": "ヒェ",
+            "hira": "ひぇ",
+            "eng": "hie"
+        },
+        {
+            "kana": "ヒャ",
+            "hira": "ひゃ",
+            "eng": "hya"
+        },
+        {
+            "kana": "ヒュ",
+            "hira": "ひゅ",
+            "eng": "hyu"
+        },
+        {
+            "kana": "ヒョ",
+            "hira": "ひょ",
+            "eng": "hyo"
+        },
+        {
+            "kana": "ファ",
+            "hira": "ふぁ",
+            "eng": "fa"
+        },
+        {
+            "kana": "フィ",
+            "hira": "ふぃ",
+            "eng": "fi"
+        },
+        {
+            "kana": "フゥ",
+            "hira": "ふぅ",
+            "eng": "fuu"
+        },
+        {
+            "kana": "フェ",
+            "hira": "ふぇ",
+            "eng": "fe"
+        },
+        {
+            "kana": "フォ",
+            "hira": "ふぉ",
+            "eng": "fo"
+        },
+        {
+            "kana": "フャ",
+            "hira": "ふゃ",
+            "eng": "fuya"
+        },
+        {
+            "kana": "フュ",
+            "hira": "ふゅ",
+            "eng": "fuyu"
+        },
+        {
+            "kana": "フョ",
+            "hira": "ふょ",
+            "eng": "fuyo"
+        }
+    ],
+    [
+        {
+            "kana": "ミィ",
+            "hira": "みぃ",
+            "eng": "mii"
+        },
+        {
+            "kana": "ミェ",
+            "hira": "みぇ",
+            "eng": "mie"
+        },
+        {
+            "kana": "ミャ",
+            "hira": "みゃ",
+            "eng": "mya"
+        },
+        {
+            "kana": "ミュ",
+            "hira": "みゅ",
+            "eng": "myu"
+        },
+        {
+            "kana": "ミョ",
+            "hira": "みょ",
+            "eng": "myo"
+        },
+        {
+            "kana": "ムァ",
+            "hira": "むぁ",
+            "eng": "mua"
+        },
+        {
+            "kana": "ムィ",
+            "hira": "むぃ",
+            "eng": "mui"
+        },
+        {
+            "kana": "ムゥ",
+            "hira": "むぅ",
+            "eng": "muu"
+        },
+        {
+            "kana": "ムェ",
+            "hira": "むぇ",
+            "eng": "mue"
+        },
+        {
+            "kana": "ムォ",
+            "hira": "むぉ",
+            "eng": "muo"
+        }
+    ],
+    [
+        {
+            "kana": "リィ",
+            "hira": "りぃ",
+            "eng": "rii"
+        },
+        {
+            "kana": "リェ",
+            "hira": "りぇ",
+            "eng": "rie"
+        },
+        {
+            "kana": "リャ",
+            "hira": "りゃ",
+            "eng": "rya"
+        },
+        {
+            "kana": "リュ",
+            "hira": "りゅ",
+            "eng": "ryu"
+        },
+        {
+            "kana": "リョ",
+            "hira": "りょ",
+            "eng": "ryo"
+        },
+        {
+            "kana": "ルァ",
+            "hira": "るぁ",
+            "eng": "rua"
+        },
+        {
+            "kana": "ルィ",
+            "hira": "るぃ",
+            "eng": "rui"
+        },
+        {
+            "kana": "ルゥ",
+            "hira": "るぅ",
+            "eng": "ruu"
+        },
+        {
+            "kana": "ルェ",
+            "hira": "るぇ",
+            "eng": "rue"
+        },
+        {
+            "kana": "ルォ",
+            "hira": "るぉ",
+            "eng": "ruo"
+        }
+    ],
+    [
+        {
+            "kana": "ギィ",
+            "hira": "ぎぃ",
+            "eng": "gii"
+        },
+        {
+            "kana": "ギェ",
+            "hira": "ぎぇ",
+            "eng": "gie"
+        },
+        {
+            "kana": "ギャ",
+            "hira": "ぎゃ",
+            "eng": "gya"
+        },
+        {
+            "kana": "ギュ",
+            "hira": "ぎゅ",
+            "eng": "gyu"
+        },
+        {
+            "kana": "ギョ",
+            "hira": "ぎょ",
+            "eng": "gyo"
+        },
+        {
+            "kana": "グァ",
+            "hira": "ぐぁ",
+            "eng": "gua"
+        },
+        {
+            "kana": "グィ",
+            "hira": "ぐぃ",
+            "eng": "gui"
+        },
+        {
+            "kana": "グゥ",
+            "hira": "ぐぅ",
+            "eng": "guu"
+        },
+        {
+            "kana": "グェ",
+            "hira": "ぐぇ",
+            "eng": "gue"
+        },
+        {
+            "kana": "グォ",
+            "hira": "ぐぉ",
+            "eng": "guo"
+        }
+    ],
+    [
+        {
+            "kana": "ジィ",
+            "hira": "じぃ",
+            "eng": "jii"
+        },
+        {
+            "kana": "ジェ",
+            "hira": "じぇ",
+            "eng": "jie"
+        },
+        {
+            "kana": "ジャ",
+            "hira": "じゃ",
+            "eng": "ja"
+        },
+        {
+            "kana": "ジュ",
+            "hira": "じゅ",
+            "eng": "ju"
+        },
+        {
+            "kana": "ジョ",
+            "hira": "じょ",
+            "eng": "jo"
+        },
+        {
+            "kana": "ズァ",
+            "hira": "ずぁ",
+            "eng": "zua"
+        },
+        {
+            "kana": "ズィ",
+            "hira": "ずぃ",
+            "eng": "zui"
+        },
+        {
+            "kana": "ズゥ",
+            "hira": "ずぅ",
+            "eng": "zuu"
+        },
+        {
+            "kana": "ズェ",
+            "hira": "ずぇ",
+            "eng": "zue"
+        },
+        {
+            "kana": "ズォ",
+            "hira": "ずぉ",
+            "eng": "zuo"
+        },
+        {
+            "kana": "ヂィ",
+            "hira": "ぢぃ",
+            "eng": "jii"
+        },
+        {
+            "kana": "ヂェ",
+            "hira": "ぢぇ",
+            "eng": "jie"
+        },
+        {
+            "kana": "ヂャ",
+            "hira": "ぢゃ",
+            "eng": "ja"
+        },
+        {
+            "kana": "ヂュ",
+            "hira": "ぢゅ",
+            "eng": "ju"
+        },
+        {
+            "kana": "ヂョ",
+            "hira": "ぢょ",
+            "eng": "jo"
+        }
+    ],
+    [
+        {
+            "kana": "ディ",
+            "hira": "でぃ",
+            "eng": "di"
+        },
+        {
+            "kana": "デェ",
+            "hira": "でぇ",
+            "eng": "dee"
+        },
+        {
+            "kana": "デャ",
+            "hira": "でゃ",
+            "eng": "deya"
+        },
+        {
+            "kana": "デュ",
+            "hira": "でゅ",
+            "eng": "deyu"
+        },
+        {
+            "kana": "デョ",
+            "hira": "でょ",
+            "eng": "deyo"
+        },
+        {
+            "kana": "ドァ",
+            "hira": "どぁ",
+            "eng": "doa"
+        },
+        {
+            "kana": "ドィ",
+            "hira": "どぃ",
+            "eng": "doi"
+        },
+        {
+            "kana": "ドゥ",
+            "hira": "どぅ",
+            "eng": "dou"
+        },
+        {
+            "kana": "ドェ",
+            "hira": "どぇ",
+            "eng": "doe"
+        },
+        {
+            "kana": "ドォ",
+            "hira": "どぉ",
+            "eng": "doo"
+        }
+    ],
+    [
+        {
+            "kana": "ビィ",
+            "hira": "びぃ",
+            "eng": "bii"
+        },
+        {
+            "kana": "ビェ",
+            "hira": "びぇ",
+            "eng": "bie"
+        },
+        {
+            "kana": "ビャ",
+            "hira": "びゃ",
+            "eng": "bya"
+        },
+        {
+            "kana": "ビュ",
+            "hira": "びゅ",
+            "eng": "byu"
+        },
+        {
+            "kana": "ビョ",
+            "hira": "びょ",
+            "eng": "byo"
+        },
+        {
+            "kana": "ブァ",
+            "hira": "ぶぁ",
+            "eng": "bua"
+        },
+        {
+            "kana": "ブィ",
+            "hira": "ぶぃ",
+            "eng": "bui"
+        },
+        {
+            "kana": "ブゥ",
+            "hira": "ぶぅ",
+            "eng": "buu"
+        },
+        {
+            "kana": "ブェ",
+            "hira": "ぶぇ",
+            "eng": "bue"
+        },
+        {
+            "kana": "ブォ",
+            "hira": "ぶぉ",
+            "eng": "buo"
+        }
+    ],
+    [
+        {
+            "kana": "ピィ",
+            "hira": "ぴぃ",
+            "eng": "pii"
+        },
+        {
+            "kana": "ピェ",
+            "hira": "ぴぇ",
+            "eng": "pie"
+        },
+        {
+            "kana": "ピャ",
+            "hira": "ぴゃ",
+            "eng": "pya"
+        },
+        {
+            "kana": "ピュ",
+            "hira": "ぴゅ",
+            "eng": "pyu"
+        },
+        {
+            "kana": "ピョ",
+            "hira": "ぴょ",
+            "eng": "pyo"
+        },
+        {
+            "kana": "プァ",
+            "hira": "ぷぁ",
+            "eng": "pua"
+        },
+        {
+            "kana": "プィ",
+            "hira": "ぷぃ",
+            "eng": "pui"
+        },
+        {
+            "kana": "プゥ",
+            "hira": "ぷぅ",
+            "eng": "puu"
+        },
+        {
+            "kana": "プェ",
+            "hira": "ぷぇ",
+            "eng": "pue"
+        },
+        {
+            "kana": "プォ",
+            "hira": "ぷぉ",
+            "eng": "puo"
+        }
+    ]
+]
