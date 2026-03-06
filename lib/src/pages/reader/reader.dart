@@ -26,22 +26,15 @@ class ReaderPage extends StatelessWidget {
 class _ReaderView extends StatelessWidget {
   const _ReaderView();
 
-  void _onTokenTap(BuildContext context, String token) async {
+  void _onTokenTap(
+    BuildContext context,
+    String token,
+    int paragraphInex,
+    int tokenIndex,
+  ) async {
     final cubit = context.read<ReaderCubit>();
 
-    // Show a small loading indicator or just fetch
-    final entry = await cubit.lookupToken(token);
-
-    if (context.mounted) {
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: KaminariTheme.surface,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (_) => DictionaryView(entry),
-      );
-    }
+    await cubit.lookupToken(token, paragraphInex, tokenIndex);
   }
 
   @override
@@ -50,112 +43,195 @@ class _ReaderView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: KaminariTheme.background,
-      body: Stack(
-        children: [
-          BlocBuilder<ReaderCubit, ReaderState>(
-            builder: (context, state) {
-              if (state.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      body: BlocBuilder<ReaderCubit, ReaderState>(
+        builder: (context, state) {
+          return Stack(
+            children: [
+              Builder(
+                builder: (context) {
+                  if (state.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-              if (state.errorMessage != null) {
-                return Center(
-                  child: CustomText(state.errorMessage!, TextType.bodyLarge),
-                );
-              }
+                  if (state.errorMessage != null) {
+                    return Center(
+                      child: CustomText(
+                        state.errorMessage!,
+                        TextType.bodyLarge,
+                      ),
+                    );
+                  }
 
-              return CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 140, 24, 100),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final tokens = state.tokenizedParagraphs[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 24),
-                          child: _TokenizedParagraph(
-                            tokens: tokens,
-                            onTokenTap: (t) => _onTokenTap(context, t),
+                  return CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(24, 140, 24, 100),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final tokens = state.tokenizedParagraphs[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 24),
+                              child: _TokenizedParagraph(
+                                tokens: tokens,
+                                paragraphIndex: index,
+                                onTokenTap: _onTokenTap,
+                              ),
+                            );
+                          }, childCount: state.tokenizedParagraphs.length),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+
+              // Header Bar
+              ClipRRect(
+                child: BgFilter(
+                  bgColor: KaminariTheme.background.withAlpha(200),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: KaminariTheme.surfaceTint.withAlpha(40),
+                        ),
+                      ),
+                    ),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              LightningIconButton(
+                                icon: Icons.arrow_back_ios_new,
+                                onPressed: () => Navigator.of(context).pop(),
+                              ),
+                              Expanded(
+                                child: CustomText(
+                                  cubit.chapter.title,
+                                  TextType.labelMedium,
+                                  fontSize: 16,
+                                  color: KaminariTheme.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(
+                                width: 48,
+                              ), // Balance for back button
+                            ],
                           ),
-                        );
-                      }, childCount: state.tokenizedParagraphs.length),
+                          const SizedBox(height: 8),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            transitionBuilder: (child, animation) =>
+                                SizeTransition(
+                                  sizeFactor: animation,
+                                  child: child,
+                                ),
+                            child: ReaderDictionaryExtension(),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              );
-            },
-          ),
-
-          // Header Bar
-          ClipRRect(
-            child: BgFilter(
-              bgColor: KaminariTheme.background.withAlpha(200),
-              child: SafeArea(
-                bottom: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        LightningIconButton(
-                          icon: Icons.arrow_back_ios_new,
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        Expanded(
-                          child: CustomText(
-                            cubit.chapter.title,
-                            TextType.labelMedium,
-                            fontSize: 16,
-                            color: KaminariTheme.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 48), // Balance for back button
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                  ],
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 class _TokenizedParagraph extends StatelessWidget {
-  const _TokenizedParagraph({required this.tokens, required this.onTokenTap});
+  const _TokenizedParagraph({
+    required this.tokens,
+    required this.paragraphIndex,
+    required this.onTokenTap,
+  });
 
   final List<String> tokens;
-  final Function(String) onTokenTap;
+  final int paragraphIndex;
+  final Function(BuildContext, String, int, int) onTokenTap;
 
   @override
   Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(
-        children: tokens.map((token) {
-          final bool isPunctuation = RegExp(
-            r'[^\w\s\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]',
-          ).hasMatch(token);
+    // Wrap with BlocBuilder to react to selection changes for *this* paragraph only
+    return BlocBuilder<ReaderCubit, ReaderState>(
+      // Only rebuild this paragraph if:
+      // 1. Its tokens or content changes (unlikely after initial load)
+      // 2. The global selectedParagraphIndex matches *this* paragraph's index (it's the current selection)
+      // 3. The global selectedParagraphIndex *was* this paragraph's index (it was previously selected and needs to deselect)
+      buildWhen: (previous, current) {
+        final bool wasSelectedParagraph =
+            previous.selectedParagraphIndex == paragraphIndex;
+        final bool isSelectedParagraph =
+            current.selectedParagraphIndex == paragraphIndex;
 
-          return TextSpan(
-            text: token,
-            style: TextStyle(
-              fontSize: 19,
-              height: 1.8,
-              color: isPunctuation
-                  ? KaminariTheme.textSecondary.withAlpha(150)
-                  : KaminariTheme.textPrimary,
-              // Optional: slight underline or background for interactive parts
-            ),
-            recognizer: isPunctuation
-                ? null
-                : (TapGestureRecognizer()..onTap = () => onTokenTap(token)),
-          );
-        }).toList(),
-      ),
+        // Rebuild if this paragraph's selection status changes
+        if (wasSelectedParagraph != isSelectedParagraph) {
+          return true;
+        }
+
+        // Rebuild if this paragraph was selected and its *specific token index* changed
+        // (i.e., a different token within the *same* paragraph was selected)
+        if (isSelectedParagraph &&
+            previous.selectedTokenIndex != current.selectedTokenIndex) {
+          return true;
+        }
+
+        return false;
+      },
+      builder: (context, state) {
+        final selectedParagraphIndex = state.selectedParagraphIndex;
+        final selectedTokenIndex = state.selectedTokenIndex;
+
+        return Text.rich(
+          TextSpan(
+            children: List.generate(tokens.length, (tokenIndex) {
+              final token = tokens[tokenIndex];
+              final bool isPunctuation = RegExp(
+                r'[^\w\s\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]',
+              ).hasMatch(token);
+
+              final isSelected =
+                  selectedParagraphIndex == paragraphIndex &&
+                  selectedTokenIndex == tokenIndex;
+
+              return TextSpan(
+                text: token,
+                style: TextStyle(
+                  fontSize: 19,
+                  height: 1.8,
+                  color: isPunctuation
+                      ? KaminariTheme.textSecondary.withAlpha(150)
+                      : (isSelected
+                            ? KaminariTheme.textTitle
+                            : KaminariTheme.textPrimary), // Highlighted color
+                  backgroundColor: isSelected
+                      ? KaminariTheme.bronze.withAlpha(125)
+                      : Colors.transparent, // Highlight background
+                ),
+                recognizer: isPunctuation
+                    ? null
+                    : (TapGestureRecognizer()
+                        ..onTap = () => onTokenTap(
+                          context,
+                          token,
+                          paragraphIndex,
+                          tokenIndex,
+                        )),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 }
