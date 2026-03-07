@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:kaminari/src/pages/webview/import_webview_cubit.dart';
 import 'package:kaminari/src/pages/webview/importing_dialog.dart';
@@ -17,8 +18,7 @@ class ImportWebviewPage extends StatelessWidget {
   Widget build(context) {
     return BlocProvider(
       create: (context) => WebviewCubit(
-        llmService: LlmService(),
-        extractorCache: context.read(),
+        extractorBuilder: ExtractorBuilder(LlmService(), context.read()),
         initialUrl: initialUrl,
       ),
       child: const _ImportWebviewPage(),

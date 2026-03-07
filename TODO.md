@@ -1,10 +1,13 @@
-- [ ] Create book-selectors model
-- [ ] Serialize both the book-selectors and the book-details models
-- [ ] Empty States (favorites, history, discover (filtered/unfiltered))
 - [ ] cache selector scripts to reuse -> fallback to gemini on fail
+- [ ] cache last read book and chapter
+- [ ] cache/restore scroll position
+- [ ] download missing chapter (handle error with webview )
+
+
+- [ ] Empty States (favorites, history, discover (filtered/unfiltered))
 - [ ] confirmation step to set booktype and whatnot
 - [ ] extractAsShortStory on failure? (https://ncode.syosetu.com/n9674md/)
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
-- [ ] handle reimport same
+- [ ] handle reimport same book
 - [ ] use jagger?
 - [ ] h-b-p, t-d, k-g, s-z/j
