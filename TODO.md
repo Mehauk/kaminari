@@ -11,3 +11,4 @@
 - [ ] handle reimport same book
 - [ ] use jagger?
 - [ ] h-b-p, t-d, k-g, s-z/j
+- [ ] BUG: inf linearprog on import webview

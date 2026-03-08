@@ -32,7 +32,6 @@ abstract class BookDetailsExtractor with _$BookDetailsExtractor {
     required String coverUrl,
     required String jlptLevel,
     required String synopsis,
-    required String chapter,
     required ChapterInfoExtractor chapterDetails,
   }) = _BookDetailsExtractor;
 
@@ -45,6 +44,7 @@ abstract class BookDetailsExtractor with _$BookDetailsExtractor {
 @freezed
 abstract class ChapterInfoExtractor with _$ChapterInfoExtractor {
   const factory ChapterInfoExtractor({
+    required String base,
     required String url,
     required String title,
     String? updatedDate,

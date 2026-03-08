@@ -12,7 +12,6 @@ class ExtractorBuilder {
     String prompt,
   ) async {
     String? fullResponse = await _cache.loadBookExtractorForOrigin(origin);
-    fullResponse = null;
     if (fullResponse != null) return fullResponse;
 
     String fullResponse0 = '';
@@ -29,7 +28,6 @@ class ExtractorBuilder {
     String chapterPrompt,
   ) async {
     String? fullResponse = await _cache.loadPageExtractorForOrigin(origin);
-    fullResponse = null;
     if (fullResponse != null) return fullResponse;
 
     String fullResponse0 = '';
