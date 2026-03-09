@@ -315,7 +315,8 @@ class _ProgressSection extends StatelessWidget {
                   if (context.mounted) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => ReaderPage(fullChapter!),
+                        builder: (context) =>
+                            ReaderPage(fullChapter!, bookId: cubit.book.id!),
                       ),
                     );
                   }
@@ -528,7 +529,12 @@ class _ChapterTile extends StatelessWidget {
             .getChapterWithContent(chapter.id!);
         if (context.mounted) {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => ReaderPage(fullChapter!)),
+            MaterialPageRoute(
+              builder: (context) => ReaderPage(
+                fullChapter!,
+                bookId: context.read<BookDetailsCubit>().book.id!,
+              ),
+            ),
           );
         }
       },

@@ -10,14 +10,16 @@ import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
 
 class ReaderPage extends StatelessWidget {
-  const ReaderPage(this.chapter, {super.key});
+  const ReaderPage(this.chapter, {super.key, required this.bookId});
 
   final ChapterInfo chapter;
+  final int bookId;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ReaderCubit(chapter),
+      create: (context) =>
+          ReaderCubit(chapter, dbService: context.read(), bookId: bookId),
       child: const _ReaderView(),
     );
   }
