@@ -27,8 +27,12 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   ReaderCubit(this.chapter, {required this.dbService, required this.bookId})
     : super(const ReaderState()) {
-    dbService.updateBookAccessTime(bookId);
+    dbService.updateBookAccess(bookId, chapter.number);
     _tokenizeContent();
+  }
+
+  void saveScrollPosition(double pixels) {
+    dbService.updateChapterScrollPosition(chapter.id!, pixels);
   }
 
   Future<void> _tokenizeContent() async {

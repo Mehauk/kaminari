@@ -37,7 +37,6 @@ class HomeScreen extends StatelessWidget {
                   future: context.read<DatabaseService>().getLastAccessedBook(),
                   builder: (context, snapshot) {
                     final book = snapshot.data;
-                    print(book);
                     if (book != null) {
                       return LastReadBookCard(book);
                     } else {

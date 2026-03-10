@@ -25,8 +25,29 @@ class ReaderPage extends StatelessWidget {
   }
 }
 
-class _ReaderView extends StatelessWidget {
+class _ReaderView extends StatefulWidget {
   const _ReaderView();
+
+  @override
+  State<_ReaderView> createState() => _ReaderViewState();
+}
+
+class _ReaderViewState extends State<_ReaderView> {
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialOffset =
+        context.read<ReaderCubit>().chapter.scrollPosition ?? 0.0;
+    _scrollController = ScrollController(initialScrollOffset: initialOffset);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _onTokenTap(
     BuildContext context,
@@ -64,29 +85,40 @@ class _ReaderView extends StatelessWidget {
                     );
                   }
 
-                  return CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(24, 140, 24, 100),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final tokens = state.tokenizedParagraphs[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 24),
-                              child: _TokenizedParagraph(
-                                tokens: tokens,
-                                paragraphIndex: index,
-                                onTokenTap: _onTokenTap,
-                              ),
-                            );
-                          }, childCount: state.tokenizedParagraphs.length),
+                  return NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      if (notification is ScrollEndNotification) {
+                        cubit.saveScrollPosition(
+                          _scrollController.position.pixels,
+                        );
+                      }
+                      return false;
+                    },
+                    child: CustomScrollView(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(24, 140, 24, 100),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final tokens = state.tokenizedParagraphs[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 24),
+                                child: _TokenizedParagraph(
+                                  tokens: tokens,
+                                  paragraphIndex: index,
+                                  onTokenTap: _onTokenTap,
+                                ),
+                              );
+                            }, childCount: state.tokenizedParagraphs.length),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   );
                 },
               ),

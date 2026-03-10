@@ -1,7 +1,9 @@
 - [x] cache selector scripts to reuse -> fallback to gemini on fail
 - [x] cache last read book and chapter
-- [ ] cache/restore scroll position
+- [x] cache/restore scroll position
+- [ ] clickable janji cards (more info)
 - [ ] download missing chapter (handle error with webview )
+- [ ] implement history/favorites tab
 
 
 - [ ] Empty States (favorites, history, discover (filtered/unfiltered))

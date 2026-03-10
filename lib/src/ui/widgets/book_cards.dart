@@ -2,9 +2,12 @@ import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/pages/book_details/book_details_page.dart';
+import 'package:kaminari/src/pages/reader/reader.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
@@ -28,7 +31,9 @@ class LastReadBookCard extends StatelessWidget {
         ),
       ],
       child: InkWell(
-        onTap: () => Navigator.of(context).pushNamed('/book-details'),
+        onTap: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => BookDetailsPage(book))),
         child: Column(
           children: [
             Stack(
@@ -115,7 +120,23 @@ class LastReadBookCard extends StatelessWidget {
                       ),
                       SizedBox(width: 16),
                       FilledButton(
-                        onPressed: () => print(2),
+                        onPressed: () async {
+                          final db = context.read<DatabaseService>();
+                          final currentChapter = await db.getBookCurrentChapter(
+                            book.id!,
+                          );
+                          final fullChapter = await db.getChapterWithContent(
+                            book.chapters[currentChapter].id!,
+                          );
+                          if (context.mounted) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ReaderPage(fullChapter!, bookId: book.id!),
+                              ),
+                            );
+                          }
+                        },
                         child: Row(children: [Text("Continue")]),
                       ),
                     ],
@@ -140,7 +161,9 @@ class HistoryBookCard extends StatelessWidget {
     return LightningCard(
       type: .thin,
       child: InkWell(
-        onTap: () => Navigator.of(context).pushNamed('/book-details'),
+        onTap: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => BookDetailsPage(book))),
         child: Padding(
           padding: .all(16),
           child: Row(

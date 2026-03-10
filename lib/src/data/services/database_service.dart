@@ -22,12 +22,35 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1, // Incremented version
+      version: 4, // Updated to 4
       onCreate: _createTables,
+      onUpgrade: _onUpgrade, // Added migration handler
       onConfigure: (db) async {
-        await db.execute('PRAGMA foreign_keys = ON'); // Crucial
+        await db.execute('PRAGMA foreign_keys = ON');
       },
     );
+  }
+
+  /// Handles migrations between versions
+  static Future<void> _onUpgrade(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 4) {
+      // Adding the scrollPosition column to ChapterInfo
+      // We use a try-catch or conditional check because some developers
+      // might have manually modified their local DBs during testing.
+      try {
+        await db.execute(
+          'ALTER TABLE ChapterInfo ADD COLUMN scrollPosition REAL DEFAULT 0',
+        );
+      } catch (e) {
+        debugPrint(
+          "Migration Note: scrollPosition column already exists or table missing.",
+        );
+      }
+    }
   }
 
   static Future<void> _createTables(Database db, int version) async {
@@ -59,6 +82,7 @@ class DatabaseService {
         url TEXT NOT NULL,
         wordCount INTEGER,
         chapterNumber INTEGER NOT NULL,
+        scrollPosition REAL DEFAULT 0,
         FOREIGN KEY (book_id) REFERENCES BookDetails (id) ON DELETE CASCADE
       )
     ''');
@@ -80,8 +104,8 @@ class DatabaseService {
 
     // We fetch books and all their chapters in one query
     final rows = await db.rawQuery('''
-      SELECT b.*, c.id AS ch_id, c.url AS ch_url, c.title AS ch_title, 
-             c.chapterNumber AS ch_number
+      SELECT b.*, b.currentChapterIndex AS currentChapter, c.id AS ch_id, c.url AS ch_url, c.title AS ch_title, 
+             c.chapterNumber AS ch_number, c.scrollPosition
       FROM BookDetails b
       LEFT JOIN ChapterInfo c ON b.id = c.book_id
       ORDER BY b.id, c.chapterNumber ASC
@@ -104,6 +128,7 @@ class DatabaseService {
           "url": row['ch_url'] as String,
           "number": row['ch_number'] as int,
           "title": row['ch_title'] as String,
+          "scrollPosition": row['scrollPosition'] as double?,
         };
         booksMap[bookId]!["chapters"].add(chapter);
       }
@@ -117,7 +142,7 @@ class DatabaseService {
 
     final rows = await db.rawQuery(
       '''
-      SELECT c.id, c.book_id, c.title, c.url, c.chapterNumber AS number, s.content
+      SELECT c.id, c.book_id, c.title, c.url, c.chapterNumber AS number, s.content, c.scrollPosition
       FROM ChapterInfo c
       LEFT JOIN ChapterSection s ON c.id = s.chapter_id
       WHERE c.id = ?
@@ -141,7 +166,7 @@ class DatabaseService {
 
     // 1. Get the last accessed book row
     final rows = await db.rawQuery('''
-    SELECT * FROM BookDetails
+    SELECT *, currentChapterIndex AS currentChapter FROM BookDetails
     ORDER BY accessedDate DESC LIMIT 1
   ''');
 
@@ -164,19 +189,46 @@ class DatabaseService {
     final bookMap = Map<String, dynamic>.from(bookRow);
     bookMap['chapters'] = chapterRows;
 
-    print("BOOOOK");
-    debugPrint(bookMap.toString());
-
     return BookDetails.fromJson(bookMap);
   }
 
-  Future<void> updateBookAccessTime(int bookId) async {
+  Future<void> updateBookAccess(int bookId, int currrentChapter) async {
     final db = await database;
     await db.update(
       'BookDetails',
-      {'accessedDate': DateTime.now().millisecondsSinceEpoch},
+      {
+        'accessedDate': DateTime.now().millisecondsSinceEpoch,
+        'currentChapterIndex': currrentChapter,
+      },
       where: 'id = ?',
       whereArgs: [bookId],
+    );
+  }
+
+  Future<int> getBookCurrentChapter(int bookId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'BookDetails',
+      columns: ['currentChapterIndex'],
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+    if (maps.isNotEmpty) {
+      return maps.first['currentChapterIndex'] as int;
+    }
+    return 0;
+  }
+
+  Future<void> updateChapterScrollPosition(
+    int chapterId,
+    double position,
+  ) async {
+    final db = await database;
+    await db.update(
+      'ChapterInfo',
+      {'scrollPosition': position},
+      where: 'id = ?',
+      whereArgs: [chapterId],
     );
   }
 
