@@ -1,8 +1,9 @@
 - [x] cache selector scripts to reuse -> fallback to gemini on fail
 - [x] cache last read book and chapter
 - [x] cache/restore scroll position
-- [ ] clickable janji cards (more info)
+- [x] clickable kanji cards (more info)
 - [ ] download missing chapter (handle error with webview )
+- [ ] h-b-p, t-d, k-g, s-z/j
 - [ ] implement history/favorites tab
 
 
@@ -12,5 +13,4 @@
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [ ] handle reimport same book
 - [ ] use jagger?
-- [ ] h-b-p, t-d, k-g, s-z/j
 - [ ] BUG: inf linearprog on import webview
