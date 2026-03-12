@@ -133,14 +133,25 @@ class _KanjiCard extends StatelessWidget {
     print(entry.onReading);
     print(entry.kunReadings);
 
-    final List<String> onReadings = [
+    Set<String> onReadings = {
       ...entry.onReading,
-      ...entry.onReading.map((e) => e.split(".").first).toSet(),
-    ];
-    final List<String> kunReadings = [
+      ...entry.onReading.map((e) => e.split(".").first),
+    };
+
+    onReadings = {
+      ...onReadings,
+      ...onReadings.expand((e) => getVariants(e) ?? [e]),
+    };
+
+    Set<String> kunReadings = {
       ...entry.kunReadings,
-      ...entry.kunReadings.map((e) => e.split(".").first).toSet(),
-    ];
+      ...entry.kunReadings.map((e) => e.split(".").first),
+    };
+
+    kunReadings = {
+      ...kunReadings,
+      ...kunReadings.expand((e) => getVariants(e) ?? [e]),
+    };
 
     // Check On-readings (usually Katakana)
     final String matchedOn = onReadings.firstWhere(
@@ -347,4 +358,45 @@ class KanjiEntry with _$KanjiEntry {
   String toString() {
     return "$kanji -- $meanings";
   }
+}
+
+// Map of base kana to their diacritic variants
+const Map<String, List<String>> kanaDiacritics = {
+  // --- HIRAGANA ---
+  // K-row -> G-row
+  'か': ['が'], 'き': ['ぎ'], 'く': ['ぐ'], 'け': ['げ'], 'こ': ['ご'],
+  // S-row -> Z-row
+  'さ': ['ざ'], 'し': ['じ'], 'す': ['ず'], 'せ': ['ぜ'], 'そ': ['ぞ'],
+  // T-row -> D-row
+  'た': ['だ'], 'ち': ['ヂ'], 'つ': ['づ'], 'て': ['で'], 'と': ['ど'],
+  // H-row -> B-row & P-row
+  'は': ['ば', 'ぱ'],
+  'ひ': ['び', 'ぴ'],
+  'ふ': ['ぶ', 'ぷ'],
+  'へ': ['べ', 'ぺ'],
+  'ほ': ['ぼ', 'ぽ'],
+
+  // --- KATAKANA ---
+  // K-row -> G-row
+  'カ': ['ガ'], 'キ': ['ギ'], 'ク': ['グ'], 'ケ': ['ゲ'], 'コ': ['ゴ'],
+  // S-row -> Z-row
+  'サ': ['ザ'], 'シ': ['ジ'], 'ス': ['ズ'], 'セ': ['ゼ'], 'ソ': ['ゾ'],
+  // T-row -> D-row
+  'タ': ['ダ'], 'チ': ['ヂ'], 'ツ': ['ヅ'], 'テ': ['デ'], 'ト': ['ド'],
+  // H-row -> B-row & P-row
+  'ハ': ['バ', 'パ'],
+  'ヒ': ['ビ', 'ピ'],
+  'フ': ['ブ', 'プ'],
+  'ヘ': ['ベ', 'ペ'],
+  'ホ': ['ボ', 'ポ'],
+  // V-row
+  'ウ': ['ヴ'],
+};
+
+// Example function to get variants
+Iterable<String>? getVariants(String kana) {
+  if (kana.isEmpty) return null;
+  final vars = kanaDiacritics[kana[0]];
+  if (kana.length == 1) return vars;
+  return vars?.map((e) => e + kana.substring(1));
 }
