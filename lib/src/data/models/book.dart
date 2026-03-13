@@ -91,7 +91,7 @@ abstract class BookDetails with _$BookDetails {
   factory BookDetails.fromJson(Map<String, dynamic> json) =>
       _$BookDetailsFromJson(json);
 
-  double get progress =>
+  double progress(int currentChapter) =>
       chapters.isEmpty ? 0 : currentChapter / chapters.length;
 }
 
