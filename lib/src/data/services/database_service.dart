@@ -136,6 +136,37 @@ class DatabaseService {
     return booksMap.values.map((m) => BookDetails.fromJson(m)).toList();
   }
 
+  Future<List<BookDetails>> getHistoryBooks() async {
+    final db = await database;
+    final rows = await db.rawQuery('''
+      SELECT b.*, b.currentChapterIndex AS currentChapter, c.id AS ch_id, c.url AS ch_url, c.title AS ch_title, 
+             c.chapterNumber AS ch_number, c.scrollPosition
+      FROM BookDetails b
+      LEFT JOIN ChapterInfo c ON b.id = c.book_id
+      WHERE b.accessedDate IS NOT NULL
+      ORDER BY b.accessedDate DESC
+    ''');
+
+    final Map<int, Map<String, dynamic>> booksMap = {};
+
+    for (final row in rows) {
+      final bookId = row['id'] as int;
+      if (!booksMap.containsKey(bookId)) {
+        booksMap[bookId] = {...row, 'chapters': []};
+      }
+      if (row['ch_id'] != null) {
+        booksMap[bookId]!["chapters"].add({
+          "id": row['ch_id'] as int,
+          "url": row['ch_url'] as String,
+          "number": row['ch_number'] as int,
+          "title": row['ch_title'] as String,
+          "scrollPosition": row['scrollPosition'] as double?,
+        });
+      }
+    }
+    return booksMap.values.map((m) => BookDetails.fromJson(m)).toList();
+  }
+
   /// Fetch a specific chapter with all its content sections
   Future<ChapterInfo?> getChapterWithContent(int chapterId) async {
     final db = await database;

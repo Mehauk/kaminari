@@ -2,11 +2,13 @@
 - [x] cache last read book and chapter
 - [x] cache/restore scroll position
 - [x] clickable kanji cards (more info)
-- [ ] download missing chapter (handle error with webview )
 - [x] h-b-p, t-d, k-g, s-z/j
-- [ ] implement history/favorites tab
+- [x] implement history
+- [ ] implement favoriting and favorites tab on history page
+- [ ] download missing chapter using the cached chapter/page extractor (handle error by oepning the import webview at the pages location and manually clicking the import button) (note that the import button this time only targets the indivudal chapter and not the entire book.). also make sure that one chapter before and after are imported.
 
 
+- [ ] Images?
 - [ ] Empty States (favorites, history, discover (filtered/unfiltered))
 - [ ] confirmation step to set booktype and whatnot
 - [ ] extractAsShortStory on failure? (https://ncode.syosetu.com/n9674md/)
