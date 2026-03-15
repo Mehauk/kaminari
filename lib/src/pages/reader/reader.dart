@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/globals/background_webview_cubit.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
@@ -41,6 +42,16 @@ class _ReaderViewState extends State<_ReaderView> {
     final initialOffset =
         context.read<ReaderCubit>().chapter.scrollPosition ?? 0.0;
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final readerCubit = context.read<ReaderCubit>();
+      final backgroundCubit = context.read<BackgroundWebviewCubit>();
+      backgroundCubit.prefetchNextChapters(
+        bookId: readerCubit.bookId,
+        currentChapter: readerCubit.chapter.number,
+      );
+    });
   }
 
   @override
@@ -174,6 +185,45 @@ class _ReaderViewState extends State<_ReaderView> {
                     ),
                   ),
                 ),
+              ),
+              BlocBuilder<BackgroundWebviewCubit, BackgroundWebviewState>(
+                builder: (context, backgroundState) {
+                  final shouldShowIndicator =
+                      backgroundState.isPrefetching &&
+                      backgroundState.activeBookId == cubit.bookId;
+                  if (!shouldShowIndicator) return const SizedBox.shrink();
+
+                  return Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: KaminariTheme.background.withAlpha(220),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 4,
+                        horizontal: 16,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Downloading chapters in background...',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           );

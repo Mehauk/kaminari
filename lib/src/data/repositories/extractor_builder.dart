@@ -9,10 +9,13 @@ class ExtractorBuilder {
 
   Future<String> buildBookExtractorSelectors(
     String origin,
-    String prompt,
-  ) async {
-    String? fullResponse = await _cache.loadBookExtractorForOrigin(origin);
-    if (fullResponse != null) return fullResponse;
+    String prompt, {
+    bool forceReload = false,
+  }) async {
+    if (!forceReload) {
+      String? fullResponse = await _cache.loadBookExtractorForOrigin(origin);
+      if (fullResponse != null) return fullResponse;
+    }
 
     String fullResponse0 = '';
     await for (final chunk in _llmService.streamResponse(prompt)) {
@@ -25,10 +28,13 @@ class ExtractorBuilder {
 
   Future<String> buildChapterExtractorSelectors(
     String origin,
-    String chapterPrompt,
-  ) async {
-    String? fullResponse = await _cache.loadPageExtractorForOrigin(origin);
-    if (fullResponse != null) return fullResponse;
+    String chapterPrompt, {
+    bool forceReload = false,
+  }) async {
+    if (!forceReload) {
+      String? fullResponse = await _cache.loadPageExtractorForOrigin(origin);
+      if (fullResponse != null) return fullResponse;
+    }
 
     String fullResponse0 = '';
     await for (final chunk in _llmService.streamResponse(chapterPrompt)) {
