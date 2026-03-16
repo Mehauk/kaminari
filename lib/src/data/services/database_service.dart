@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -22,9 +21,9 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 4, // Updated to 4
+      version: 5,
       onCreate: _createTables,
-      onUpgrade: _onUpgrade, // Added migration handler
+      onUpgrade: _onUpgrade,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -36,29 +35,14 @@ class DatabaseService {
     Database db,
     int oldVersion,
     int newVersion,
-  ) async {
-    if (oldVersion < 4) {
-      // Adding the scrollPosition column to ChapterInfo
-      // We use a try-catch or conditional check because some developers
-      // might have manually modified their local DBs during testing.
-      try {
-        await db.execute(
-          'ALTER TABLE ChapterInfo ADD COLUMN scrollPosition REAL DEFAULT 0',
-        );
-      } catch (e) {
-        debugPrint(
-          "Migration Note: scrollPosition column already exists or table missing.",
-        );
-      }
-    }
-  }
+  ) async {}
 
   static Future<void> _createTables(Database db, int version) async {
     // 1. BookDetails Table
     await db.execute('''
       CREATE TABLE BookDetails (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        url TEXT NOT NULL UNIQUE,
+        url TEXT NOT NULL,
         source TEXT NOT NULL,
         title TEXT NOT NULL,
         author TEXT NOT NULL,
@@ -68,7 +52,8 @@ class DatabaseService {
         updatedDate TEXT,
         accessedDate INTEGER,
         bookType TEXT NOT NULL,
-        currentChapterIndex INTEGER DEFAULT 0
+        currentChapterIndex INTEGER DEFAULT 0,
+        UNIQUE(title, source, author, bookType)
       )
     ''');
 
@@ -83,6 +68,7 @@ class DatabaseService {
         wordCount INTEGER,
         chapterNumber INTEGER NOT NULL,
         scrollPosition REAL DEFAULT 0,
+        UNIQUE(book_id, chapterNumber),
         FOREIGN KEY (book_id) REFERENCES BookDetails (id) ON DELETE CASCADE
       )
     ''');
@@ -263,34 +249,84 @@ class DatabaseService {
     );
   }
 
-  /// Helper to save a book (used in the WebviewCubit import flow)
   Future<void> saveBook(BookDetails book) async {
     final db = await database;
     await db.transaction((txn) async {
-      final bookId = await txn.insert('BookDetails', {
-        'url': book.url,
-        'source': book.source,
-        'title': book.title,
-        'author': book.author,
-        'synopsis': book.synopsis,
-        'bookType': book.bookType.name,
-      });
+      // 1. Check if the book exists
+      final List<Map<String, dynamic>> existingBooks = await txn.query(
+        'BookDetails',
+        where: 'title = ? AND source = ? AND author = ? AND bookType = ?',
+        whereArgs: [book.title, book.source, book.author, book.bookType.name],
+      );
 
-      for (var chapter in book.chapters) {
-        final chapterId = await txn.insert('ChapterInfo', {
-          'book_id': bookId,
-          'title': chapter.title,
-          'url': chapter.url,
-          'chapterNumber': chapter.number,
+      int bookId;
+      if (existingBooks.isNotEmpty) {
+        bookId = existingBooks.first['id'] as int;
+        await txn.update(
+          'BookDetails',
+          {
+            'url': book.url,
+            'synopsis': book.synopsis,
+            'coverUrl': book.coverUrl,
+            'jlptLevel': book.jlptLevel,
+            'updatedDate': book.updatedDate,
+          },
+          where: 'id = ?',
+          whereArgs: [bookId],
+        );
+      } else {
+        bookId = await txn.insert('BookDetails', {
+          'url': book.url,
+          'source': book.source,
+          'title': book.title,
+          'author': book.author,
+          'synopsis': book.synopsis,
+          'coverUrl': book.coverUrl,
+          'jlptLevel': book.jlptLevel,
+          'bookType': book.bookType.name,
         });
+      }
 
-        if (chapter.content != null) {
-          for (var section in chapter.content!) {
-            await txn.insert('ChapterSection', {
-              'chapter_id': chapterId,
-              'content': section,
-            });
+      // 2. Handle Chapters
+      for (var chapter in book.chapters) {
+        // Check if this chapter exists by URL OR by Chapter Number
+        final List<Map<String, dynamic>> existingChapters = await txn.query(
+          'ChapterInfo',
+          where: 'book_id = ? AND (url = ? OR chapterNumber = ?)',
+          whereArgs: [bookId, chapter.url, chapter.number],
+        );
+
+        if (existingChapters.isEmpty) {
+          // DOES NOT EXIST: Fresh insert
+          final chapterId = await txn.insert('ChapterInfo', {
+            'book_id': bookId,
+            'title': chapter.title,
+            'url': chapter.url,
+            'chapterNumber': chapter.number,
+            'scrollPosition': 0,
+          });
+
+          if (chapter.content != null) {
+            for (var section in chapter.content!) {
+              await txn.insert('ChapterSection', {
+                'chapter_id': chapterId,
+                'content': section,
+              });
+            }
           }
+        } else {
+          // EXISTS: Update metadata but keep the ID (and thus the progress/content)
+          int existingId = existingChapters.first['id'] as int;
+          await txn.update(
+            'ChapterInfo',
+            {
+              'title': chapter.title,
+              'url': chapter.url, // Update URL in case it changed
+              'chapterNumber': chapter.number,
+            },
+            where: 'id = ?',
+            whereArgs: [existingId],
+          );
         }
       }
     });
