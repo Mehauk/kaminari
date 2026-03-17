@@ -61,8 +61,18 @@ String cheaptersLoadingIIFE(
         number: i
       })});
       chapters = chapters.concat(pageChapters);
-      const nextBtn = doc.querySelector('$nextPageSelector');
-      nextUrl = (nextBtn && nextBtn.href !== document.location.href) ? nextBtn.href : null;
+      let nextUrl = null;
+      try {
+        const nextBtn = document.querySelector('$nextPageSelector');
+        // Check if button exists and has a valid href
+        nextUrl = (nextBtn && nextBtn.href && nextBtn.href !== document.location.href) 
+          ? nextBtn.href 
+          : null;
+      } catch (e) {
+        // Invalid selector syntax causes error, catch it and keep nextUrl as null
+        console.warn("Invalid selector:", '$nextPageSelector');
+        nextUrl = null;
+      }
     }
     return chapters;
   })()
@@ -196,7 +206,15 @@ String generateContentExtractionJSPrompt(String urls, String selector) =>
             const el = doc.querySelector(selector);
             if (el) {
               const lines = Array.from(el.children)
-                .map(c => c.textContent.trim())
+                .map(function(c) {
+                  let text = c.textContent.trim();
+                  if ((text?.length ?? 0) > 0) return text;
+                  try {
+                    return c.querySelector('img')?.src ?? "";
+                  } catch {
+                    return "";
+                  }
+                })
                 .filter(t => t.length > 0);
               if (lines.length === 0 && el.textContent.trim().length > 0) {
                 lines.push(el.textContent.trim());

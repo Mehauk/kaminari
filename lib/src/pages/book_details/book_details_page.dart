@@ -128,7 +128,73 @@ class _CoverAppBar extends StatelessWidget {
         ),
         LightningIconButton(
           icon: Icons.more_vert_rounded,
-          onPressed: () => print(2),
+          onPressed: () async {
+            final cubit = context.read<BookDetailsCubit>();
+            final pageContext = context;
+            await showModalBottomSheet<void>(
+              context: pageContext,
+              backgroundColor: Colors.transparent,
+              builder: (context) => Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).canvasColor,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 48,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ListTile(
+                      leading: const Icon(Icons.delete_outline_rounded),
+                      title: const Text('Delete book'),
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        final confirmed = await showDialog<bool>(
+                          context: pageContext,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Delete book'),
+                            content: const Text(
+                              'Are you sure you want to delete this book?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(true),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed != true) return;
+                        final bookId = cubit.book.id;
+                        if (bookId == null) return;
+                        await cubit.dbService.deleteBook(bookId);
+                        if (pageContext.mounted)
+                          Navigator.of(pageContext).pop(true);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(

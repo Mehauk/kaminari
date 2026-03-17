@@ -371,4 +371,9 @@ class DatabaseService {
     );
     return rows.map((row) => ChapterInfo.fromJson(row)).toList();
   }
+
+  Future<int> deleteBook(int bookId) async {
+    final db = await database;
+    return await db.delete('BookDetails', where: 'id = ?', whereArgs: [bookId]);
+  }
 }

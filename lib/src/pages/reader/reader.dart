@@ -8,7 +8,9 @@ import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/text.dart';
+import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
+import 'package:kaminari/src/utils/string_extensions.dart';
 
 class ReaderPage extends StatelessWidget {
   const ReaderPage(this.chapter, {super.key, required this.bookId});
@@ -246,6 +248,22 @@ class _TokenizedParagraph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (tokens.length == 1 && tokens.first.startsWith("http")) {
+      return LightningCard(
+        type: .glowing,
+        child: Image.network(
+          tokens.first,
+          fit: .cover,
+          height: 400,
+          errorBuilder: (context, error, stackTrace) => SizedBox(height: 400),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return SizedBox(height: 400);
+          },
+        ),
+      );
+    }
+
     // Wrap with BlocBuilder to react to selection changes for *this* paragraph only
     return BlocBuilder<ReaderCubit, ReaderState>(
       // Only rebuild this paragraph if:
@@ -280,9 +298,7 @@ class _TokenizedParagraph extends StatelessWidget {
           TextSpan(
             children: List.generate(tokens.length, (tokenIndex) {
               final token = tokens[tokenIndex];
-              final bool isPunctuation = RegExp(
-                r'[^\w\s\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]',
-              ).hasMatch(token);
+              final bool isPunctuation = token.containsPunctuation;
 
               final isSelected =
                   selectedParagraphIndex == paragraphIndex &&

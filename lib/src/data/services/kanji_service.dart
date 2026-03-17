@@ -29,9 +29,22 @@ class KanjiService {
   }
 
   static Future<List<String>> tokenizeText(String text) async {
+    if (text.startsWith("http")) return [text];
     await _initMecab(); // Ensure initialized once
     final res = _mecab!.segment(text);
-    return res;
+
+    return res
+        .expand((e) {
+          // This regex matches either:
+          // 1. A single punctuation character: [^\p{L}\p{N}\p{Z}]
+          // 2. OR a sequence of non-punctuation characters: [\p{L}\p{N}\p{Z}]+
+          return RegExp(
+            r'[^\p{L}\p{N}\p{Z}]|[\p{L}\p{N}\p{Z}]+',
+            unicode: true,
+          ).allMatches(e).map((m) => m.group(0)!);
+        })
+        .where((token) => token.trim().isNotEmpty)
+        .toList(); // Optional: remove empty/whitespace tokens
   }
 
   // _________________________KA NA_________________________
