@@ -1,0 +1,12 @@
+flutter_native_splash:
+  color: "#15130B"
+  image: assets/images/app_icon.png
+  
+  android_12:
+    image: assets/images/app_icon.png
+    icon_background_color: "#15130B"
+    
+  # Optional: Adds a "Bolt" feel with a branding image at the bottom
+  # branding: assets/images/branding_text.png 
+
+  fullscreen: true
