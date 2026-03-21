@@ -47,7 +47,7 @@ class ExtractorBuilder {
 }
 
 // fullResponse0 =
-//         '{"\$schema": "https://json-schema.org/draft/2020-12/schema", "title": ".p-novel__title", "author": ".p-novel__author > a", "coverUrl": "N/A", "jlptLevel": "N/A", "synopsis": "#novel_ex.p-novel__summary", "paginationFirstUrl": ".c-pager__item--first", "paginationNextUrl": ".c-pager__item--next", "chapter": ".p-eplist__sublist", "chapterDetails": {"url": "a.p-eplist__subtitle", "title": "a.p-eplist__subtitle", "updatedDate": ".p-eplist__update"}}';
+//         '{"\$schema": "https://json-schema.org/draft/2020-12/schema", "title": ".p-novel__title", "author": ".p-novel__author > a", "coverUrl": "N/A", "jlptLevel": "N/A", "synopsis": "#novel_ex.p-novel__summary", "paginationFirstUrl": ".c-pager__item--first", "paginationNextUrl": ".c-pager__item--next", "chapter": ".p-eplist__sublist", "individualChapterDetails": {"url": "a.p-eplist__subtitle", "title": "a.p-eplist__subtitle", "updatedDate": ".p-eplist__update"}}';
    
     // chapterLlmResponse0 =
     //     '{"contentSection": "div.js-novel-text.p-novel__text"}';

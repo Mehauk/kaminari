@@ -29,10 +29,10 @@ abstract class BookDetailsExtractor with _$BookDetailsExtractor {
     String? nextPageUrl,
     required String title,
     required String author,
-    required String coverUrl,
-    required String jlptLevel,
+    String? coverUrl,
+    String? jlptLevel,
     required String synopsis,
-    required ChapterInfoExtractor chapterDetails,
+    required ChapterInfoExtractor individualChapterDetails,
   }) = _BookDetailsExtractor;
 
   factory BookDetailsExtractor.fromJson(Map<String, dynamic> json) =>

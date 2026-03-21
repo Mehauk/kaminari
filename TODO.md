@@ -14,6 +14,8 @@
 
 
 - [ ] importing indicators update
+- [ ] Import builder loader update
+- [ ] images with aspect ratio
 - [ ] empty states (favorites, history, discover (filtered/unfiltered))
 - [ ] confirmation step to set booktype and whatnot
 - [ ] extractAsShortStory on failure? (https://ncode.syosetu.com/n9674md/)
