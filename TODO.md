@@ -11,6 +11,7 @@
 - [ ] prioritize opened chapter downloading over the others
 - [ ] make a queue, with limitaions per 5 minutes on downloads (opening a chapter skips limit)
 - [ ] implement favoriting and favorites tab on history page
+- [ ] dictionary view for webview
 
 
 - [ ] importing indicators update
@@ -19,8 +20,8 @@
 - [ ] empty states (favorites, history, discover (filtered/unfiltered))
 - [ ] confirmation step to set booktype and whatnot
 - [ ] extractAsShortStory on failure? (https://ncode.syosetu.com/n9674md/)
-- [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [ ] use jagger?
-- [ ] BUG: inf linearprog on import webview
 - [ ] delete/cleanup read
+- [ ] BUG: you dont get all the chapters if you dont start on the first page.
+- [ ] BUG: inf linearprog on import webview
 - [ ] BUG: import webview url not showing
