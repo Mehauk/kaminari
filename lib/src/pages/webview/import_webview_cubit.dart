@@ -64,7 +64,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (_) => resetForNewPage(),
+          onPageStarted: (url) => resetForNewPage(url),
           onPageFinished: (url) async {
             final title = await controller.getTitle();
 
@@ -73,7 +73,7 @@ class WebviewCubit extends Cubit<WebviewState> {
               _pageLoadCompleter!.complete();
             }
 
-            updateNavigation(url: url, title: title);
+            updateNavigation(url: url, title: title, isLoading: false);
           },
         ),
       )
@@ -89,12 +89,18 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..loadRequest(Uri.parse(initialUrl ?? 'https://syosetu.com/'));
   }
 
-  void resetForNewPage() {
-    emit(state.copyWith(isLoading: true, importStatus: .notImported));
+  void resetForNewPage(String url) {
+    emit(state.copyWith(url: url, isLoading: true, importStatus: .notImported));
   }
 
-  void updateNavigation({String? url, String? title}) {
-    emit(state.copyWith(url: url ?? state.url, title: title ?? state.title));
+  void updateNavigation({String? url, String? title, bool? isLoading}) {
+    emit(
+      state.copyWith(
+        url: url ?? state.url,
+        title: title ?? state.title,
+        isLoading: isLoading ?? state.isLoading,
+      ),
+    );
   }
 
   Future<void> handleImport() async {

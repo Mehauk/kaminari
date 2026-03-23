@@ -41,7 +41,7 @@ class _ImportWebviewPage extends StatelessWidget {
             children: [
               Column(
                 children: [
-                  SizedBox(height: 60),
+                  SizedBox(height: 100),
                   Expanded(
                     child: WebViewWidget(controller: webviewCubit.controller),
                   ),
