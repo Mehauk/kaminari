@@ -9,7 +9,9 @@ import 'package:kaminari/src/data/constants/prompt.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
+import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
+import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 part 'import_webview_cubit.freezed.dart';
@@ -49,6 +51,7 @@ abstract class WebviewState with _$WebviewState {
     @Default('Loading...') String title,
     @Default(true) bool isLoading,
     @Default(ImportStatus.notImported) ImportStatus importStatus,
+    DictionaryEntry? selectedEntry,
   }) = _WebviewState;
 }
 
@@ -73,9 +76,17 @@ class WebviewCubit extends Cubit<WebviewState> {
               _pageLoadCompleter!.complete();
             }
 
+            await _injectScanner();
+
             updateNavigation(url: url, title: title, isLoading: false);
           },
         ),
+      )
+      ..addJavaScriptChannel(
+        'LookupChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          onWordFound(message.message);
+        },
       )
       ..addJavaScriptChannel(
         'ExtractionChannel',
@@ -89,8 +100,85 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..loadRequest(Uri.parse(initialUrl ?? 'https://syosetu.com/'));
   }
 
+  void clearSelection() => emit(state.copyWith(selectedEntry: null));
+
+  void onWordFound(String message) async {
+    final data = jsonDecode(message);
+    final String fullText = data['text'];
+    final int tapOffset = data['offset'];
+
+    // 1. Tokenize the entire context chunk
+    final tokens = await KanjiService.tokenizeText(fullText);
+
+    // 2. Find which token contains the tapOffset
+    String? targetedWord;
+    int currentPos = 0;
+
+    for (final token in tokens) {
+      int tokenEnd = currentPos + token.length;
+
+      // Check if the tap happened within this token's boundaries
+      if (tapOffset >= currentPos && tapOffset < tokenEnd) {
+        targetedWord = token;
+        break;
+      }
+      currentPos = tokenEnd;
+    }
+
+    if (targetedWord == null) return;
+
+    final (wordMap, kanjis) = await KanjiService.lookupToken(targetedWord);
+
+    emit(
+      state.copyWith(selectedEntry: DictionaryEntry(wordMap, kanjis: kanjis)),
+    );
+  }
+
+  Future<void> _injectScanner() async {
+    await controller.runJavaScript('''
+      (function() {
+        let lastTap = 0;
+
+        document.addEventListener('touchstart', function(e) {
+          const now = new Date().getTime();
+          const timesince = now - lastTap;
+
+          // If the time between taps is less than 300ms, treat it as a double tap
+          if (timesince < 300 && timesince > 0) {
+            const touch = e.touches[0];
+            const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+            
+            if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+              const container = range.startContainer;
+              const offset = range.startOffset;
+              
+              const message = {
+                "text": container.data.substring(offset),
+                "offset": 0
+              };
+              
+              if (window.LookupChannel) {
+                window.LookupChannel.postMessage(JSON.stringify(message));
+              }
+            }
+            // Prevent zooming on double-tap if desired
+            // e.preventDefault(); 
+          }
+          lastTap = now;
+        }, {passive: false});
+      })();
+    ''');
+  }
+
   void resetForNewPage(String url) {
-    emit(state.copyWith(url: url, isLoading: true, importStatus: .notImported));
+    emit(
+      state.copyWith(
+        url: url,
+        isLoading: true,
+        importStatus: .notImported,
+        selectedEntry: null,
+      ),
+    );
   }
 
   void updateNavigation({String? url, String? title, bool? isLoading}) {

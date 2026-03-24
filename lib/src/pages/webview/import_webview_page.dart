@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
+import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/pages/webview/import_webview_cubit.dart';
 import 'package:kaminari/src/pages/webview/importing_dialog.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
@@ -50,7 +51,7 @@ class _ImportWebviewPage extends StatelessWidget {
               Column(
                 children: [
                   _WebAddressBar(controller: webviewCubit.controller),
-                  // show dictionaryview here if valid text selection
+
                   if (webviewState.isLoading)
                     LinearProgressIndicator(minHeight: 4),
                 ],
@@ -87,7 +88,8 @@ class _WebAddressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = context.select<WebviewCubit, String>((c) => c.state.url);
+    final cubit = context.read<WebviewCubit>();
+    final url = cubit.state.url;
     return ClipRRect(
       child: BgFilter(
         bgColor: KaminariTheme.background.withAlpha(220),
@@ -95,54 +97,59 @@ class _WebAddressBar extends StatelessWidget {
           bottom: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 12, 16, 12),
-            child: Row(
+            child: Column(
               children: [
-                LightningIconButton(
-                  icon: Icons.arrow_back_ios_new,
-                  onPressed: () => Navigator.pop(context),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                Row(
+                  children: [
+                    LightningIconButton(
+                      icon: Icons.arrow_back_ios_new,
+                      onPressed: () => Navigator.pop(context),
                     ),
-                    decoration: BoxDecoration(
-                      color: KaminariTheme.colorScheme.primaryContainer
-                          .withAlpha(30),
-                      borderRadius: BorderRadius.circular(
-                        KaminariTheme.altBorderRadius,
-                      ),
-                      border: Border.all(
-                        color: KaminariTheme.surfaceTint.withAlpha(50),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.lock_outline,
-                          size: 14,
-                          color: KaminariTheme.cyan,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: CustomText(
-                            url,
-                            TextType.labelSmall,
-                            fontSize: 12,
-                            color: KaminariTheme.textSecondary,
+                        decoration: BoxDecoration(
+                          color: KaminariTheme.colorScheme.primaryContainer
+                              .withAlpha(30),
+                          borderRadius: BorderRadius.circular(
+                            KaminariTheme.altBorderRadius,
+                          ),
+                          border: Border.all(
+                            color: KaminariTheme.surfaceTint.withAlpha(50),
                           ),
                         ),
-                      ],
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.lock_outline,
+                              size: 14,
+                              color: KaminariTheme.cyan,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: CustomText(
+                                url,
+                                TextType.labelSmall,
+                                fontSize: 12,
+                                color: KaminariTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    LightningIconButton(
+                      icon: Icons.refresh,
+                      onPressed: () => controller.reload(),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                LightningIconButton(
-                  icon: Icons.refresh,
-                  onPressed: () => controller.reload(),
-                ),
+                DictionaryView(cubit.state.selectedEntry, cubit.clearSelection),
               ],
             ),
           ),

@@ -1,18 +1,18 @@
 // ignore_for_file: annotate_overrides
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:jp_transliterate/jp_transliterate.dart';
 import 'package:kaminari/src/config/theme.dart';
-import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 
 part 'dictionary_view.freezed.dart';
 
-class ReaderDictionaryExtension extends StatelessWidget {
-  const ReaderDictionaryExtension({super.key});
+class DictionaryView extends StatelessWidget {
+  final DictionaryEntry? entry;
+  final void Function() clearSelection;
+  const DictionaryView(this.entry, this.clearSelection, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,25 +21,24 @@ class ReaderDictionaryExtension extends StatelessWidget {
       transitionBuilder: (Widget child, Animation<double> animation) {
         return SizeTransition(sizeFactor: animation, child: child);
       },
-      child: _DictionaryContent(),
+      child: _DictionaryContent(entry, clearSelection),
     );
   }
 }
 
 class _DictionaryContent extends StatelessWidget {
-  const _DictionaryContent();
+  final DictionaryEntry? entry;
+  final void Function() clearSelection;
+  const _DictionaryContent(this.entry, this.clearSelection);
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<ReaderCubit>();
-    if (cubit.state.selectedEntry == null) {
+    if (entry == null) {
       return const SizedBox.shrink();
     }
 
-    final entry = cubit.state.selectedEntry!;
-
     return Container(
-      key: ValueKey(entry.letters.join()), // Forces animation on word change
+      key: ValueKey(entry!.letters.join()), // Forces animation on word change
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
       decoration: BoxDecoration(
         border: Border(
@@ -60,13 +59,13 @@ class _DictionaryContent extends StatelessWidget {
                     Wrap(
                       children: [
                         CustomText(
-                          entry.letters.join(),
+                          entry!.letters.join(),
                           TextType.headlineLarge,
                           color: KaminariTheme.textTitle,
                         ),
                         const SizedBox(width: 12),
                         CustomText(
-                          entry.sounds.join(),
+                          entry!.sounds.join(),
                           TextType.labelMedium,
                           color: KaminariTheme.cyan,
                         ),
@@ -74,7 +73,7 @@ class _DictionaryContent extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     CustomText(
-                      entry.meanings.join("; "),
+                      entry!.meanings.join("; "),
                       TextType.bodyMedium,
                       maxLines: 3,
                       color: KaminariTheme.textPrimary,
@@ -83,14 +82,14 @@ class _DictionaryContent extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: () => cubit.clearSelection(),
+                onPressed: clearSelection,
                 icon: const Icon(Icons.close, size: 20),
               ),
             ],
           ),
-          if (entry.kanjis.isNotEmpty) ...[
+          if (entry!.kanjis.isNotEmpty) ...[
             const SizedBox(height: 16),
-            _KanjiRow(kanjis: entry.kanjis, wordReadings: entry.sounds),
+            _KanjiRow(kanjis: entry!.kanjis, wordReadings: entry!.sounds),
           ],
         ],
       ),
