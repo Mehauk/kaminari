@@ -13,6 +13,10 @@ class HistoryScreen extends StatelessWidget {
       create: (_) => HistoryCubit(dbService: context.read()),
       child: BlocBuilder<HistoryCubit, HistoryState>(
         builder: (context, state) {
+          final books = state.filter == HistoryFilter.favorites
+              ? state.history.where((book) => book.isFavorite).toList()
+              : state.history;
+
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -41,16 +45,27 @@ class HistoryScreen extends StatelessWidget {
                       const SizedBox(height: 32),
                       if (state.isLoading)
                         const Center(child: CircularProgressIndicator())
-                      else if (state.history.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 64),
-                          child: Text("No reading history yet."),
+                      else if (books.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 64),
+                          child: Text(
+                            state.filter == HistoryFilter.favorites
+                                ? "No favorites yet."
+                                : "No reading history yet.",
+                          ),
                         )
                       else
                         Column(
                           spacing: 16,
-                          children: state.history
-                              .map((book) => HistoryBookCard(book))
+                          children: books
+                              .map(
+                                (book) => HistoryBookCard(
+                                  book,
+                                  onFavoriteToggle: () => context
+                                      .read<HistoryCubit>()
+                                      .toggleFavorite(book),
+                                ),
+                              )
                               .toList(),
                         ),
                       const SizedBox(height: 56),

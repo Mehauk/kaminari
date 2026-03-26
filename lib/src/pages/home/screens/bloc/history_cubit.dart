@@ -29,6 +29,16 @@ class HistoryCubit extends Cubit<HistoryState> {
     emit(state.copyWith(history: books, isLoading: false));
   }
 
+  Future<void> toggleFavorite(BookDetails book) async {
+    if (book.id == null) return;
+    final updatedBook = book.copyWith(isFavorite: !book.isFavorite);
+    await dbService.updateBookFavorite(book.id!, updatedBook.isFavorite);
+    final updatedHistory = state.history
+        .map((item) => item.id == book.id ? updatedBook : item)
+        .toList();
+    emit(state.copyWith(history: updatedHistory));
+  }
+
   void setFilter(HistoryFilter filter) {
     emit(state.copyWith(filter: filter));
   }

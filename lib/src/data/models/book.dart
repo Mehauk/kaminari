@@ -85,6 +85,7 @@ abstract class BookDetails with _$BookDetails {
     int? accessedDate,
     @Default(BookType.webNovel) BookType bookType,
     @Default(0) int currentChapter,
+    @Default(false) bool isFavorite,
     @Default(false) bool synopsisExpanded,
   }) = _BookDetails;
 

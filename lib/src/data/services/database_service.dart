@@ -21,7 +21,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async {
@@ -35,7 +35,13 @@ class DatabaseService {
     Database db,
     int oldVersion,
     int newVersion,
-  ) async {}
+  ) async {
+    if (oldVersion < 6) {
+      await db.execute(
+        'ALTER TABLE BookDetails ADD COLUMN isFavorite INTEGER DEFAULT 0',
+      );
+    }
+  }
 
   static Future<void> _createTables(Database db, int version) async {
     // 1. BookDetails Table
@@ -53,6 +59,7 @@ class DatabaseService {
         accessedDate INTEGER,
         bookType TEXT NOT NULL,
         currentChapterIndex INTEGER DEFAULT 0,
+        isFavorite INTEGER DEFAULT 0,
         UNIQUE(title, source, author, bookType)
       )
     ''');
@@ -104,7 +111,11 @@ class DatabaseService {
 
       // Initialize book if not in map
       if (!booksMap.containsKey(bookId)) {
-        booksMap[bookId] = {...row, 'chapters': []};
+        booksMap[bookId] = {
+          ...row,
+          'isFavorite': (row['isFavorite'] as int?) == 1,
+          'chapters': [],
+        };
       }
 
       // Add chapter if it exists
@@ -138,7 +149,11 @@ class DatabaseService {
     for (final row in rows) {
       final bookId = row['id'] as int;
       if (!booksMap.containsKey(bookId)) {
-        booksMap[bookId] = {...row, 'chapters': []};
+        booksMap[bookId] = {
+          ...row,
+          'isFavorite': (row['isFavorite'] as int?) == 1,
+          'chapters': [],
+        };
       }
       if (row['ch_id'] != null) {
         booksMap[bookId]!["chapters"].add({
@@ -204,6 +219,7 @@ class DatabaseService {
 
     // 3. Construct a map that matches the structure expected by .fromJson
     final bookMap = Map<String, dynamic>.from(bookRow);
+    bookMap['isFavorite'] = (bookMap['isFavorite'] as int?) == 1;
     bookMap['chapters'] = chapterRows;
 
     return BookDetails.fromJson(bookMap);
@@ -217,6 +233,16 @@ class DatabaseService {
         'accessedDate': DateTime.now().millisecondsSinceEpoch,
         'currentChapterIndex': currrentChapter,
       },
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+  }
+
+  Future<void> updateBookFavorite(int bookId, bool isFavorite) async {
+    final db = await database;
+    await db.update(
+      'BookDetails',
+      {'isFavorite': isFavorite ? 1 : 0},
       where: 'id = ?',
       whereArgs: [bookId],
     );
@@ -284,6 +310,7 @@ class DatabaseService {
           'coverUrl': book.coverUrl,
           'jlptLevel': book.jlptLevel,
           'bookType': book.bookType.name,
+          'isFavorite': book.isFavorite ? 1 : 0,
         });
       }
 
