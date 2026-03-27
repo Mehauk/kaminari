@@ -10,6 +10,7 @@
 - [x] delete book
 - [x] dictionary view for webview
 - [x] implement favoriting and favorites tab on history page
+- [ ] empty states (favorites, history, discover (filtered/unfiltered))
 - [ ] show downloading indicator on opened chapter without content
 - [ ] prioritize opened chapter downloading over the others
 - [ ] make a queue, with limitaions per 5 minutes on downloads (opening a chapter skips limit)
@@ -18,7 +19,6 @@
 - [ ] Import builder loader update (with type selection)
 
 
-- [ ] empty states (favorites, history, discover (filtered/unfiltered))
 - [ ] use jagger?
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [x] BUG: inf linearprog on import webview
