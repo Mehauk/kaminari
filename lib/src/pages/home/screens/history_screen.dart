@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/pages/home/screens/bloc/history_cubit.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
 import 'package:kaminari/src/ui/widgets/book_cards.dart';
+import 'package:kaminari/src/ui/widgets/empty_state.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -46,13 +47,14 @@ class HistoryScreen extends StatelessWidget {
                       if (state.isLoading)
                         const Center(child: CircularProgressIndicator())
                       else if (books.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 64),
-                          child: Text(
-                            state.filter == HistoryFilter.favorites
-                                ? "No favorites yet."
-                                : "No reading history yet.",
-                          ),
+                        EmptyState(
+                          icon: const Icon(Icons.book_outlined, size: 48),
+                          title: state.filter == HistoryFilter.favorites
+                              ? 'No favorites yet.'
+                              : 'No reading history yet.',
+                          subtitle: state.filter == HistoryFilter.favorites
+                              ? 'Mark books as favorites to see them here.'
+                              : 'Open a book to start tracking your reading history.',
                         )
                       else
                         Column(
