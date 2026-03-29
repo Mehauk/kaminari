@@ -11,15 +11,18 @@
 - [x] dictionary view for webview
 - [x] implement favoriting and favorites tab on history page
 - [x] empty states (favorites, history, discover (filtered/unfiltered))
-- [ ] make a queue, with limitaions per 5 minutes on downloads (opening a chapter skips limit)
-- [ ] prioritize opened chapter downloading over the others
-- [ ] show downloading indicator on opened chapter without content
+- [x] failed import should delete extractor cache
+- [x] make a queue, with limitaions per 5 minutes on downloads (opening a chapter skips limit)
+- [x] prioritize opened chapter downloading over the others
+- [x] show downloading indicator on opened chapter without content
+- [x] importing indicators update
 - [ ] open import chapter webview on error (only for current)
-- [ ] importing indicators update
 - [ ] Import builder loader update (with type selection)
+- [ ] responsive home tabs
 
 
 - [ ] use jagger?
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
+- [ ] BUG: first three chapters not autmatic?

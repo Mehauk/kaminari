@@ -29,4 +29,10 @@ class ExtractorCache {
   Future<String?> loadPageExtractorForOrigin(String origin) async {
     return await _localStorage.getData("$_pageKey$origin");
   }
+
+  Future<void> clearCacheForOrigin(String origin) async {
+    await _localStorage.removeData("$_bookKey$origin");
+    await _localStorage.removeData("$_pageKey$origin");
+    print("cleared cache for $origin");
+  }
 }

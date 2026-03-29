@@ -44,6 +44,9 @@ class ExtractorBuilder {
     _cache.savePageExtractorForOrigin(origin, fullResponse0);
     return fullResponse0;
   }
+
+  Future<void> clearCacheForOrigin(String origin) =>
+      _cache.clearCacheForOrigin(origin);
 }
 
 // fullResponse0 =

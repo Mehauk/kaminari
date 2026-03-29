@@ -13,10 +13,20 @@ import 'package:webview_flutter/webview_flutter.dart';
 part 'background_webview_cubit.freezed.dart';
 
 @freezed
+abstract class DownloadTask with _$DownloadTask {
+  const factory DownloadTask({
+    required int bookId,
+    required ChapterInfo chapter,
+    @Default(false) bool isPriority,
+  }) = _DownloadTask;
+}
+
+@freezed
 abstract class BackgroundWebviewState with _$BackgroundWebviewState {
   const factory BackgroundWebviewState({
-    @Default(false) bool isPrefetching,
-    int? activeBookId,
+    @Default(false) bool isProcessing,
+    int? activeChapterId,
+    @Default([]) List<int> completedChapterIds,
     String? errorMessage,
   }) = _BackgroundWebviewState;
 }
@@ -25,9 +35,14 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
   final DatabaseService dbService;
   final ExtractorBuilder extractorBuilder;
   late final WebViewController _controller;
+
   Completer<String>? _extractionCompleter;
   Completer<void>? _pageLoadCompleter;
-  bool _isRunning = false;
+
+  // Queue Management
+  final List<DownloadTask> _queue = [];
+  final List<DateTime> _downloadTimestamps = [];
+  bool _isLoopRunning = false;
 
   BackgroundWebviewCubit({
     required this.dbService,
@@ -42,56 +57,149 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) {
-            if (_pageLoadCompleter != null &&
-                !_pageLoadCompleter!.isCompleted) {
-              _pageLoadCompleter!.complete();
-            }
+            _pageLoadCompleter?.complete();
           },
         ),
       )
       ..addJavaScriptChannel(
         'ExtractionChannel',
         onMessageReceived: (JavaScriptMessage message) {
-          if (_extractionCompleter != null &&
-              !_extractionCompleter!.isCompleted) {
-            _extractionCompleter!.complete(message.message);
-          }
+          _extractionCompleter?.complete(message.message);
         },
       );
   }
 
-  Future<void> prefetchNextChapters({
+  /// Adds chapters to the download queue.
+  /// [isPriority] skips rate limiting and puts tasks at the top of the stack.
+  Future<void> enqueueChapters({
     required int bookId,
-    required int currentChapter,
-    int limit = 3,
+    required List<ChapterInfo> chapters,
+    bool isPriority = false,
   }) async {
-    if (_isRunning) return;
-    _isRunning = true;
-    emit(
-      state.copyWith(
-        isPrefetching: true,
-        activeBookId: bookId,
-        errorMessage: null,
-      ),
-    );
+    for (var chapter in chapters) {
+      // Avoid duplicates in queue
+      _queue.removeWhere((t) => t.chapter.id == chapter.id);
 
-    try {
-      final nextChapters = await dbService.getNextChaptersWithoutContent(
-        bookId,
-        currentChapter,
-        limit,
+      final task = DownloadTask(
+        bookId: bookId,
+        chapter: chapter,
+        isPriority: isPriority,
       );
 
-      if (nextChapters.isEmpty) return;
+      if (isPriority) {
+        _queue.insert(0, task);
+      } else {
+        _queue.add(task);
+        // Sort non-priority items: smallest chapter number first
+        final priorityTasks = _queue.where((t) => t.isPriority).toList();
+        final regularTasks = _queue.where((t) => !t.isPriority).toList();
+        regularTasks.sort(
+          (a, b) => a.chapter.number.compareTo(b.chapter.number),
+        );
 
-      for (final chapter in nextChapters) {
-        await _extractChapterContent(chapter);
+        _queue.clear();
+        _queue.addAll(priorityTasks);
+        _queue.addAll(regularTasks);
       }
-    } catch (error) {
-      emit(state.copyWith(errorMessage: error.toString()));
-    } finally {
-      _isRunning = false;
-      emit(state.copyWith(isPrefetching: false, activeBookId: null));
+    }
+
+    if (!_isLoopRunning) {
+      _processQueue();
+    }
+  }
+
+  Future<void> _processQueue() async {
+    _isLoopRunning = true;
+
+    while (_queue.isNotEmpty) {
+      final task = _queue.removeAt(0);
+
+      // Rate limit check: 5 per minute (ignore if priority)
+      if (!task.isPriority) {
+        await _enforceRateLimit();
+      }
+
+      emit(
+        state.copyWith(isProcessing: true, activeChapterId: task.chapter.id),
+      );
+
+      try {
+        await _extractChapterContent(task.chapter);
+        _downloadTimestamps.add(DateTime.now());
+
+        // Notify UI that a specific chapter is done
+        emit(
+          state.copyWith(
+            completedChapterIds: [
+              ...state.completedChapterIds,
+              task.chapter.id!,
+            ],
+          ),
+        );
+      } catch (e) {
+        print("Background download error: $e");
+      } finally {
+        emit(state.copyWith(activeChapterId: null));
+      }
+    }
+
+    _isLoopRunning = false;
+    emit(state.copyWith(isProcessing: false));
+  }
+
+  Future<void> _enforceRateLimit() async {
+    final now = DateTime.now();
+    // Keep only timestamps from the last minute
+    _downloadTimestamps.removeWhere((t) => now.difference(t).inMinutes >= 1);
+
+    if (_downloadTimestamps.length >= 5) {
+      final oldest = _downloadTimestamps.first;
+      final waitTime = const Duration(minutes: 1) - now.difference(oldest);
+      if (waitTime > Duration.zero) {
+        print("Rate limit reached. Waiting ${waitTime.inSeconds}s...");
+        await Future.delayed(waitTime);
+      }
+    }
+  }
+
+  Future<void> _extractChapterContent(ChapterInfo chapter) async {
+    final origin = Uri.parse(chapter.url).origin;
+    await _loadUrl(chapter.url);
+
+    final dynamic chapterTreeRaw = await _controller
+        .runJavaScriptReturningResult(minTreeExtFn);
+    final String chapterTree = chapterTreeRaw as String;
+    final chapterPrompt = buildChapterExtractionAIPrompt(chapterTree);
+
+    final chapterLlmResponse = await extractorBuilder
+        .buildChapterExtractorSelectors(origin, chapterPrompt);
+
+    final chapterExtractor = LlmService.extractJsonFromResponse(
+      chapterLlmResponse,
+      ChapterExtractor.fromJson,
+    );
+
+    final contentJs = generateContentExtractionJSPrompt(
+      jsonEncode([chapter.url]),
+      jsonEncode(chapterExtractor.contentSection),
+    );
+
+    _extractionCompleter = Completer<String>();
+    await _controller.runJavaScript(contentJs);
+
+    final result = await _extractionCompleter!.future.timeout(
+      const Duration(minutes: 2),
+    );
+    final response = jsonDecode(result);
+
+    if (response.containsKey('contents')) {
+      final List contents = response['contents'][0];
+      final List<String> stringContents = contents
+          .map((e) => e.toString())
+          .toList();
+      if (stringContents.isNotEmpty) {
+        await dbService.saveChapterContent(chapter.id!, stringContents);
+      }
     }
   }
 
@@ -100,70 +208,5 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     await _controller.loadRequest(Uri.parse(url));
     await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
     _pageLoadCompleter = null;
-  }
-
-  Future<void> _extractChapterContent(ChapterInfo chapter) async {
-    final origin = Uri.parse(chapter.url).origin;
-    const maxAttempts = 2;
-    int attempt = 0;
-
-    while (attempt < maxAttempts) {
-      attempt += 1;
-      try {
-        await _loadUrl(chapter.url);
-
-        final dynamic chapterTreeRaw = await _controller
-            .runJavaScriptReturningResult(minTreeExtFn);
-        final String chapterTree = chapterTreeRaw as String;
-        final chapterPrompt = buildChapterExtractionAIPrompt(chapterTree);
-
-        final chapterLlmResponse = await extractorBuilder
-            .buildChapterExtractorSelectors(
-              origin,
-              chapterPrompt,
-              forceReload: attempt > 1,
-            );
-
-        final chapterExtractor = LlmService.extractJsonFromResponse(
-          chapterLlmResponse,
-          ChapterExtractor.fromJson,
-        );
-
-        final contentJs = generateContentExtractionJSPrompt(
-          jsonEncode([chapter.url]),
-          jsonEncode(chapterExtractor.contentSection),
-        );
-
-        _extractionCompleter = Completer<String>();
-        await _controller.runJavaScript(contentJs);
-        final contentResultString = await _extractionCompleter!.future.timeout(
-          const Duration(minutes: 2),
-        );
-        final contentResponse = jsonDecode(contentResultString);
-
-        if (contentResponse.containsKey('error')) {
-          throw Exception(contentResponse['error']);
-        }
-
-        final extracted = (contentResponse['contents'] as List)
-            .cast<List<dynamic>>();
-        final contents = extracted
-            .map((section) => section.map((e) => e.toString()).toList())
-            .expand((e) => e)
-            .toList();
-
-        if (contents.isNotEmpty) {
-          await dbService.saveChapterContent(chapter.id!, contents);
-        }
-
-        return;
-      } catch (error) {
-        if (attempt >= maxAttempts) {
-          print('Prefetch failed for ${chapter.url}: $error');
-          return;
-        }
-        await Future.delayed(const Duration(seconds: 2));
-      }
-    }
   }
 }

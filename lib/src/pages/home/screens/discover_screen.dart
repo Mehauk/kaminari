@@ -6,8 +6,8 @@ import 'package:kaminari/src/pages/home/screens/bloc/discover_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
 import 'package:kaminari/src/ui/widgets/book_cards.dart';
-import 'package:kaminari/src/ui/widgets/grid.dart';
 import 'package:kaminari/src/ui/widgets/empty_state.dart';
+import 'package:kaminari/src/ui/widgets/grid.dart';
 
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
@@ -69,7 +69,10 @@ class DiscoverScreen extends StatelessWidget {
                       LayoutBuilder(
                         builder: (context, constraints) {
                           if (state.books.isEmpty) {
-                            final query = context.read<DiscoverCubit>().state.query;
+                            final query = context
+                                .read<DiscoverCubit>()
+                                .state
+                                .query;
                             return EmptyState(
                               icon: const Icon(Icons.search_off, size: 48),
                               title: query.isEmpty
