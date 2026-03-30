@@ -19,6 +19,8 @@
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
 - [ ] responsive home tabs
+- [ ] use most common/first meaning of word
+- [ ] change dictionary close action to bttom of display
 
 
 - [ ] use jagger?
