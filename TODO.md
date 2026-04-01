@@ -17,7 +17,8 @@
 - [x] show downloading indicator on opened chapter without content
 - [x] importing indicators update
 - [x] heuristics to check japanese level
-- [ ] word count of first page * pages
+- [x] character count of first page * pages
+- [ ] BUG: bottom nav covered by native nav bar
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
 - [ ] responsive home tabs
@@ -26,6 +27,7 @@
 
 
 - [ ] use jagger?
+- [ ] replace ai with heuristical analysis across the board?
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing

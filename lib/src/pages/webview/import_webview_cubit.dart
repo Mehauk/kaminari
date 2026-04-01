@@ -195,8 +195,20 @@ class WebviewCubit extends Cubit<WebviewState> {
   Future<void> handleImport() async {
     emit(state.copyWith(importStatus: .importing));
 
-    Object? origin;
+    String? origin;
     try {
+      final originResult = await controller.runJavaScriptReturningResult(
+        "(function() {return document.location.origin;})()",
+      );
+      
+      // runJavaScriptReturningResult returns a JSON-encoded string for string values,
+      // so we need to decode it to remove the quotes
+      origin = originResult is String
+          ? jsonDecode(originResult) as String
+          : originResult.toString();
+      
+      print("[WebviewCubit] Extracted origin: '$origin'");
+
       // 1. Extract Minified DOM via JS
       final dynamic rawTree = await controller.runJavaScriptReturningResult(
         minTreeExtFn,
@@ -207,12 +219,8 @@ class WebviewCubit extends Cubit<WebviewState> {
       final prompt = buildDiscoveryAIPrompt(miniTree);
       print(prompt);
 
-      origin = await controller.runJavaScriptReturningResult(
-        "document.location.origin",
-      );
-
       final fullResponse = await extractorBuilder.buildBookExtractorSelectors(
-        origin as String,
+        origin,
         prompt,
       );
 
@@ -234,7 +242,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       emit(state.copyWith(importStatus: .importedSuccessfully));
     } catch (e, stack) {
       print("Extraction Error: $e\n$stack");
-      if (origin is String) extractorBuilder.clearCacheForOrigin(origin);
+      if (origin != null) extractorBuilder.clearCacheForOrigin(origin);
       emit(state.copyWith(importStatus: .importFailure));
     }
   }
@@ -317,6 +325,12 @@ class WebviewCubit extends Cubit<WebviewState> {
       // navigate to first chapter
       // do chapter extraction prompt once
       // extract the first 3 chapters
+      print("resultString");
+      debugPrint(response.toString());
+      
+      final String extractedSource = response['source'] as String? ?? '';
+      print("[WebviewCubit] Extracted source from response: '$extractedSource'");
+      
       final List chapters = response['chapters'] ?? [];
       if (chapters.isNotEmpty) {
         final firstChapterUrl = chapters[0]['url'];
@@ -334,10 +348,14 @@ class WebviewCubit extends Cubit<WebviewState> {
 
           // 3. Get selector from LLM
           final chapterPrompt = buildChapterExtractionAIPrompt(chapterTree);
-          print(chapterPrompt);
+          print("chapterpor");
+          debugPrint(chapterPrompt);
 
           final chapterLlmResponse = await extractorBuilder
-              .buildBookExtractorSelectors(reMap['source'], chapterPrompt);
+              .buildChapterExtractorSelectors(
+                extractedSource,
+                chapterPrompt,
+              );
 
           print('chapterLlmResponse');
           print(chapterLlmResponse);
@@ -355,7 +373,10 @@ class WebviewCubit extends Cubit<WebviewState> {
               .toList();
           final contentJs = generateContentExtractionJSPrompt(
             jsonEncode(urlsToExtract),
-            jsonEncode(chapterExtractor.contentSection),
+            jsonEncode(
+              chapterExtractor
+                  .contentSections,
+            ),
           );
 
           _extractionCompleter = Completer<String>();
@@ -380,6 +401,19 @@ class WebviewCubit extends Cubit<WebviewState> {
             await (response['synopsis'] as String).jlptEstimate;
       }
 
+      response['firstChapterCharCount'] = 0;
+      if (chapters.isNotEmpty) {
+        final firstChapter = Map<String, dynamic>.from(chapters[0]);
+        if (firstChapter['content'] != null) {
+          final contentSections = List<String>.from(firstChapter['content']);
+          response['firstChapterCharCount'] = contentSections.join().length;
+        }
+      }
+
+      debugPrint(chapters.first.toString());
+
+      response['chapters'] = chapters;
+
       final book = BookDetails.fromJson(response);
 
       return book;
@@ -388,5 +422,10 @@ class WebviewCubit extends Cubit<WebviewState> {
     } finally {
       _extractionCompleter = null;
     }
+  }
+
+  /// Get all cached extractors for debug purposes
+  Map<String, Map<String, String>> getCachedExtractors() {
+    return extractorBuilder.getCachedExtractors();
   }
 }

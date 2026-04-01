@@ -21,7 +21,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async {
@@ -39,6 +39,11 @@ class DatabaseService {
     if (oldVersion < 6) {
       await db.execute(
         'ALTER TABLE BookDetails ADD COLUMN isFavorite INTEGER DEFAULT 0',
+      );
+    }
+    if (oldVersion < 8) {
+      await db.execute(
+        'ALTER TABLE BookDetails ADD COLUMN firstChapterCharCount INTEGER DEFAULT 0',
       );
     }
   }
@@ -59,6 +64,7 @@ class DatabaseService {
         accessedDate INTEGER,
         bookType TEXT NOT NULL,
         currentChapterIndex INTEGER DEFAULT 0,
+        firstChapterCharCount INTEGER DEFAULT 0,
         isFavorite INTEGER DEFAULT 0,
         UNIQUE(title, source, author, bookType)
       )
@@ -296,6 +302,7 @@ class DatabaseService {
             'coverUrl': book.coverUrl,
             'jlptLevel': book.jlptLevel,
             'updatedDate': book.updatedDate,
+            'firstChapterCharCount': book.firstChapterCharCount,
           },
           where: 'id = ?',
           whereArgs: [bookId],
@@ -310,6 +317,7 @@ class DatabaseService {
           'coverUrl': book.coverUrl,
           'jlptLevel': book.jlptLevel,
           'bookType': book.bookType.name,
+          'firstChapterCharCount': book.firstChapterCharCount,
           'isFavorite': book.isFavorite ? 1 : 0,
         });
       }

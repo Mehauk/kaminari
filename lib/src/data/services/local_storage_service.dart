@@ -38,4 +38,9 @@ class LocalStorageService {
   Future<bool> clearAll() async {
     return await _preferences!.clear();
   }
+
+  // Get all keys
+  Set<String> getAllKeys() {
+    return _preferences?.getKeys() ?? {};
+  }
 }
