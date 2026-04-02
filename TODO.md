@@ -18,16 +18,18 @@
 - [x] importing indicators update
 - [x] heuristics to check japanese level
 - [x] character count of first page * pages
-- [ ] BUG: bottom nav covered by native nav bar
+- [x] change dictionary close action to bottom of display
+- [x] BUG: bottom nav covered by native nav bar
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
 - [ ] responsive home tabs
 - [ ] use most common/first meaning of word
-- [ ] change dictionary close action to bttom of display
+- [ ] fix JLPT estimator
 
 
 - [ ] use jagger?
 - [ ] replace ai with heuristical analysis across the board?
+- [ ] icons update
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing

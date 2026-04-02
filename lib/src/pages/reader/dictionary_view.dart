@@ -39,7 +39,7 @@ class _DictionaryContent extends StatelessWidget {
 
     return Container(
       key: ValueKey(entry!.letters.join()), // Forces animation on word change
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(color: KaminariTheme.surfaceTint.withAlpha(40)),
@@ -81,16 +81,17 @@ class _DictionaryContent extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: clearSelection,
-                icon: const Icon(Icons.close, size: 20),
-              ),
             ],
           ),
           if (entry!.kanjis.isNotEmpty) ...[
             const SizedBox(height: 16),
             _KanjiRow(kanjis: entry!.kanjis, wordReadings: entry!.sounds),
           ],
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: clearSelection,
+            child: Center(child: CustomText("\u25B2", .bodyLarge)),
+          ),
         ],
       ),
     );
