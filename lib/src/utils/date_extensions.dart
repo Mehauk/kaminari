@@ -31,11 +31,27 @@ extension ToTimeString on int? {
     }
 
     // Switch to absolute date for anything older than yesterday
-    if (difference.inDays < 7) {
+    if (difference.inDays < 30) {
       return '${difference.inDays} days ago';
     }
 
     // Return absolute standard date (YYYY-MM-DD)
-    return '${eventTime.year}-${eventTime.month.toString().padLeft(2, '0')}-${eventTime.day.toString().padLeft(2, '0')}';
+    return '${eventTime.month.toString().padLeft(2, '0')} ${eventTime.day.toString().padLeft(2, '0')} ${eventTime.year}';
+  }
+
+  String get toDateStringPrefRelativeShort {
+    String res = toDateStringPrefRelative;
+
+    final DateTime eventTime = DateTime.fromMillisecondsSinceEpoch(this!);
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(eventTime);
+
+    final parts = res.split(" ");
+
+    if (difference.inDays > 30) {
+      return parts.take(2).join(" ");
+    }
+
+    return "${parts.first}${parts[1][0]} ${parts[2]}";
   }
 }

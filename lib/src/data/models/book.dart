@@ -7,9 +7,9 @@ part 'book.g.dart';
 
 enum BookType {
   all("All"),
-  webNovel("Web Novels"),
-  lightNovel("Light Novels"),
-  shortStory("Short Stories");
+  webNovel("Web Novel"),
+  lightNovel("Light Novel"),
+  shortStory("Short Story");
 
   final String text;
   const BookType(this.text);
