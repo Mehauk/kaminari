@@ -11,6 +11,7 @@ abstract class BookDetailsState with _$BookDetailsState {
     @Default(false) bool synopsisExpanded,
     @Default(0) int currentChapter,
     @Default(false) bool isFavorite,
+    int? lastAccessed,
   }) = _BookDetailsState;
 }
 
@@ -22,6 +23,7 @@ class BookDetailsCubit extends Cubit<BookDetailsState> {
         BookDetailsState(
           currentChapter: book.currentChapter,
           isFavorite: book.isFavorite,
+          lastAccessed: book.accessedDate,
         ),
       );
 
@@ -31,8 +33,15 @@ class BookDetailsCubit extends Cubit<BookDetailsState> {
 
   Future<void> refreshProgress() async {
     if (book.id == null) return;
-    final latestChapter = await dbService.getBookCurrentChapter(book.id!);
-    emit(state.copyWith(currentChapter: latestChapter));
+    final latestBook = await dbService.getBook(book.id!);
+    if (latestBook == null) return;
+    book = latestBook;
+    emit(
+      state.copyWith(
+        currentChapter: latestBook.currentChapter,
+        lastAccessed: latestBook.accessedDate,
+      ),
+    );
   }
 
   Future<void> toggleFavorite() async {

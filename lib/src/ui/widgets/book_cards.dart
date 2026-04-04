@@ -124,11 +124,9 @@ class LastReadBookCard extends StatelessWidget {
                       FilledButton(
                         onPressed: () async {
                           final db = context.read<DatabaseService>();
-                          final currentChapter = await db.getBookCurrentChapter(
-                            book.id!,
-                          );
+                          final rebook = await db.getBook(book.id!);
                           final fullChapter = await db.getChapterWithContent(
-                            book.chapters[currentChapter].id!,
+                            rebook!.chapters[rebook.currentChapter].id!,
                           );
                           if (context.mounted) {
                             Navigator.of(context).push(

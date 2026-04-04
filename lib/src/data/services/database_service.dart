@@ -254,18 +254,36 @@ class DatabaseService {
     );
   }
 
-  Future<int> getBookCurrentChapter(int bookId) async {
+  Future<BookDetails?> getBook(int bookId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'BookDetails',
-      columns: ['currentChapterIndex'],
-      where: 'id = ?',
-      whereArgs: [bookId],
+    final rows = await db.rawQuery(
+      '''
+      SELECT b.*, b.currentChapterIndex AS currentChapter, c.id AS ch_id, c.url AS ch_url, c.title AS ch_title,
+             c.chapterNumber AS ch_number, c.scrollPosition
+      FROM BookDetails b
+      LEFT JOIN ChapterInfo c ON b.id = c.book_id
+      WHERE b.id = ?
+      ORDER BY c.chapterNumber ASC
+      ''',
+      [bookId],
     );
-    if (maps.isNotEmpty) {
-      return maps.first['currentChapterIndex'] as int;
-    }
-    return 0;
+
+    if (rows.isEmpty) return null;
+
+    final bookMap = Map<String, dynamic>.from(rows.first);
+    bookMap['isFavorite'] = (bookMap['isFavorite'] as int?) == 1;
+    bookMap['chapters'] = rows
+        .where((row) => row['ch_id'] != null)
+        .map((row) => {
+              'id': row['ch_id'] as int,
+              'url': row['ch_url'] as String,
+              'number': row['ch_number'] as int,
+              'title': row['ch_title'] as String,
+              'scrollPosition': row['scrollPosition'] as double?,
+            })
+        .toList();
+
+    return BookDetails.fromJson(bookMap);
   }
 
   Future<void> updateChapterScrollPosition(
