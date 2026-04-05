@@ -83,9 +83,21 @@ class LastReadBookCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: .start,
                 children: [
-                  CustomText(
-                    book.chapters[book.currentChapter].title,
-                    .bodyLarge,
+                  Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.book_fill,
+                        size: 16,
+                        color: KaminariTheme.textSecondary,
+                      ),
+                      SizedBox(width: 4),
+                      Expanded(
+                        child: CustomText(
+                          book.chapters[book.currentChapter].title,
+                          .bodyLarge,
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 20),
                   Row(
@@ -336,11 +348,23 @@ class DiscoverableBookCard extends StatelessWidget {
                     fontWeight: .w300,
                   ),
                   SizedBox(height: 4),
-                  CustomText(
-                    book.author,
-                    .titleMedium,
-                    fontSize: 12,
-                    fontWeight: .w300,
+                  Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.person_fill,
+                        size: 12,
+                        color: KaminariTheme.textSecondary,
+                      ),
+                      SizedBox(width: 4),
+                      Expanded(
+                        child: CustomText(
+                          book.author,
+                          .titleMedium,
+                          fontSize: 12,
+                          fontWeight: .w300,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
