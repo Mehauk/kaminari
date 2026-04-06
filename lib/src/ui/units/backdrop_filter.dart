@@ -2,19 +2,21 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:kaminari/src/config/theme.dart';
-import 'package:kaminari/src/widgets/inner_shadow.dart';
+import 'package:kaminari/src/ui/units/inner_shadow.dart';
 
 class BgFilter extends StatelessWidget {
   const BgFilter({
     super.key,
     this.child,
     this.innerShadow,
+    this.bgColor,
     this.borderRadius = BorderRadius.zero,
   });
 
   final Widget? child;
   final List<BoxShadow>? innerShadow;
   final BorderRadius borderRadius;
+  final Color? bgColor;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +25,7 @@ class BgFilter extends StatelessWidget {
       child: InnerShadow(
         shadows: innerShadow,
         borderRadius: borderRadius,
-        child: ColoredBox(color: KaminariTheme.card, child: child),
+        child: ColoredBox(color: bgColor ?? KaminariTheme.card, child: child),
       ),
     );
   }

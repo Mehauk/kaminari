@@ -35,7 +35,7 @@ flutter:
     
     - family: Noto Sans JP
       fonts:
-        - asset: assets/NotoSansJP-VariableFont_wght.ttf
+        - asset: assets/fonts/NotoSansJP-VariableFont_wght.ttf
         
     - family: JetBrains Mono
       fonts:
