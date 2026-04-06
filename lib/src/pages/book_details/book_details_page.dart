@@ -433,7 +433,8 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 12),
         _StatTile(
           icon: Icons.timer_outlined,
-          value: cubit.state.lastAccessed.toDateStringPrefRelativeShort,
+          value:
+              cubit.state.lastAccessed?.toDateStringPrefRelativeShort ?? "N/A",
           label: 'Last Read',
         ),
         const SizedBox(width: 12),
