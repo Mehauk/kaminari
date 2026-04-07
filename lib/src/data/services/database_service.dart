@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -8,10 +10,16 @@ class DatabaseService {
   DatabaseService._internal();
 
   Database? _db;
+  final StreamController<void> _booksChangeController =
+      StreamController<void>.broadcast();
+
+  /// Stream that emits whenever books / book-related data changes.
+  Stream<void> get onBooksChanged => _booksChangeController.stream;
 
   Future<Database> get database async {
     if (_db != null) return _db!;
     _db = await _initDb();
+    _notifyChange();
     return _db!;
   }
 
@@ -28,6 +36,12 @@ class DatabaseService {
         await db.execute('PRAGMA foreign_keys = ON');
       },
     );
+  }
+
+  void _notifyChange() {
+    try {
+      if (!_booksChangeController.isClosed) _booksChangeController.add(null);
+    } catch (_) {}
   }
 
   /// Handles migrations between versions
@@ -242,6 +256,7 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [bookId],
     );
+    _notifyChange();
   }
 
   Future<void> updateBookFavorite(int bookId, bool isFavorite) async {
@@ -252,6 +267,7 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [bookId],
     );
+    _notifyChange();
   }
 
   Future<BookDetails?> getBook(int bookId) async {
@@ -274,13 +290,15 @@ class DatabaseService {
     bookMap['isFavorite'] = (bookMap['isFavorite'] as int?) == 1;
     bookMap['chapters'] = rows
         .where((row) => row['ch_id'] != null)
-        .map((row) => {
-              'id': row['ch_id'] as int,
-              'url': row['ch_url'] as String,
-              'number': row['ch_number'] as int,
-              'title': row['ch_title'] as String,
-              'scrollPosition': row['scrollPosition'] as double?,
-            })
+        .map(
+          (row) => {
+            'id': row['ch_id'] as int,
+            'url': row['ch_url'] as String,
+            'number': row['ch_number'] as int,
+            'title': row['ch_title'] as String,
+            'scrollPosition': row['scrollPosition'] as double?,
+          },
+        )
         .toList();
 
     return BookDetails.fromJson(bookMap);
@@ -383,11 +401,12 @@ class DatabaseService {
         }
       }
     });
+    _notifyChange();
   }
 
   Future<int> saveChapterContent(int chapterId, List<String> content) async {
     final db = await database;
-    return await db.transaction((txn) async {
+    final result = await db.transaction((txn) async {
       await txn.delete(
         'ChapterSection',
         where: 'chapter_id = ?',
@@ -401,6 +420,8 @@ class DatabaseService {
       }
       return content.length;
     });
+    _notifyChange();
+    return result;
   }
 
   Future<List<ChapterInfo>> getNextChaptersWithoutContent(
@@ -427,6 +448,12 @@ class DatabaseService {
 
   Future<int> deleteBook(int bookId) async {
     final db = await database;
-    return await db.delete('BookDetails', where: 'id = ?', whereArgs: [bookId]);
+    final count = await db.delete(
+      'BookDetails',
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+    _notifyChange();
+    return count;
   }
 }

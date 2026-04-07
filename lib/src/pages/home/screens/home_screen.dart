@@ -33,17 +33,22 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 32),
-                FutureBuilder<BookDetails?>(
-                  future: context.read<DatabaseService>().getLastAccessedBook(),
-                  builder: (context, snapshot) {
-                    final book = snapshot.data;
-                    if (book != null) {
-                      return LastReadBookCard(book);
-                    } else {
-                      return _PlaceholderBookCard(
-                        isLoading: snapshot.connectionState == .waiting,
-                      );
-                    }
+                StreamBuilder<void>(
+                  stream: context.read<DatabaseService>().onBooksChanged,
+                  builder: (context, _) {
+                    return FutureBuilder<BookDetails?>(
+                      future: context.read<DatabaseService>().getLastAccessedBook(),
+                      builder: (context, snapshot) {
+                        final book = snapshot.data;
+                        if (book != null) {
+                          return LastReadBookCard(book);
+                        } else {
+                          return _PlaceholderBookCard(
+                            isLoading: snapshot.connectionState == .waiting,
+                          );
+                        }
+                      },
+                    );
                   },
                 ),
                 SizedBox(height: 32),

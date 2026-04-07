@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/models/book.dart';
@@ -18,9 +20,11 @@ abstract class HistoryState with _$HistoryState {
 
 class HistoryCubit extends Cubit<HistoryState> {
   final DatabaseService dbService;
+  late final StreamSubscription<void> _sub;
 
   HistoryCubit({required this.dbService}) : super(const HistoryState()) {
     loadHistory();
+    _sub = dbService.onBooksChanged.listen((_) => loadHistory());
   }
 
   Future<void> loadHistory() async {
@@ -41,5 +45,11 @@ class HistoryCubit extends Cubit<HistoryState> {
 
   void setFilter(HistoryFilter filter) {
     emit(state.copyWith(filter: filter));
+  }
+
+  @override
+  Future<void> close() {
+    _sub.cancel();
+    return super.close();
   }
 }
