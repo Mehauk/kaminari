@@ -4,19 +4,23 @@ import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 
 class LightningBookCard extends StatelessWidget {
-  const LightningBookCard({super.key});
+  const LightningBookCard({super.key, this.reading = false});
+
+  final bool reading;
 
   @override
   Widget build(BuildContext context) {
     return LightningCard(
       type: .glowing,
-      innerShadow: [
-        BoxShadow(
-          color: KaminariTheme.surfaceTint.withAlpha(30),
-          blurRadius: 10,
-          offset: const Offset(1, 1),
-        ),
-      ],
+      innerShadow: reading
+          ? [
+              BoxShadow(
+                color: KaminariTheme.surfaceTint.withAlpha(30),
+                blurRadius: 10,
+                offset: const Offset(1, 1),
+              ),
+            ]
+          : null,
       child: Column(
         children: [
           Stack(
@@ -66,27 +70,29 @@ class LightningBookCard extends StatelessWidget {
                       child: Column(
                         mainAxisSize: .min,
                         children: [
-                          Row(
-                            mainAxisAlignment: .spaceBetween,
-                            crossAxisAlignment: .start,
-                            children: [
-                              Expanded(
-                                child: CustomText(
-                                  "READING PROGRESS",
-                                  .labelSmall,
+                          if (reading) ...[
+                            Row(
+                              mainAxisAlignment: .spaceBetween,
+                              crossAxisAlignment: .start,
+                              children: [
+                                Expanded(
+                                  child: CustomText(
+                                    "READING PROGRESS",
+                                    .labelSmall,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 8),
+                                SizedBox(width: 8),
 
-                              CustomText(
-                                "68%",
-                                .labelSmall,
-                                colorOverride: KaminariTheme.textTitle,
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                          LinearProgressIndicator(value: 0.68),
+                                CustomText(
+                                  "68%",
+                                  .labelSmall,
+                                  colorOverride: KaminariTheme.textTitle,
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            LinearProgressIndicator(value: 0.68),
+                          ],
                         ],
                       ),
                     ),

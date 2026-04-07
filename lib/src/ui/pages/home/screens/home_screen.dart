@@ -3,6 +3,7 @@ import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
+import 'package:kaminari/src/ui/widgets/book_card.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
 
@@ -28,7 +29,7 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 32),
-                _BookCard(),
+                LightningBookCard(reading: true),
                 SizedBox(height: 32),
                 Row(
                   children: [
@@ -88,7 +89,7 @@ class HomeScreen extends StatelessWidget {
                             mainAxisAlignment: .spaceBetween,
                             crossAxisAlignment: .start,
                             children: [
-                              CustomText("電", .bodyLarge, fontSizeOverride: 42),
+                              CustomText("電", .bodyLarge, fontSize: 42),
                               CustomText(
                                 "デン (Den)",
                                 .bodyLarge,
@@ -166,109 +167,6 @@ class _MasteryCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _BookCard extends StatelessWidget {
-  const _BookCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return LightningCard(
-      type: .glowing,
-      innerShadow: [
-        BoxShadow(
-          color: KaminariTheme.surfaceTint.withAlpha(30),
-          blurRadius: 10,
-          offset: const Offset(1, 1),
-        ),
-      ],
-      child: Column(
-        children: [
-          Stack(
-            alignment: AlignmentGeometry.bottomStart,
-            children: [
-              Image.network(
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuAsmvERQIxb69zOnC3qKBAhy-utzthLY4MKFP6Cna6vzDRyZBZRGPp2J6WEUCiRmVJL-f3q2U3jq1A94N7GbNG3lKuNOP9CoN5kzB2SMJh-62WJUjTsxlLAUiFfA4Oc-9CXr8VrJJ_7iBjGaP2xwIK-h5_sXYSqlGgJJz-vDvP_qe_Db6Kcw4Be4OxX-g07-ucZwCrxxAsUIzSZPGD5_LpXQjO7HHu3StMKAjIa_bubKQA88L9z9RYqn8yjJO7xGXByqLQbGV4DKjVI",
-                alignment: Alignment(0, -0.2),
-                fit: BoxFit.cover,
-                width: double.maxFinite,
-                height: 192,
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: AlignmentGeometry.bottomCenter,
-                    end: AlignmentGeometry.topCenter,
-                    colors: [
-                      KaminariTheme.background,
-                      KaminariTheme.background.withAlpha(128),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                child: SizedBox(height: 192, width: double.maxFinite),
-              ),
-              Positioned(left: 20, top: 12, child: Chip(label: Text("NOVEL"))),
-              Padding(
-                padding: const .symmetric(horizontal: 24, vertical: 4),
-                child: CustomText("Overlord: Volume 14", .headlineMedium),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const .fromLTRB(24, 4, 24, 24),
-            child: Column(
-              crossAxisAlignment: .start,
-              children: [
-                CustomText(
-                  "Chapter 3: The Witch of the Falling Kingdom",
-                  .bodyLarge,
-                ),
-                SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: .min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: .spaceBetween,
-                            crossAxisAlignment: .start,
-                            children: [
-                              Expanded(
-                                child: CustomText(
-                                  "READING PROGRESS",
-                                  .labelSmall,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-
-                              CustomText(
-                                "68%",
-                                .labelSmall,
-                                colorOverride: KaminariTheme.textTitle,
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                          LinearProgressIndicator(value: 0.68),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    FilledButton(
-                      onPressed: () => print(2),
-                      child: Text("Continue"),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
