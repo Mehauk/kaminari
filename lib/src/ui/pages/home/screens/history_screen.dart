@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/bloc/home/screens/history_cubit.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
-import 'package:kaminari/src/ui/widgets/book_card.dart';
+import 'package:kaminari/src/ui/widgets/book_cards.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -42,8 +42,8 @@ class HistoryScreen extends StatelessWidget {
                       Column(
                         spacing: 16,
                         children: const [
-                          LightningBookCard(reading: true),
-                          LightningBookCard(reading: true),
+                          LastReadBookCard(),
+                          LastReadBookCard(),
                         ],
                       ),
                       const SizedBox(height: 56),

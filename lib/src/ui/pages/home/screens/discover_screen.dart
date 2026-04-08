@@ -4,7 +4,8 @@ import 'package:kaminari/src/bloc/home/screens/discover_cubit.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
-import 'package:kaminari/src/ui/widgets/book_card.dart';
+import 'package:kaminari/src/ui/widgets/book_cards.dart';
+import 'package:kaminari/src/ui/widgets/grid.dart';
 
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
@@ -56,9 +57,21 @@ class DiscoverScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Column(
-                        spacing: 16,
-                        children: [LightningBookCard(), LightningBookCard()],
+                      Grid(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          DiscoverableBookCard(),
+                          DiscoverableBookCard(),
+                          LastReadBookCard(),
+                          DiscoverableBookCard(),
+                          DiscoverableBookCard(),
+                          DiscoverableBookCard(),
+                          DiscoverableBookCard(),
+                          DiscoverableBookCard(),
+                          DiscoverableBookCard(),
+                          DiscoverableBookCard(),
+                        ],
                       ),
                       const SizedBox(height: 56),
                     ],
@@ -110,7 +123,7 @@ class _FilterChip extends StatelessWidget {
             child: CustomText(
               filter.text,
               .labelSmall,
-              colorOverride: selected ? KaminariTheme.textTitle : null,
+              color: selected ? KaminariTheme.textTitle : null,
             ),
           ),
         ),

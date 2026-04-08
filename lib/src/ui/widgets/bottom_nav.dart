@@ -98,7 +98,7 @@ class LightningBottomNavItem extends StatelessWidget {
                       tab.name.capitalize,
                       .labelMedium,
                       fontSize: 14,
-                      colorOverride: active ? KaminariTheme.textTitle : null,
+                      color: active ? KaminariTheme.textTitle : null,
                     ),
                   ),
                 ],

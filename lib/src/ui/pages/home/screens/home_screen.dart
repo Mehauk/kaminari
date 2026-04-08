@@ -3,7 +3,7 @@ import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
-import 'package:kaminari/src/ui/widgets/book_card.dart';
+import 'package:kaminari/src/ui/widgets/book_cards.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
 
@@ -29,7 +29,7 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 32),
-                LightningBookCard(reading: true),
+                LastReadBookCard(),
                 SizedBox(height: 32),
                 Row(
                   children: [
@@ -80,7 +80,7 @@ class HomeScreen extends StatelessWidget {
                               CustomText(
                                 "KANJI OF THE DAY",
                                 .labelSmall,
-                                colorOverride: KaminariTheme.textTitle,
+                                color: KaminariTheme.textTitle,
                               ),
                               CustomText("ONYOMI", .labelSmall),
                             ],
@@ -93,7 +93,7 @@ class HomeScreen extends StatelessWidget {
                               CustomText(
                                 "デン (Den)",
                                 .bodyLarge,
-                                colorOverride: KaminariTheme.textTitle,
+                                color: KaminariTheme.textTitle,
                               ),
                             ],
                           ),
