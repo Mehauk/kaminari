@@ -75,13 +75,13 @@ extension JLPTEstimator on String {
 
     final avg = totalScore / sentences.length;
 
-    if (avg >= 4.2) {
+    if (avg >= 3) {
       return 'N1';
-    } else if (avg >= 3.4) {
+    } else if (avg >= 2.0) {
       return 'N2';
-    } else if (avg >= 2.6) {
+    } else if (avg >= 1.0) {
       return 'N3';
-    } else if (avg >= 1.8) {
+    } else if (avg >= 0.5) {
       return 'N4';
     } else {
       return 'N5';
@@ -90,17 +90,6 @@ extension JLPTEstimator on String {
 
   Future<double> _scoreSentence(String sentence) async {
     double score = 0;
-
-    // 1. Sentence length
-    final len = sentence.length;
-
-    if (len > 60) {
-      score += 1.2;
-    } else if (len > 35) {
-      score += 0.7;
-    } else if (len > 20) {
-      score += 0.3;
-    }
 
     // 2. Kanji density
     final chars = sentence.split('');
