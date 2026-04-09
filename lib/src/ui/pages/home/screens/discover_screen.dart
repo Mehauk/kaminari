@@ -51,27 +51,28 @@ class DiscoverScreen extends StatelessWidget {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           spacing: 8,
-                          children: FilterType.values
+                          children: BookType.values
                               .map((v) => _FilterChip(v, selected))
                               .toList(),
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Grid(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          DiscoverableBookCard(),
-                          DiscoverableBookCard(),
-                          LastReadBookCard(),
-                          DiscoverableBookCard(),
-                          DiscoverableBookCard(),
-                          DiscoverableBookCard(),
-                          DiscoverableBookCard(),
-                          DiscoverableBookCard(),
-                          DiscoverableBookCard(),
-                          DiscoverableBookCard(),
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Grid.fromColumns(
+                            columns: 2,
+                            totalWidth: constraints.maxWidth,
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              (1, DiscoverableBookCard()),
+                              (1, DiscoverableBookCard()),
+                              (2, DiscoverableBookCard()),
+                              (1, DiscoverableBookCard()),
+                              (1, DiscoverableBookCard()),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 56),
                     ],
@@ -89,8 +90,8 @@ class DiscoverScreen extends StatelessWidget {
 class _FilterChip extends StatelessWidget {
   const _FilterChip(this.filter, this.selectedFilter);
 
-  final FilterType filter;
-  final FilterType selectedFilter;
+  final BookType filter;
+  final BookType selectedFilter;
 
   @override
   Widget build(BuildContext context) {

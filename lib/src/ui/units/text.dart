@@ -13,7 +13,7 @@ enum TextType {
 
 extension on TextType {
   TextStyle? style(BuildContext context) => switch (this) {
-    TextType.labelSmall => TextTheme.of(context).labelLarge,
+    TextType.labelSmall => TextTheme.of(context).labelSmall,
     TextType.labelMedium => TextTheme.of(context).labelMedium,
     TextType.bodyMedium => TextTheme.of(context).bodyMedium,
     TextType.bodyLarge => TextTheme.of(context).bodyLarge,
