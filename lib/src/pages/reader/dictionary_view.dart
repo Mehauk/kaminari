@@ -177,6 +177,9 @@ class _KanjiCard extends StatelessWidget {
       orElse: () => '',
     );
 
+    print(matchedOn);
+    print(matchedKun);
+
     final String displayReading = matchedOn.isNotEmpty
         ? matchedOn
         : (matchedKun.isNotEmpty ? matchedKun : entry.onReading.first);
