@@ -22,7 +22,8 @@
 - [x] BUG: bottom nav covered by native nav bar
 - [x] responsive home tabs
 - [x] fix JLPT estimator
-- [ ] show scroll progress/bar
+- [x] show scroll progress/bar
+- [ ] add language (use meta tags?)
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
 - [ ] use most common/first meaning of word
@@ -32,7 +33,6 @@
 - [ ] fix readings matcher for dict view
 - [ ] handle offline mode
 
-- [ ] add language (use meta tags?)
 - [ ] use jagger?
 - [ ] replace ai with heuristical analysis across the board?
 - [ ] icons update

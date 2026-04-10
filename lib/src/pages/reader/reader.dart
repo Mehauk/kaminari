@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +41,8 @@ class _ReaderView extends StatefulWidget {
 
 class _ReaderViewState extends State<_ReaderView> {
   late ScrollController _scrollController;
+  bool _showScrollThumb = false;
+  Timer? _hideThumbTimer;
 
   @override
   void initState() {
@@ -46,6 +50,22 @@ class _ReaderViewState extends State<_ReaderView> {
     final readerCubit = context.read<ReaderCubit>();
     final initialOffset = readerCubit.chapter.scrollPosition ?? 0.0;
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
+
+    // Listen for scroll updates to show a slim progress thumb
+    _scrollController.addListener(() {
+      if (!_scrollController.hasClients) return;
+      if (!_showScrollThumb) {
+        setState(() {
+          _showScrollThumb = true;
+        });
+      }
+
+      // Hide the thumb shortly after scrolling stops
+      _hideThumbTimer?.cancel();
+      _hideThumbTimer = Timer(const Duration(milliseconds: 1200), () {
+        if (mounted) setState(() => _showScrollThumb = false);
+      });
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -86,6 +106,7 @@ class _ReaderViewState extends State<_ReaderView> {
 
   @override
   void dispose() {
+    _hideThumbTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -183,6 +204,88 @@ class _ReaderViewState extends State<_ReaderView> {
                       ),
                     );
                   },
+                ),
+
+                // SLIM READING PROGRESS SCROLLBAR
+                Positioned(
+                  top: 140,
+                  bottom: 50,
+                  right: 8,
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      opacity: _showScrollThumb ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: AnimatedBuilder(
+                        animation: _scrollController,
+                        builder: (context, child) {
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              final pos = _scrollController.hasClients
+                                  ? _scrollController.position
+                                  : null;
+                              final viewportHeight =
+                                  pos?.viewportDimension ??
+                                  constraints.maxHeight;
+                              final totalHeight =
+                                  (pos?.maxScrollExtent ?? 0) + viewportHeight;
+                              final thumbHeight = totalHeight > 0
+                                  ? (viewportHeight / totalHeight) *
+                                        constraints.maxHeight
+                                  : constraints.maxHeight * 0.12;
+                              final normalizedThumbHeight = thumbHeight.clamp(
+                                24.0,
+                                constraints.maxHeight * 0.18,
+                              );
+                              final maxTop =
+                                  constraints.maxHeight -
+                                  normalizedThumbHeight -
+                                  4.0;
+                              final thumbTop = (maxTop > 0 && pos != null)
+                                  ? (pos.pixels /
+                                            (pos.maxScrollExtent > 0
+                                                ? pos.maxScrollExtent
+                                                : 1)) *
+                                        maxTop
+                                  : 0.0;
+
+                              return Container(
+                                width: 4,
+                                decoration: BoxDecoration(
+                                  color: KaminariTheme.surfaceTint.withAlpha(
+                                    30,
+                                  ),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      top: thumbTop + 2,
+                                      left: 0,
+                                      right: 0,
+                                      child: Container(
+                                        height: normalizedThumbHeight,
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 1,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: KaminariTheme.gold.withAlpha(
+                                            220,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            3,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                 ),
 
                 // DOWNLOAD STATUS OVERLAY (Full Center)
