@@ -10,7 +10,7 @@ class BgFilter extends StatelessWidget {
     this.child,
     this.innerShadow,
     this.bgColor,
-    this.borderRadius = BorderRadius.zero,
+    this.borderRadius = .zero,
   });
 
   final Widget? child;

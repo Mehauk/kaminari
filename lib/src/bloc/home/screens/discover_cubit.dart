@@ -2,19 +2,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 enum BookType {
   all("All"),
-  lightNovels("Light Novels"),
-  shortStories("Short Stories");
+  webNovel("Web Novels"),
+  lightNovel("Light Novels"),
+  shortStory("Short Stories");
 
   final String text;
   const BookType(this.text);
 
-  String get initials {
-    return text.trim().splitMapJoin(
-      RegExp(r'(^|\s)(\S)'),
-      onMatch: (match) => match.group(2)!.toUpperCase(),
-      onNonMatch: (_) => '',
-    );
-  }
+  String get short => switch (this) {
+    BookType.all => text,
+    BookType.webNovel => "WEB",
+    BookType.lightNovel => "LN",
+    BookType.shortStory => "SS",
+  };
 }
 
 class DiscoverState {
