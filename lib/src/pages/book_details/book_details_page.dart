@@ -294,7 +294,8 @@ class _BookHeader extends StatelessWidget {
               color: const WidgetStatePropertyAll(KaminariTheme.surfaceVariant),
             ),
             const SizedBox(width: 8),
-            _JlptBadge(level: cubit.book.jlptLevel ?? 'N/A'),
+            if (cubit.book.jlptLevel != null)
+              _JlptBadge(level: cubit.book.jlptLevel!),
           ],
         ),
       ],
@@ -440,8 +441,8 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 12),
         _StatTile(
           icon: Icons.translate_rounded,
-          value: cubit.book.jlptLevel ?? 'N/A',
-          label: 'JLPT',
+          value: cubit.book.language.toUpperCase(),
+          label: 'Lang',
           valueColor: KaminariTheme.cyan,
         ),
       ],

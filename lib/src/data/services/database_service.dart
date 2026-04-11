@@ -29,7 +29,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async {
@@ -60,6 +60,11 @@ class DatabaseService {
         'ALTER TABLE BookDetails ADD COLUMN firstChapterCharCount INTEGER DEFAULT 0',
       );
     }
+    if (oldVersion < 9) {
+      await db.execute(
+        'ALTER TABLE BookDetails ADD COLUMN language TEXT NOT NULL DEFAULT "en"',
+      );
+    }
   }
 
   static Future<void> _createTables(Database db, int version) async {
@@ -74,6 +79,7 @@ class DatabaseService {
         synopsis TEXT NOT NULL,
         coverUrl TEXT,
         jlptLevel TEXT,
+        language TEXT NOT NULL DEFAULT 'en',
         updatedDate TEXT,
         accessedDate INTEGER,
         bookType TEXT NOT NULL,
@@ -337,6 +343,7 @@ class DatabaseService {
             'synopsis': book.synopsis,
             'coverUrl': book.coverUrl,
             'jlptLevel': book.jlptLevel,
+            'language': book.language,
             'updatedDate': book.updatedDate,
             'firstChapterCharCount': book.firstChapterCharCount,
           },
@@ -352,6 +359,7 @@ class DatabaseService {
           'synopsis': book.synopsis,
           'coverUrl': book.coverUrl,
           'jlptLevel': book.jlptLevel,
+          'language': book.language,
           'bookType': book.bookType.name,
           'firstChapterCharCount': book.firstChapterCharCount,
           'isFavorite': book.isFavorite ? 1 : 0,
