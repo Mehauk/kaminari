@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/bloc/book_details/book_details_cubit.dart';
 import 'package:kaminari/src/config/theme.dart';
-import 'package:kaminari/src/ui/units/backdrop_filter.dart';
-import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
+import 'package:kaminari/src/ui/widgets/icon.dart';
 
 class BookDetailsPage extends StatelessWidget {
   const BookDetailsPage({super.key, this.bookId});
@@ -75,18 +74,18 @@ class _CoverAppBar extends StatelessWidget {
       expandedHeight: 300,
       pinned: true,
       backgroundColor: KaminariTheme.background.withAlpha(225),
-      leading: _DetailsAppbarIconButton(
+      leading: LightningIconButton(
         icon: Icons.arrow_back_ios_new,
-        onpressed: () => Navigator.of(context).pop(),
+        onPressed: () => Navigator.of(context).pop(),
       ),
       actions: [
-        _DetailsAppbarIconButton(
+        LightningIconButton(
           icon: Icons.bookmark_border_rounded,
-          onpressed: () => print(1),
+          onPressed: () => print(1),
         ),
-        _DetailsAppbarIconButton(
+        LightningIconButton(
           icon: Icons.more_vert_rounded,
-          onpressed: () => print(2),
+          onPressed: () => print(2),
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -127,39 +126,6 @@ class _CoverAppBar extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DetailsAppbarIconButton extends StatelessWidget {
-  const _DetailsAppbarIconButton({required this.icon, required this.onpressed});
-
-  final IconData icon;
-  final void Function() onpressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: ClipRRect(
-        borderRadius: .circular(KaminariTheme.borderRadius),
-        child: BgFilter(
-          bgColor: KaminariTheme.colorScheme.primaryContainer.withAlpha(30),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: .circular(KaminariTheme.borderRadius),
-              border: LightningBorderEffectType.thin.border(),
-            ),
-            child: InkWell(
-              onTap: onpressed,
-              child: Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Icon(icon, size: 20),
-              ),
-            ),
-          ),
         ),
       ),
     );
