@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/bloc/book_details/book_details_cubit.dart';
 import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
@@ -32,21 +33,21 @@ class _BookDetailsView extends StatelessWidget {
           backgroundColor: KaminariTheme.background,
           body: CustomScrollView(
             slivers: [
-              _CoverAppBar(state: state),
+              const _CoverAppBar(),
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     const SizedBox(height: 20),
-                    _BookHeader(state: state),
+                    const _BookHeader(),
                     const SizedBox(height: 24),
-                    _ProgressSection(state: state),
+                    const _ProgressSection(),
                     const SizedBox(height: 24),
-                    _StatsRow(state: state),
+                    const _StatsRow(),
                     const SizedBox(height: 24),
-                    _SynopsisSection(state: state),
+                    const _SynopsisSection(),
                     const SizedBox(height: 24),
-                    _ChapterList(state: state),
+                    const _ChapterList(),
                     const SizedBox(height: 40),
                   ]),
                 ),
@@ -64,12 +65,11 @@ class _BookDetailsView extends StatelessWidget {
 // ──────────────────────────────────────────────────────
 
 class _CoverAppBar extends StatelessWidget {
-  const _CoverAppBar({required this.state});
-
-  final BookDetailsState state;
+  const _CoverAppBar();
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<BookDetailsCubit>().state;
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
@@ -94,7 +94,7 @@ class _CoverAppBar extends StatelessWidget {
           fit: .expand,
           children: [
             Image.network(
-              state.coverUrl,
+              state.book.coverUrl,
               fit: .cover,
               alignment: const Alignment(0, -0.2),
             ),
@@ -137,21 +137,20 @@ class _CoverAppBar extends StatelessWidget {
 // ──────────────────────────────────────────────────────
 
 class _BookHeader extends StatelessWidget {
-  const _BookHeader({required this.state});
-
-  final BookDetailsState state;
+  const _BookHeader();
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<BookDetailsCubit>().state;
     return Column(
       crossAxisAlignment: .start,
       children: [
         // Japanese title
-        CustomText(state.title, .titleMedium, fontSize: 22),
+        CustomText(state.book.title, .titleMedium, fontSize: 22),
         const SizedBox(height: 4),
         // Romanized title
         CustomText(
-          state.titleRomaji,
+          state.book.titleRomaji,
           .headlineMedium,
           color: KaminariTheme.textTitle,
         ),
@@ -166,23 +165,23 @@ class _BookHeader extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Expanded(
-              child: CustomText(state.author, .bodyMedium, fontSize: 14),
+              child: CustomText(state.book.author, .bodyMedium, fontSize: 14),
             ),
           ],
         ),
         const SizedBox(height: 14),
         // Genre + JLPT chips
         Row(
-          spacing: 8,
           children: [
             Chip(
-              label: Text(state.bookType),
-              labelStyle: TextStyle().copyWith(
+              label: Text(state.book.bookType),
+              labelStyle: const TextStyle().copyWith(
                 color: KaminariTheme.textSecondary,
               ),
-              color: WidgetStatePropertyAll(KaminariTheme.surfaceVariant),
+              color: const WidgetStatePropertyAll(KaminariTheme.surfaceVariant),
             ),
-            _JlptBadge(level: state.jlptLevel),
+            const SizedBox(width: 8),
+            _JlptBadge(level: state.book.jlptLevel),
           ],
         ),
       ],
@@ -221,32 +220,31 @@ class _JlptBadge extends StatelessWidget {
 // ──────────────────────────────────────────────────────
 
 class _ProgressSection extends StatelessWidget {
-  const _ProgressSection({required this.state});
-
-  final BookDetailsState state;
+  const _ProgressSection();
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<BookDetailsCubit>().state;
     return LightningCard(
       type: .glowing,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: .start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: .spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 CustomText('READING PROGRESS', .labelSmall),
                 CustomText(
-                  '${(state.progress * 100).toStringAsFixed(0)}%',
+                  '${(state.book.progress * 100).toStringAsFixed(0)}%',
                   .labelSmall,
                   color: KaminariTheme.textTitle,
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            LinearProgressIndicator(value: state.progress),
+            LinearProgressIndicator(value: state.book.progress),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -258,7 +256,7 @@ class _ProgressSection extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: CustomText(
-                    state.currentChapter,
+                    state.book.currentChapter,
                     .bodyMedium,
                     fontSize: 13,
                   ),
@@ -267,7 +265,7 @@ class _ProgressSection extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             CustomText(
-              'Page ${state.currentPage} of ${state.totalPages}',
+              'Page ${state.book.currentPage} of ${state.book.totalPages}',
               .labelSmall,
             ),
             const SizedBox(height: 16),
@@ -291,21 +289,20 @@ class _ProgressSection extends StatelessWidget {
 // ──────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.state});
-
-  final BookDetailsState state;
+  const _StatsRow();
 
   @override
   Widget build(BuildContext context) {
-    final hours = state.estimatedMinutes ~/ 60;
-    final mins = state.estimatedMinutes % 60;
+    final state = context.watch<BookDetailsCubit>().state;
+    final hours = state.book.estimatedMinutes ~/ 60;
+    final mins = state.book.estimatedMinutes % 60;
     final timeLabel = hours > 0 ? '${hours}h ${mins}m' : '${mins}m';
 
     return Row(
       children: [
         _StatTile(
           icon: Icons.text_fields_rounded,
-          value: '${(state.totalWordCount / 1000).toStringAsFixed(1)}k',
+          value: '${(state.book.totalWordCount / 1000).toStringAsFixed(1)}k',
           label: 'Words',
         ),
         const SizedBox(width: 12),
@@ -317,7 +314,7 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 12),
         _StatTile(
           icon: Icons.translate_rounded,
-          value: state.jlptLevel,
+          value: state.book.jlptLevel,
           label: 'JLPT',
           valueColor: KaminariTheme.cyan,
         ),
@@ -371,18 +368,17 @@ class _StatTile extends StatelessWidget {
 // ──────────────────────────────────────────────────────
 
 class _SynopsisSection extends StatelessWidget {
-  const _SynopsisSection({required this.state});
-
-  final BookDetailsState state;
+  const _SynopsisSection();
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<BookDetailsCubit>().state;
     return LightningCard(
       type: .striking,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: .start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -398,16 +394,22 @@ class _SynopsisSection extends StatelessWidget {
             const SizedBox(height: 12),
             AnimatedCrossFade(
               duration: const Duration(milliseconds: 250),
-              crossFadeState: state.synopsisExpanded ? .showSecond : .showFirst,
+              crossFadeState: state.synopsisExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
               firstChild: Text(
-                state.synopsis,
+                state.book.synopsis,
                 maxLines: 4,
-                overflow: .ellipsis,
-                style: TextTheme.of(context).bodyMedium?.copyWith(fontSize: 14),
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontSize: 14),
               ),
               secondChild: Text(
-                state.synopsis,
-                style: TextTheme.of(context).bodyMedium?.copyWith(fontSize: 14),
+                state.book.synopsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontSize: 14),
               ),
             ),
             const SizedBox(height: 10),
@@ -444,12 +446,11 @@ class _SynopsisSection extends StatelessWidget {
 // ──────────────────────────────────────────────────────
 
 class _ChapterList extends StatelessWidget {
-  const _ChapterList({required this.state});
-
-  final BookDetailsState state;
+  const _ChapterList();
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<BookDetailsCubit>().state;
     return Column(
       crossAxisAlignment: .start,
       children: [
@@ -463,7 +464,7 @@ class _ChapterList extends StatelessWidget {
             const SizedBox(width: 8),
             CustomText('Chapters', .headlineMedium, fontSize: 16),
             const Spacer(),
-            CustomText('${state.chapters.length} total', .labelSmall),
+            CustomText('${state.book.chapters.length} total', .labelSmall),
           ],
         ),
         const SizedBox(height: 12),
@@ -471,12 +472,13 @@ class _ChapterList extends StatelessWidget {
           type: .thin,
           child: Column(
             children: [
-              for (int i = 0; i < state.chapters.length; i++) ...[
+              for (int i = 0; i < state.book.chapters.length; i++) ...[
                 _ChapterTile(
-                  chapter: state.chapters[i],
-                  isCurrent: state.chapters[i].title == state.currentChapter,
+                  chapter: state.book.chapters[i],
+                  isCurrent:
+                      state.book.chapters[i].title == state.book.currentChapter,
                 ),
-                if (i < state.chapters.length - 1)
+                if (i < state.book.chapters.length - 1)
                   Divider(
                     height: 1,
                     color: KaminariTheme.surfaceTint.withAlpha(20),

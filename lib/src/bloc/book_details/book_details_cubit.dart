@@ -1,85 +1,38 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kaminari/src/data/models/book.dart';
 
-class ChapterInfo {
-  const ChapterInfo({
-    required this.number,
-    required this.title,
-    required this.isRead,
-    this.wordCount = 0,
-  });
-
-  final int number;
-  final String title;
-  final bool isRead;
-  final int wordCount;
-}
+// ──────────────────────────────────────────────────────
+// State — wraps the data model and adds pure-UI flags
+// ──────────────────────────────────────────────────────
 
 class BookDetailsState {
   const BookDetailsState({
-    required this.id,
-    required this.title,
-    required this.titleRomaji,
-    required this.author,
-    required this.coverUrl,
-    required this.bookType,
-    required this.jlptLevel,
-    required this.synopsis,
-    required this.totalPages,
-    required this.currentPage,
-    required this.currentChapter,
-    required this.chapters,
-    required this.totalWordCount,
-    required this.estimatedMinutes,
+    required this.book,
     this.synopsisExpanded = false,
   });
 
-  final String id;
-  final String title;
-  final String titleRomaji;
-  final String author;
-  final String coverUrl;
-  final String bookType;
-  final String jlptLevel;
-  final String synopsis;
-  final int totalPages;
-  final int currentPage;
-  final String currentChapter;
-  final List<ChapterInfo> chapters;
-  final int totalWordCount;
-  final int estimatedMinutes;
+  final BookDetails book;
   final bool synopsisExpanded;
-
-  double get progress => totalPages > 0 ? currentPage / totalPages : 0.0;
 
   BookDetailsState copyWith({bool? synopsisExpanded}) {
     return BookDetailsState(
-      id: id,
-      title: title,
-      titleRomaji: titleRomaji,
-      author: author,
-      coverUrl: coverUrl,
-      bookType: bookType,
-      jlptLevel: jlptLevel,
-      synopsis: synopsis,
-      totalPages: totalPages,
-      currentPage: currentPage,
-      currentChapter: currentChapter,
-      chapters: chapters,
-      totalWordCount: totalWordCount,
-      estimatedMinutes: estimatedMinutes,
+      book: book,
       synopsisExpanded: synopsisExpanded ?? this.synopsisExpanded,
     );
   }
 }
 
+// ──────────────────────────────────────────────────────
 // Mock data — swap out with real data source later
-final _mockBookDetails = BookDetailsState(
+// ──────────────────────────────────────────────────────
+
+final _mockBookDetails = BookDetails(
   id: 'overlord-14',
   title: 'オーバーロード XIV',
   titleRomaji: 'Overlord: Volume 14',
   author: '丸山くがね (Kugane Maruyama)',
   coverUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuA87VKJVB1SgRkQzTgDKHSssUaKKoTmKQYsyHDcyV22DophVDGIxAZ5WXYSVgv-5PvFhwFATrJvZ1LOF-Q2N1UXAQ1B2QHx45n-Zl_89Mb6IUCiZiziLlnzLAiPJFJE96AZuOVYVN9WEZFA77n438ux3REjvsk1Wl5rvbyVl1k0rFEWcbgH9TR6WpDqSSEQtC0BVUcl5egjG5mBmjejws15kHspmwLKzw1GGNVF_OMnQ5JwpWyPyhlL4i2HMBrsYbt1QcEposxoGmCV",
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuA87VKJVB1SgRkQzTgDKHSssUaKKoTmKQYsyHDcyV22DophVDGIxAZ5WXYSVgv-5PvFhwFATrJvZ1LOF-Q2N1UXAQ1B2QHx45n-Zl_89Mb6IUCiZiziLlnzLAiPJFJE96AZuOVYVN9WEZFA77n438ux3REjvsk1Wl5rvbyVl1k0rFEWcbgH9TR6WpDqSSEQtC0BVUcl5egjG5mBmjejws15kHspmwLKzw1GGNVF_OMnQ5JwpWyPyhlL4i2HMBrsYbt1QcEposxoGmCV',
   bookType: 'Light Novel',
   jlptLevel: 'N2',
   synopsis:
@@ -130,8 +83,13 @@ final _mockBookDetails = BookDetailsState(
   ],
 );
 
+// ──────────────────────────────────────────────────────
+// Cubit
+// ──────────────────────────────────────────────────────
+
 class BookDetailsCubit extends Cubit<BookDetailsState> {
-  BookDetailsCubit({String? bookId}) : super(_mockBookDetails);
+  BookDetailsCubit({String? bookId})
+      : super(BookDetailsState(book: _mockBookDetails));
 
   void toggleSynopsis() {
     emit(state.copyWith(synopsisExpanded: !state.synopsisExpanded));

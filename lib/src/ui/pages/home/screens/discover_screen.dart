@@ -26,8 +26,6 @@ class DiscoverScreen extends StatelessWidget {
       create: (_) => DiscoverCubit(),
       child: BlocBuilder<DiscoverCubit, DiscoverState>(
         builder: (context, state) {
-          final selected = context.read<DiscoverCubit>().state.filter;
-
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -62,7 +60,7 @@ class DiscoverScreen extends StatelessWidget {
                         child: Row(
                           spacing: 8,
                           children: BookType.values
-                              .map((v) => _FilterChip(v, selected))
+                              .map((v) => _FilterChip(v))
                               .toList(),
                         ),
                       ),
@@ -98,13 +96,15 @@ class DiscoverScreen extends StatelessWidget {
 }
 
 class _FilterChip extends StatelessWidget {
-  const _FilterChip(this.filter, this.selectedFilter);
+  const _FilterChip(this.filter);
 
   final BookType filter;
-  final BookType selectedFilter;
 
   @override
   Widget build(BuildContext context) {
+    final selectedFilter = context.select<DiscoverCubit, BookType>(
+      (c) => c.state.filter,
+    );
     final selected = filter == selectedFilter;
     return DecoratedBox(
       decoration: ShapeDecoration(

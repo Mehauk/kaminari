@@ -15,10 +15,9 @@ extension on HomeNavTab {
 }
 
 class LightningBottomNav extends StatelessWidget {
-  const LightningBottomNav(this.items, {super.key, required this.activeIndex});
+  const LightningBottomNav(this.items, {super.key});
 
   final List<LightningBottomNavItem> items;
-  final HomeNavTab activeIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +71,9 @@ class LightningBottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool active = context.read<HomeNavCubit>().state == tab;
+    final bool active = context.select<HomeNavCubit, bool>(
+      (c) => c.state == tab,
+    );
     return Expanded(
       child: InkWell(
         onTap: () => context.read<HomeNavCubit>().selectTab(tab),

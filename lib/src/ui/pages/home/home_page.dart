@@ -33,7 +33,6 @@ class HomePage extends StatelessWidget {
             body: body,
             bottomNavigationBar: LightningBottomNav(
               HomeNavTab.values.map((v) => LightningBottomNavItem(v)).toList(),
-              activeIndex: state,
             ),
           );
         },
