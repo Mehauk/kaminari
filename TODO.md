@@ -24,14 +24,14 @@
 - [x] fix JLPT estimator
 - [x] show scroll progress/bar
 - [x] add language (use meta tags?)
-- [ ] open import chapter webview on error (only for current)
-- [ ] Import builder loader update (with type selection)
+- [x] handle offline mode
+- [ ] fix readings matcher for dict view
 - [ ] use most common/first meaning of word
+- [ ] Import builder loader update (with type selection)
 - [ ] implement home screen functionality
 - [ ] Prereading kanji anki type shii
 - [ ] reading progress fix (+1 if accessedDate not null)
-- [ ] fix readings matcher for dict view
-- [ ] handle offline mode
+- [ ] open import chapter webview on error (only for current)
 
 - [ ] use jagger?
 - [ ] replace ai with heuristical analysis across the board?
@@ -40,3 +40,6 @@
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
 - [x] BUG: first three chapters not autmatic?
+
+- [ ] Settings page
+  - [ ] download over mobile network?

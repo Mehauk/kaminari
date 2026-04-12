@@ -5,6 +5,7 @@ import 'package:kaminari/src/data/repositories/extractor_cache.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:kaminari/src/data/services/local_storage_service.dart';
+import 'package:kaminari/src/data/services/network_service.dart';
 import 'package:kaminari/src/globals/background_webview_cubit.dart';
 import 'package:kaminari/src/pages/home/home_page.dart';
 import 'package:kaminari/src/pages/webview/import_webview_page.dart';
@@ -22,6 +23,7 @@ class KaminariApp extends StatelessWidget {
       providers: [
         RepositoryProvider.value(value: DatabaseService()),
         RepositoryProvider.value(value: ExtractorCache(LocalStorageService())),
+        RepositoryProvider.value(value: NetworkService()),
       ],
       child: BlocProvider<BackgroundWebviewCubit>(
         create: (context) => BackgroundWebviewCubit(
@@ -30,6 +32,7 @@ class KaminariApp extends StatelessWidget {
             LlmService(),
             context.read<ExtractorCache>(),
           ),
+          networkService: context.read<NetworkService>(),
         ),
         lazy: true,
         child: SafeArea(
