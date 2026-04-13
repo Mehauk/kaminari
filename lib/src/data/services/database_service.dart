@@ -62,7 +62,7 @@ class DatabaseService {
     }
     if (oldVersion < 9) {
       await db.execute(
-        'ALTER TABLE BookDetails ADD COLUMN language TEXT NOT NULL DEFAULT "en"',
+        'ALTER TABLE BookDetails ADD COLUMN language TEXT NOT NULL DEFAULT "ja"',
       );
     }
   }

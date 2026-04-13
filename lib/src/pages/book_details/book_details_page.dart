@@ -429,7 +429,7 @@ class _StatsRow extends StatelessWidget {
           icon: Icons.text_fields_rounded,
           value:
               '${(cubit.book.firstChapterCharCount * cubit.book.chapters.length / 1000).toStringAsFixed(1)}k',
-          label: 'Chars',
+          label: 'Characters',
         ),
         const SizedBox(width: 12),
         _StatTile(
@@ -442,7 +442,7 @@ class _StatsRow extends StatelessWidget {
         _StatTile(
           icon: Icons.translate_rounded,
           value: cubit.book.language.toUpperCase(),
-          label: 'Lang',
+          label: 'Language',
           valueColor: KaminariTheme.cyan,
         ),
       ],
@@ -480,9 +480,10 @@ class _StatTile extends StatelessWidget {
                 fontSize: 18,
                 color: valueColor ?? KaminariTheme.textTitle,
                 alignment: .center,
+                maxLines: 1,
               ),
               const SizedBox(height: 2),
-              CustomText(label, .labelSmall, fontSize: 11),
+              CustomText(label, .labelSmall, fontSize: 11, maxLines: 1),
             ],
           ),
         ),
