@@ -19,7 +19,6 @@
 - [x] heuristics to check japanese level
 - [x] character count of first page * pages
 - [x] change dictionary close action to bottom of display
-- [x] BUG: bottom nav covered by native nav bar
 - [x] responsive home tabs
 - [x] fix JLPT estimator
 - [x] show scroll progress/bar
@@ -29,17 +28,23 @@
 - [ ] use most common/first meaning of word
 - [ ] Import builder loader update (with type selection)
 - [ ] implement home screen functionality
-- [ ] Prereading kanji anki type shii
+- [ ] prereading kanji anki type shii
 - [ ] reading progress fix (+1 if accessedDate not null)
 - [ ] open import chapter webview on error (only for current)
-
-- [ ] use jagger?
-- [ ] replace ai with heuristical analysis across the board?
 - [ ] icons update
+- [ ] chiisai tsu
+
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
+- [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
 - [x] BUG: first three chapters not autmatic?
+  
+- [ ] use jagger?
+- [ ] replace ai with heuristical analysis across the board?
 
-- [ ] Settings page
+- [ ] discorver page additions
+  - [ ] finder (wrapper around a singular source search?)
+
+- [ ] settings page
   - [ ] download over mobile network?
