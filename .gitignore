@@ -50,3 +50,6 @@ app.*.map.json
 # Model files
 *.task
 *.gguf
+
+# env
+.env
