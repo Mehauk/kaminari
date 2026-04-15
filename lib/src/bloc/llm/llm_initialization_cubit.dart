@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 
-part 'llm_cubit.freezed.dart';
+part 'llm_initialization_cubit.freezed.dart';
 
 enum LlmStatus { initial, notInstalled, downloading, installed, error }
 
@@ -15,23 +15,33 @@ abstract class LlmState with _$LlmState {
   }) = _LlmState;
 }
 
-class LlmCubit extends Cubit<LlmState> {
+class LlmInitializationCubit extends Cubit<LlmState> {
   final LlmService llm;
 
-  LlmCubit(this.llm) : super(const LlmState()) {
+  LlmInitializationCubit(this.llm) : super(const LlmState()) {
     checkStatus();
   }
 
-  Future<void> checkStatus() async {
+  bool _emitReturningStatus(LlmState state) {
+    emit(state);
+    return state.status == .installed;
+  }
+
+  Future<bool> checkStatus() async {
     try {
       final downloaded = await llm.isDownloaded();
       if (downloaded) {
-        emit(state.copyWith(status: LlmStatus.installed, progress: 100));
+        await llm.download().install();
+        return _emitReturningStatus(
+          state.copyWith(status: LlmStatus.installed, progress: 100),
+        );
       } else {
-        emit(state.copyWith(status: LlmStatus.notInstalled));
+        return _emitReturningStatus(
+          state.copyWith(status: LlmStatus.notInstalled),
+        );
       }
     } catch (e) {
-      emit(
+      return _emitReturningStatus(
         state.copyWith(
           status: LlmStatus.error,
           errorMessage: "Failed to check model status: $e",

@@ -25,10 +25,11 @@ class LlmService {
 
   /// 4. Generate text (Streaming)
   Stream<String> streamResponse(String prompt) async* {
-    final model = await FlutterGemma.getActiveModel(maxTokens: maxTokens);
+    final model = await FlutterGemma.getActiveModel(
+      maxTokens: maxTokens,
+      preferredBackend: .gpu,
+    );
     final session = await model.createChat();
-    session.close();
-    model.close();
 
     // Add user message to session
     await session.addQueryChunk(Message.text(text: prompt, isUser: true));

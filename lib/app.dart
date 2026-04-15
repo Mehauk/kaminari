@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kaminari/src/bloc/llm/llm_cubit.dart';
+import 'package:kaminari/src/bloc/llm/llm_initialization_cubit.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:kaminari/src/ui/pages/book_details/book_details_page.dart';
 import 'package:kaminari/src/ui/pages/home/home_page.dart';
@@ -14,7 +14,7 @@ class KaminariApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => LlmCubit(LlmService()),
+      create: (context) => LlmInitializationCubit(LlmService()),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Kaminari Browser',

@@ -1,15 +1,18 @@
 String buildDiscoveryPrompt(String miniTree) {
   return """
-Analyze this minified DOM tree and identify the most likely CSS selectors for book metadata.
-Tree: $miniTree
+You are a web scraper assistant. Your job is to find CSS selectors in a consdensed DOM shorthand.
+Output ONLY valid JSON.
 
-Return ONLY a JSON object with these keys:
-"title": "selector for book title",
-"author": "selector for author name",
-"synopsis": "selector for summary/description",
-"chapter": "selector for the chapter/page links"
+### Examples:
+Input: "body[div.header, main#content[h1.title, p.desc], div.links[a.ch]]"
+Output: {"title": "h1.title", "author": "", "synopsis": "p.desc", "chapter": "a.ch"}
 
-JSON:
+Input: "div.container[section.top[h2.book-name, span.writer], div.info[div.summary], ul.list[li>a.link]]"
+Output: {"title": "h2.book-name", "author": "span.writer", "synopsis": "div.summary", "chapter": "a.link"}
+
+### Task:
+Input: $miniTree
+Output:
 """;
 }
 
