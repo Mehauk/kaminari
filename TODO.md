@@ -24,7 +24,8 @@
 - [x] show scroll progress/bar
 - [x] add language (use meta tags?)
 - [x] handle offline mode
-- [ ] fix readings matcher for dict view
+- [x] fix readings matcher for dict view
+- [x] chiisai tsu
 - [ ] use most common/first meaning of word
 - [ ] Import builder loader update (with type selection)
 - [ ] implement home screen functionality
@@ -32,7 +33,6 @@
 - [ ] reading progress fix (+1 if accessedDate not null)
 - [ ] open import chapter webview on error (only for current)
 - [ ] icons update
-- [ ] chiisai tsu
 
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [x] BUG: bottom nav covered by native nav bar
