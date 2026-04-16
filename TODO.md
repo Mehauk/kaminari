@@ -33,17 +33,17 @@
 - [ ] reading progress fix (+1 if accessedDate not null)
 - [ ] open import chapter webview on error (only for current)
 - [ ] icons update
+- [ ] move the first three chapter downloading to the background cubit
 
-- [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
-- [x] BUG: first three chapters not autmatic?
+- [x] BUG: first three chapters not autmatic?  
   
 - [ ] use jagger?
 - [ ] replace ai with heuristical analysis across the board?
 
-- [ ] discorver page additions
+- [ ] discover page additions
   - [ ] finder (wrapper around a singular source search?)
 
 - [ ] settings page
