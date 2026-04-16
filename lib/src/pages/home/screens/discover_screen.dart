@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kaminari/src/bloc/home/screens/discover_cubit.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/pages/home/screens/bloc/discover_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
 import 'package:kaminari/src/ui/widgets/book_cards.dart';

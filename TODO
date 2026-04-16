@@ -1,5 +1,5 @@
 - [ ] Create book-selectors model
 - [ ] Serialize both the book-selectors and the book-details models
 - [ ] Empty States (favorites, history, discover (filtered/unfiltered))
-- [ ] Test dowload model edge cases
 - [ ] cache selector scripts to reuse -> fallback to gemini on fail
+- [ ] confirmation step to set booktype and whatnot

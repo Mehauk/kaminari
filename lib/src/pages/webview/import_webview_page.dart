@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kaminari/src/bloc/llm/llm_initialization_cubit.dart';
-import 'package:kaminari/src/bloc/webview/webview_cubit.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
-import 'package:kaminari/src/ui/pages/webview/llm_download_overlay.dart';
+import 'package:kaminari/src/pages/webview/import_webview_cubit.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
@@ -31,6 +29,15 @@ class _ImportWebviewPage extends StatelessWidget {
     return BlocBuilder<WebviewCubit, WebviewState>(
       builder: (context, webviewState) {
         final webviewCubit = context.read<WebviewCubit>();
+        // Determine button state
+        final bool isFailed = webviewState.extractionFailed;
+        final bool isImporting = webviewState.isImporting;
+        final bool isDisabled = isFailed || isImporting;
+
+        String label = "IMPORT";
+        if (isFailed) label = "FAILED TO IMPORT";
+        if (isImporting) label = "IMPORTING...";
+
         return Scaffold(
           body: Stack(
             children: [
@@ -53,50 +60,21 @@ class _ImportWebviewPage extends StatelessWidget {
               ),
             ],
           ),
-          floatingActionButton: BlocBuilder<LlmInitializationCubit, LlmState>(
-            builder: (context, llmState) {
-              // Determine button state
-              final bool isFailed = webviewState.extractionFailed;
-              final bool isImporting = webviewState.isImporting;
-              final bool isDownloading =
-                  llmState.status == LlmStatus.downloading;
-              final bool isDisabled = isFailed || isImporting || isDownloading;
-
-              String label = "IMPORT";
-              if (isFailed) label = "FAILED TO IMPORT";
-              if (isImporting) label = "IMPORTING...";
-              if (isDownloading) {
-                label = "DOWNLOADING... ${llmState.progress}%";
-              }
-
-              return FloatingActionButton.extended(
-                onPressed: isDisabled
-                    ? null
-                    : () async {
-                        final llmCubit = context.read<LlmInitializationCubit>();
-                        if (await llmCubit.checkStatus()) {
-                          webviewCubit.handleImport();
-                        } else if (context.mounted) {
-                          showDialog(
-                            context: context,
-                            builder: (context) => LlmOverlay(),
-                          );
-                        }
-                      },
-                backgroundColor: isFailed ? KaminariTheme.error : null,
-                icon: (isImporting || isDownloading)
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          value: isDownloading ? llmState.progress / 100 : null,
-                        ),
-                      )
-                    : Icon(isFailed ? Icons.close : Icons.download_outlined),
-                label: Text(label),
-              );
-            },
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: isDisabled
+                ? null
+                : () async {
+                    webviewCubit.handleImport();
+                  },
+            backgroundColor: isFailed ? KaminariTheme.error : null,
+            icon: isImporting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  )
+                : Icon(isFailed ? Icons.close : Icons.download_outlined),
+            label: Text(label),
           ),
         );
       },

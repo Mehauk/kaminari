@@ -3,6 +3,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'book.freezed.dart';
+part 'book.g.dart';
 
 enum BookType {
   all("All"),
@@ -22,55 +23,75 @@ enum BookType {
 }
 
 @freezed
-class ChapterInfo with _$ChapterInfo {
-  const ChapterInfo({
-    required this.number,
-    required this.title,
-    required this.isRead,
-    this.wordCount = 0,
-  });
+abstract class ChapterInfoBase with _$ChapterInfoBase {
+  const factory ChapterInfoBase({
+    required String url,
+    required int number,
+    required String title,
+    String? nextPage,
+    String? updatedDate,
+  }) = _ChapterInfoBase;
 
-  final int number;
-  final String title;
-  final bool isRead;
-  final int wordCount;
+  factory ChapterInfoBase.fromJson(Map<String, dynamic> json) =>
+      _$ChapterInfoBaseFromJson(json);
+
+  static const schema = _$_ChapterInfoJsonSchema;
 }
 
 @freezed
-class BookDetails with _$BookDetails {
-  const BookDetails({
-    required this.id,
-    required this.title,
-    required this.titleRomaji,
-    required this.author,
-    required this.coverUrl,
-    required this.bookType,
-    required this.jlptLevel,
-    required this.synopsis,
-    required this.totalPages,
-    required this.currentPage,
-    required this.currentChapter,
-    required this.chapters,
-    required this.totalWordCount,
-    required this.estimatedMinutes,
-    this.synopsisExpanded = false,
-  });
+abstract class ChapterInfo with _$ChapterInfo {
+  const factory ChapterInfo({
+    required String url,
+    required int number,
+    required String title,
+    String? updatedDate,
+  }) = _ChapterInfo;
 
-  final String id;
-  final String title;
-  final String titleRomaji;
-  final String author;
-  final String coverUrl;
-  final String bookType;
-  final String jlptLevel;
-  final String synopsis;
-  final int totalPages;
-  final int currentPage;
-  final String currentChapter;
-  final List<ChapterInfo> chapters;
-  final int totalWordCount;
-  final int estimatedMinutes;
-  final bool synopsisExpanded;
+  factory ChapterInfo.fromJson(Map<String, dynamic> json) =>
+      _$ChapterInfoFromJson(json);
+}
 
-  double get progress => totalPages > 0 ? currentPage / totalPages : 0.0;
+@freezed
+abstract class BookDetailsBase with _$BookDetailsBase {
+  const BookDetailsBase._();
+
+  const factory BookDetailsBase({
+    required String url,
+    required String title,
+    required String author,
+    required String coverUrl,
+    required String jlptLevel,
+    required String synopsis,
+    required List<ChapterInfoBase> chapters,
+  }) = _BookDetailsBase;
+
+  factory BookDetailsBase.fromJson(Map<String, dynamic> json) =>
+      _$BookDetailsBaseFromJson(json);
+
+  static const schema = _$_BookDetailsBaseJsonSchema;
+}
+
+@freezed
+abstract class BookDetails with _$BookDetails {
+  const BookDetails._();
+
+  const factory BookDetails({
+    required String url,
+    required String title,
+    required String author,
+    required String coverUrl,
+    required String jlptLevel,
+    required String synopsis,
+    required List<ChapterInfo> chapters,
+    String? updatedDate,
+    @Default(BookType.webNovel) BookType bookType,
+    @Default(0) int currentChapter,
+    @Default(false) bool synopsisExpanded,
+  }) = _BookDetails;
+
+  factory BookDetails.fromJson(Map<String, dynamic> json) =>
+      _$BookDetailsFromJson(json);
+
+  double get progress =>
+      chapters.isEmpty ? 0 : currentChapter / chapters.length;
 }

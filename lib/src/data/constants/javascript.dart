@@ -1,18 +1,15 @@
+import 'package:kaminari/src/data/models/book.dart';
+
 String buildDiscoveryPrompt(String miniTree) {
   return """
-You are a web scraper assistant. Your job is to find CSS selectors in a consdensed DOM shorthand.
-Output ONLY valid JSON.
+Analyze this minified DOM tree and identify the most likely CSS selectors for book metadata.
+Tree: $miniTree
 
-### Examples:
-Input: "body[div.header, main#content[h1.title, p.desc], div.links[a.ch]]"
-Output: {"title": "h1.title", "author": "", "synopsis": "p.desc", "chapter": "a.ch"}
+Return ONLY a single JSON object for the following schema:
+${BookDetailsBase.schema}
+${ChapterInfoBase.schema}
 
-Input: "div.container[section.top[h2.book-name, span.writer], div.info[div.summary], ul.list[li>a.link]]"
-Output: {"title": "h2.book-name", "author": "span.writer", "synopsis": "div.summary", "chapter": "a.link"}
-
-### Task:
-Input: $miniTree
-Output:
+JSON:
 """;
 }
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kaminari/src/bloc/home/home_nav_cubit.dart';
-import 'package:kaminari/src/ui/pages/home/screens/discover_screen.dart';
-import 'package:kaminari/src/ui/pages/home/screens/history_screen.dart';
-import 'package:kaminari/src/ui/pages/home/screens/home_screen.dart';
+import 'package:kaminari/src/pages/home/home_nav_cubit.dart';
+import 'package:kaminari/src/pages/home/screens/discover_screen.dart';
+import 'package:kaminari/src/pages/home/screens/history_screen.dart';
+import 'package:kaminari/src/pages/home/screens/home_screen.dart';
 import 'package:kaminari/src/ui/widgets/bottom_nav.dart';
 
 class HomePage extends StatelessWidget {

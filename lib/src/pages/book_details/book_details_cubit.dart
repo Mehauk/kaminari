@@ -21,13 +21,12 @@ abstract class BookDetailsState with _$BookDetailsState {
 // ──────────────────────────────────────────────────────
 
 final _mockBookDetails = BookDetails(
-  id: 'overlord-14',
+  url: '',
   title: 'オーバーロード XIV',
-  titleRomaji: 'Overlord: Volume 14',
   author: '丸山くがね (Kugane Maruyama)',
   coverUrl:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuA87VKJVB1SgRkQzTgDKHSssUaKKoTmKQYsyHDcyV22DophVDGIxAZ5WXYSVgv-5PvFhwFATrJvZ1LOF-Q2N1UXAQ1B2QHx45n-Zl_89Mb6IUCiZiziLlnzLAiPJFJE96AZuOVYVN9WEZFA77n438ux3REjvsk1Wl5rvbyVl1k0rFEWcbgH9TR6WpDqSSEQtC0BVUcl5egjG5mBmjejws15kHspmwLKzw1GGNVF_OMnQ5JwpWyPyhlL4i2HMBrsYbt1QcEposxoGmCV',
-  bookType: 'Light Novel',
+  bookType: .lightNovel,
   jlptLevel: 'N2',
   synopsis:
       'The Sorcerer Kingdom continues to expand its influence over the Re-Estize Kingdom. '
@@ -37,43 +36,11 @@ final _mockBookDetails = BookDetails(
       'This volume focuses on the political machinations between the two nations and features '
       'rich vocabulary around medieval governance, military tactics, and court intrigue — '
       'ideal for N2 learners building reading stamina in formal registers.',
-  totalPages: 312,
-  currentPage: 212,
-  currentChapter: 'Chapter 3: The Witch of the Falling Kingdom',
-  totalWordCount: 68400,
-  estimatedMinutes: 342,
+  currentChapter: 2,
   chapters: [
-    ChapterInfo(
-      number: 1,
-      title: 'The Ruler of Death',
-      isRead: true,
-      wordCount: 8200,
-    ),
-    ChapterInfo(
-      number: 2,
-      title: 'Preparations for War',
-      isRead: true,
-      wordCount: 9100,
-    ),
-    ChapterInfo(
-      number: 3,
-      title: 'The Witch of the Falling Kingdom',
-      isRead: false,
-      wordCount: 11400,
-    ),
-    ChapterInfo(
-      number: 4,
-      title: 'Flames of War',
-      isRead: false,
-      wordCount: 10800,
-    ),
-    ChapterInfo(
-      number: 5,
-      title: 'The Ruler\'s Gambit',
-      isRead: false,
-      wordCount: 9900,
-    ),
-    ChapterInfo(number: 6, title: 'Epilogue', isRead: false, wordCount: 5200),
+    ChapterInfo(number: 1, title: 'The Ruler of Death', url: ''),
+    ChapterInfo(number: 2, title: 'Preparations', url: ''),
+    ChapterInfo(number: 3, title: 'Preparations', url: ''),
   ],
 );
 
@@ -83,7 +50,7 @@ final _mockBookDetails = BookDetails(
 
 class BookDetailsCubit extends Cubit<BookDetailsState> {
   BookDetailsCubit({String? bookId})
-      : super(BookDetailsState(book: _mockBookDetails));
+    : super(BookDetailsState(book: _mockBookDetails));
 
   void toggleSynopsis() {
     emit(state.copyWith(synopsisExpanded: !state.synopsisExpanded));

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kaminari/src/bloc/home/screens/history_cubit.dart';
+import 'package:kaminari/src/pages/home/screens/bloc/history_cubit.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
 import 'package:kaminari/src/ui/widgets/book_cards.dart';
 
