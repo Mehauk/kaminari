@@ -412,6 +412,17 @@ class _ReaderViewState extends State<_ReaderView> {
                       );
                     },
                   ),
+                Positioned(
+                  top: 400,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.chevron_right,
+                        color: KaminariTheme.textSecondary.withAlpha(100),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             );
           },

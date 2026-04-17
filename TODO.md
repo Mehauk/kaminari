@@ -26,6 +26,9 @@
 - [x] handle offline mode
 - [x] fix readings matcher for dict view
 - [x] chiisai tsu
+- [x] reading line indicator
+- [ ] jlpt level indicator on webview
+- [ ] double tap highlight word
 - [ ] use most common/first meaning of word
 - [ ] Import builder loader update (with type selection)
 - [ ] implement home screen functionality
