@@ -61,7 +61,7 @@ const minTreeExtFn = '''
         let label = el.tagName.toLowerCase();
         if (el.id) label += `#\${el.id}`;
         if (el.classList.length > 0) {
-            label += `.\${el.classList[0]}`;
+            label += `.\${el.classList}`;
         }
         return { label, children: Array.from(el.children).map(serialize) };
     }

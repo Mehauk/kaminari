@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/pages/home/screens/bloc/history_cubit.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
-import 'package:kaminari/src/ui/widgets/book_cards.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -39,10 +38,7 @@ class HistoryScreen extends StatelessWidget {
                         selected: {state.filter == HistoryFilter.favorites},
                       ),
                       const SizedBox(height: 32),
-                      Column(
-                        spacing: 16,
-                        children: const [HistoryBookCard(), HistoryBookCard()],
-                      ),
+                      Column(spacing: 16, children: const []),
                       const SizedBox(height: 56),
                     ],
                   ),

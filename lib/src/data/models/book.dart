@@ -28,14 +28,13 @@ abstract class ChapterInfoBase with _$ChapterInfoBase {
     required String url,
     required int number,
     required String title,
-    String? nextPage,
     String? updatedDate,
   }) = _ChapterInfoBase;
 
   factory ChapterInfoBase.fromJson(Map<String, dynamic> json) =>
       _$ChapterInfoBaseFromJson(json);
 
-  static const schema = _$_ChapterInfoJsonSchema;
+  static const schema = _$_ChapterInfoBaseJsonSchema;
 }
 
 @freezed
@@ -57,6 +56,7 @@ abstract class BookDetailsBase with _$BookDetailsBase {
 
   const factory BookDetailsBase({
     required String url,
+    String? nextPageUrl,
     required String title,
     required String author,
     required String coverUrl,
@@ -79,11 +79,12 @@ abstract class BookDetails with _$BookDetails {
     required String url,
     required String title,
     required String author,
-    required String coverUrl,
-    required String jlptLevel,
     required String synopsis,
     required List<ChapterInfo> chapters,
+    String? coverUrl,
+    String? jlptLevel,
     String? updatedDate,
+    int? accessedDate,
     @Default(BookType.webNovel) BookType bookType,
     @Default(0) int currentChapter,
     @Default(false) bool synopsisExpanded,

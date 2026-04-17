@@ -20,12 +20,10 @@ abstract class BookDetailsState with _$BookDetailsState {
 // Mock data — swap out with real data source later
 // ──────────────────────────────────────────────────────
 
-final _mockBookDetails = BookDetails(
+final mockBookDetails = BookDetails(
   url: '',
   title: 'オーバーロード XIV',
   author: '丸山くがね (Kugane Maruyama)',
-  coverUrl:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuA87VKJVB1SgRkQzTgDKHSssUaKKoTmKQYsyHDcyV22DophVDGIxAZ5WXYSVgv-5PvFhwFATrJvZ1LOF-Q2N1UXAQ1B2QHx45n-Zl_89Mb6IUCiZiziLlnzLAiPJFJE96AZuOVYVN9WEZFA77n438ux3REjvsk1Wl5rvbyVl1k0rFEWcbgH9TR6WpDqSSEQtC0BVUcl5egjG5mBmjejws15kHspmwLKzw1GGNVF_OMnQ5JwpWyPyhlL4i2HMBrsYbt1QcEposxoGmCV',
   bookType: .lightNovel,
   jlptLevel: 'N2',
   synopsis:
@@ -50,7 +48,7 @@ final _mockBookDetails = BookDetails(
 
 class BookDetailsCubit extends Cubit<BookDetailsState> {
   BookDetailsCubit({String? bookId})
-    : super(BookDetailsState(book: _mockBookDetails));
+    : super(BookDetailsState(book: mockBookDetails));
 
   void toggleSynopsis() {
     emit(state.copyWith(synopsisExpanded: !state.synopsisExpanded));

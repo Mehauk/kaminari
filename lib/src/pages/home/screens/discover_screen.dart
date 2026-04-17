@@ -5,7 +5,6 @@ import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/pages/home/screens/bloc/discover_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
-import 'package:kaminari/src/ui/widgets/book_cards.dart';
 import 'package:kaminari/src/ui/widgets/grid.dart';
 
 class DiscoverScreen extends StatelessWidget {
@@ -72,13 +71,7 @@ class DiscoverScreen extends StatelessWidget {
                             totalWidth: constraints.maxWidth,
                             spacing: 12,
                             runSpacing: 12,
-                            children: [
-                              (1, DiscoverableBookCard()),
-                              (1, DiscoverableBookCard()),
-                              (2, DiscoverableBookCard()),
-                              (1, DiscoverableBookCard()),
-                              (1, DiscoverableBookCard()),
-                            ],
+                            children: [],
                           );
                         },
                       ),
