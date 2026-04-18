@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:kaminari/src/pages/webview/import_webview_cubit.dart';
+import 'package:kaminari/src/pages/webview/importing_dialog.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
@@ -36,7 +37,6 @@ class _ImportWebviewPage extends StatelessWidget {
 
         String label = "IMPORT";
         if (isFailed) label = "FAILED TO IMPORT";
-        if (isImporting) label = "IMPORTING...";
 
         return Scaffold(
           body: Stack(
@@ -60,22 +60,26 @@ class _ImportWebviewPage extends StatelessWidget {
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: isDisabled
-                ? null
-                : () async {
-                    webviewCubit.handleImport();
-                  },
-            backgroundColor: isFailed ? KaminariTheme.error : null,
-            icon: isImporting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                  )
-                : Icon(isFailed ? Icons.close : Icons.download_outlined),
-            label: Text(label),
-          ),
+          floatingActionButton: isImporting
+              ? null
+              : FloatingActionButton.extended(
+                  onPressed: isDisabled
+                      ? null
+                      : () async {
+                          showDialog(
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (context) => ImportingDialog(),
+                          );
+                          await webviewCubit.handleImport();
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                  backgroundColor: isFailed ? KaminariTheme.error : null,
+                  icon: Icon(isFailed ? Icons.close : Icons.download_outlined),
+                  label: Text(label),
+                ),
         );
       },
     );
