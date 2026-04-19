@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -28,6 +29,7 @@ abstract class WebviewState with _$WebviewState {
 class WebviewCubit extends Cubit<WebviewState> {
   final LlmService llmService;
   WebViewController controller = WebViewController();
+  Completer<String>? _extractionCompleter;
 
   WebviewCubit(String? initialUrl, this.llmService)
     : super(const WebviewState()) {
@@ -64,6 +66,15 @@ class WebviewCubit extends Cubit<WebviewState> {
             );
           },
         ),
+      )
+      ..addJavaScriptChannel(
+        'ExtractionChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          if (_extractionCompleter != null &&
+              !_extractionCompleter!.isCompleted) {
+            _extractionCompleter!.complete(message.message);
+          }
+        },
       )
       ..loadRequest(Uri.parse(initialUrl ?? 'https://syosetu.com/'));
   }
@@ -228,7 +239,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       (async () => {
         const data = $reMap;
         data.chapters = await ${cheaptersLoadingIIFE(jsonMap["chapter"], selectors.chapterDetails, firstPageSelector, nextPageSelector)};
-        return JSON.stringify(data);
+        ExtractionChannel.postMessage(JSON.stringify(data));
       })()
     """;
     print("js");
@@ -236,18 +247,14 @@ class WebviewCubit extends Cubit<WebviewState> {
     print("js");
 
     // Run a small JS script to grab text content using the discovered selectors
-    final resultString = await controller.runJavaScriptReturningResult(js);
+    _extractionCompleter = Completer<String>();
+    await controller.runJavaScript(js);
+    final resultString = await _extractionCompleter!.future;
 
     print(resultString);
-    // resultString is a String like "\"{\\\"title\\\": ...}\""
-    // sometimes with extra quotes depending on the platform/WebView version
-    final cleanJson = resultString
-        .toString()
-        .replaceAll(RegExp(r'^"|"$'), '')
-        .replaceAll('\\"', '"');
-
-    // Decode the string into a Map
-    final Map<String, dynamic> response = jsonDecode(cleanJson);
+    // resultString is a String like "{\"title\": ...}"
+    // since it's coming from postMessage, it's usually already a clean string
+    final Map<String, dynamic> response = jsonDecode(resultString);
 
     return BookDetails.fromJson(response);
   }
