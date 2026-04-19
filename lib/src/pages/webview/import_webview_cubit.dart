@@ -101,7 +101,10 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..loadRequest(Uri.parse(initialUrl ?? 'https://syosetu.com/'));
   }
 
-  void clearSelection() => emit(state.copyWith(selectedEntry: null));
+  void clearSelection() {
+    _clearHighlights();
+    emit(state.copyWith(selectedEntry: null));
+  }
 
   void onWordFound(String message) async {
     final data = jsonDecode(message);
@@ -133,11 +136,70 @@ class WebviewCubit extends Cubit<WebviewState> {
     emit(
       state.copyWith(selectedEntry: DictionaryEntry(wordMap, kanjis: kanjis)),
     );
+
+    await _highlightWord(targetedWord);
   }
 
   Future<void> _injectScanner() async {
-    await controller.runJavaScript('''
+    await controller.runJavaScript(r'''
       (function() {
+        if (window.__kaminariHighlightInstalled) return;
+        window.__kaminariHighlightInstalled = true;
+
+        const styleId = 'kaminari-word-highlight-style';
+        if (!document.getElementById(styleId)) {
+          const style = document.createElement('style');
+          style.id = styleId;
+          style.textContent = '.kaminari-word-highlight { background: rgba(255, 237, 59, 0.5); border-radius: 2px; }';
+          document.head.appendChild(style);
+        }
+
+        window.kaminariClearHighlights = function() {
+          const highlights = document.querySelectorAll('span.kaminari-word-highlight');
+          highlights.forEach(function(span) {
+            const parent = span.parentNode;
+            if (!parent) return;
+            while (span.firstChild) parent.insertBefore(span.firstChild, span);
+            parent.removeChild(span);
+            parent.normalize();
+          });
+        };
+
+        window.kaminariHighlightWord = function(word) {
+          if (!word || word.length === 0) return false;
+          window.kaminariClearHighlights();
+
+          const escaped = word.replace(/[.*+?^\${}()|[\\]\\]/g, '\\\$&');
+          const useWordBoundaries = /^[A-Za-z0-9_]+$/.test(word);
+          const regex = new RegExp(useWordBoundaries ? '\\b' + escaped + '\\b' : escaped);
+
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+            acceptNode: function(node) {
+              if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+              const parent = node.parentElement;
+              if (!parent) return NodeFilter.FILTER_REJECT;
+              if (parent.closest('script,style,noscript,iframe,textarea')) return NodeFilter.FILTER_REJECT;
+              return NodeFilter.FILTER_ACCEPT;
+            }
+          });
+
+          let currentNode;
+          while (currentNode = walker.nextNode()) {
+            const text = currentNode.nodeValue;
+            const match = regex.exec(text);
+            if (match) {
+              const before = currentNode.splitText(match.index);
+              const matched = before.splitText(match[0].length);
+              const span = document.createElement('span');
+              span.className = 'kaminari-word-highlight';
+              span.textContent = before.nodeValue;
+              matched.parentNode.replaceChild(span, before);
+              return true;
+            }
+          }
+          return false;
+        };
+
         let lastTap = 0;
 
         document.addEventListener('touchstart', function(e) {
@@ -168,6 +230,22 @@ class WebviewCubit extends Cubit<WebviewState> {
           lastTap = now;
         }, {passive: false});
       })();
+    ''');
+  }
+
+  Future<void> _clearHighlights() async {
+    await controller.runJavaScript('''
+      if (window.kaminariClearHighlights) {
+        window.kaminariClearHighlights();
+      }
+    ''');
+  }
+
+  Future<void> _highlightWord(String word) async {
+    await controller.runJavaScript('''
+      if (window.kaminariHighlightWord) {
+        window.kaminariHighlightWord(${jsonEncode(word)});
+      }
     ''');
   }
 
