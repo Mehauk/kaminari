@@ -20,6 +20,7 @@ abstract class DownloadTask with _$DownloadTask {
     required int bookId,
     required ChapterInfo chapter,
     @Default(false) bool isPriority,
+    @Default(false) bool forceReloadSelectors,
   }) = _DownloadTask;
 }
 
@@ -89,6 +90,7 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     required int bookId,
     required List<ChapterInfo> chapters,
     bool isPriority = false,
+    bool forceReloadSelectors = false,
   }) async {
     for (var chapter in chapters) {
       // Avoid duplicates in queue
@@ -98,6 +100,7 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
         bookId: bookId,
         chapter: chapter,
         isPriority: isPriority,
+        forceReloadSelectors: forceReloadSelectors,
       );
 
       if (isPriority) {
@@ -150,7 +153,7 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
       );
 
       try {
-        await _extractChapterContent(task.chapter);
+        await _extractChapterContent(task.chapter, task.forceReloadSelectors);
         _downloadTimestamps.add(DateTime.now());
 
         // Notify UI that a specific chapter is done
@@ -188,7 +191,10 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     }
   }
 
-  Future<void> _extractChapterContent(ChapterInfo chapter) async {
+  Future<void> _extractChapterContent(
+    ChapterInfo chapter,
+    bool forceReloadSelectors,
+  ) async {
     final origin = Uri.parse(chapter.url).origin;
     await _loadUrl(chapter.url);
 
@@ -198,8 +204,11 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     final chapterPrompt = buildChapterExtractionAIPrompt(chapterTree);
 
     final chapterLlmResponse = await extractorBuilder
-        .buildChapterExtractorSelectors(origin, chapterPrompt);
-
+        .buildChapterExtractorSelectors(
+          origin,
+          chapterPrompt,
+          forceReload: forceReloadSelectors,
+        );
     final chapterExtractor = LlmService.extractJsonFromResponse(
       chapterLlmResponse,
       ChapterExtractor.fromJson,
@@ -224,6 +233,7 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
           .map((e) => e.toString())
           .toList();
       if (stringContents.isNotEmpty) {
+        print("chapter number: ${chapter.number}");
         await dbService.saveChapterContent(chapter.id!, stringContents);
       }
     }
