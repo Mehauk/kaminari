@@ -15,6 +15,19 @@ JSON:
 """;
 }
 
+String buildChapterExtractionPrompt(String miniTree) {
+  return """
+Analyze this minified DOM tree and identify the most likely CSS selectors for the chapter's content.
+
+Tree: $miniTree
+
+Return ONLY a single JSON object for the following schema:
+${ChapterExtractor.schema}
+
+JSON:
+""";
+}
+
 String cheaptersLoadingIIFE(
   String chapterSelector,
   ChapterInfoExtractor detailsSelector,
@@ -89,7 +102,12 @@ const minTreeExtFn = '''
             el.remove();
         }
     });
-    
+
+    element.querySelectorAll('[id^="L"]').forEach(el => {
+      if (/^L\\d+\$/.test(el.id)) {
+        el.removeAttribute('id');
+      }
+    });
     function serialize(el) {
         let label = el.tagName.toLowerCase();
         if (el.id) label += `#\${el.id}`;
