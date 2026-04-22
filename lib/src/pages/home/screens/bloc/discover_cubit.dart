@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
 
 part 'discover_cubit.freezed.dart';
 
@@ -13,7 +14,8 @@ abstract class DiscoverState with _$DiscoverState {
 }
 
 class DiscoverCubit extends Cubit<DiscoverState> {
-  DiscoverCubit() : super(const DiscoverState());
+  final DatabaseService dbService;
+  DiscoverCubit({required this.dbService}) : super(const DiscoverState());
 
   void setFilter(BookType filter) {
     emit(state.copyWith(filter: filter));

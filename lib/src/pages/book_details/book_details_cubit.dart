@@ -22,6 +22,7 @@ abstract class BookDetailsState with _$BookDetailsState {
 
 final mockBookDetails = BookDetails(
   url: '',
+  source: '',
   title: 'オーバーロード XIV',
   author: '丸山くがね (Kugane Maruyama)',
   bookType: .lightNovel,

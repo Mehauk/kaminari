@@ -30,13 +30,7 @@ class _ImportWebviewPage extends StatelessWidget {
     return BlocBuilder<WebviewCubit, WebviewState>(
       builder: (context, webviewState) {
         final webviewCubit = context.read<WebviewCubit>();
-        // Determine button state
-        final bool isFailed = webviewState.extractionFailed;
-        final bool isImporting = webviewState.isImporting;
-        final bool isDisabled = isFailed || isImporting;
-
-        String label = "IMPORT";
-        if (isFailed) label = "FAILED TO IMPORT";
+        final bool isDisabled = webviewState.importStatus != .notImported;
 
         return Scaffold(
           body: Stack(
@@ -52,34 +46,29 @@ class _ImportWebviewPage extends StatelessWidget {
                 children: [
                   _WebAddressBar(controller: webviewCubit.controller),
                   if (webviewState.isLoading)
-                    LinearProgressIndicator(
-                      value: webviewState.progress,
-                      minHeight: 4,
-                    ),
+                    LinearProgressIndicator(minHeight: 4),
                 ],
               ),
             ],
           ),
-          floatingActionButton: isImporting
-              ? null
-              : FloatingActionButton.extended(
-                  onPressed: isDisabled
-                      ? null
-                      : () async {
-                          showDialog(
-                            barrierDismissible: false,
-                            context: context,
-                            builder: (context) => ImportingDialog(),
-                          );
-                          await webviewCubit.handleImport();
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                          }
-                        },
-                  backgroundColor: isFailed ? KaminariTheme.error : null,
-                  icon: Icon(isFailed ? Icons.close : Icons.download_outlined),
-                  label: Text(label),
-                ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: isDisabled
+                ? null
+                : () async {
+                    showDialog(
+                      barrierDismissible: false,
+                      context: context,
+                      builder: (context) => ImportingDialog(),
+                    );
+                    await webviewCubit.handleImport();
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+            backgroundColor: webviewState.importStatus.color,
+            icon: Icon(webviewState.importStatus.icon),
+            label: Text(webviewState.importStatus.label),
+          ),
         );
       },
     );

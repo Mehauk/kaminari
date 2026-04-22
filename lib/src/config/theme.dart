@@ -19,7 +19,9 @@ class KaminariTheme {
   static const Color textTitle = Color(0xFFFBE359);
   static const Color surfaceTint = Color(0xFFDDC73F);
   static const Color card = Color(0x991E1E1E);
-  static const Color error = Colors.red;
+  static const Color error = Color(0xFFFFB4AB);
+  static const Color onError = Color(0xFF690005);
+  static const Color success = goldSoft;
 
   static final ColorScheme colorScheme = ColorScheme.dark(
     surface: surface,
@@ -40,8 +42,8 @@ class KaminariTheme {
     outline: const Color(0xFF96917B),
     outlineVariant: const Color(0xFF4B4735),
     surfaceTint: surfaceTint,
-    error: const Color(0xFFFFB4AB),
-    onError: const Color(0xFF690005),
+    error: error,
+    onError: onError,
   );
 
   static final TextTheme textTheme = Typography.material2021().white.copyWith(
