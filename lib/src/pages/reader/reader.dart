@@ -12,6 +12,7 @@ import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/text.dart';
+import 'package:kaminari/src/ui/widgets/bottom_sheet.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
 import 'package:kaminari/src/utils/string_extensions.dart';
@@ -111,58 +112,30 @@ class _ReaderViewState extends State<_ReaderView> {
     super.dispose();
   }
 
-  void _showRefetchBottomSheet(BuildContext context) {
+  void _showMoreBottomSheet(BuildContext context) {
     final backgroundCubit = context.read<BackgroundWebviewCubit>();
     final readerCubit = context.read<ReaderCubit>();
 
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).canvasColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 48,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[400],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.refresh_outlined),
-              title: const Text('Refetch current chapter'),
-              subtitle: const Text(
-                'Ignore cached extractors and prioritize download',
-              ),
-              onTap: () {
-                print([readerCubit.chapter]);
-                Navigator.of(context).pop();
-                backgroundCubit.enqueueChapters(
-                  bookId: readerCubit.bookId,
-                  chapters: [readerCubit.chapter],
-                  isPriority: true,
-                  forceReloadSelectors: true,
-                );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Refetching current chapter with priority'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
+      builder: (context) => LightningBottomSheet(
+        children: [
+          (
+            Icons.refresh,
+            "Re-download current chapter.",
+            () {
+              print([readerCubit.chapter]);
+              Navigator.of(context).pop();
+              backgroundCubit.enqueueChapters(
+                bookId: readerCubit.bookId,
+                chapters: [readerCubit.chapter],
+                isPriority: true,
+                forceReloadSelectors: true,
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -415,7 +388,7 @@ class _ReaderViewState extends State<_ReaderView> {
                                 LightningIconButton(
                                   icon: Icons.more_vert,
                                   onPressed: () =>
-                                      _showRefetchBottomSheet(context),
+                                      _showMoreBottomSheet(context),
                                 ),
                               ],
                             ),
