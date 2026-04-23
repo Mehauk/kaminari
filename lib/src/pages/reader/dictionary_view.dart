@@ -115,6 +115,23 @@ class _KanjiRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(":letters");
+    print(letters);
+    print(wordReadings);
+    List<String> readings = [];
+    if (wordReadings.length != letters.length) {
+      readings = wordReadings;
+    }
+
+    for (var i = 0; i < letters.length; i++) {
+      final letter = letters[i];
+      final r = wordReadings[i];
+
+      if (letter != r) {
+        readings.add(r);
+      }
+    }
+
     return SizedBox(
       height: 85, // Increased height to accommodate reading text
       child: ListView.separated(
@@ -123,9 +140,7 @@ class _KanjiRow extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) => _KanjiCard(
           entry: kanjis[index],
-          wordReadings: wordReadings
-              .where((reading) => !letters.contains(reading))
-              .toList(),
+          wordReadings: readings,
           index: index,
         ),
       ),
@@ -198,28 +213,36 @@ class _KanjiCard extends StatelessWidget {
     };
 
     // Check On-readings (usually Katakana)
-    final String matchedOn = onReadings.firstWhere(
-      (r) =>
-          reading.contains(r.replaceAll('-', '').replaceAll(".", "")) ||
-          reading.contains(
-            JpTransliterate.katakanaToHiragana(
-              r,
-            ).replaceAll('-', '').replaceAll(".", ""),
-          ),
+    String matchedOn = onReadings.firstWhere(
+      (r) => reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
       orElse: () => '',
     );
 
     // Check Kun-readings (usually Hiragana)
-    final String matchedKun = kunReadings.firstWhere(
-      (r) =>
-          reading.contains(r.replaceAll('-', '').replaceAll(".", "")) ||
-          reading.contains(
-            JpTransliterate.hiraganaToKatakana(
-              r,
-            ).replaceAll('-', '').replaceAll(".", ""),
-          ),
+    String matchedKun = kunReadings.firstWhere(
+      (r) => reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
       orElse: () => '',
     );
+
+    if (matchedOn == '' && matchedKun == '') {
+      matchedOn = onReadings.firstWhere(
+        (r) => reading.contains(
+          JpTransliterate.katakanaToHiragana(
+            r,
+          ).replaceAll('-', '').replaceAll(".", ""),
+        ),
+        orElse: () => '',
+      );
+
+      matchedKun = kunReadings.firstWhere(
+        (r) => reading.contains(
+          JpTransliterate.hiraganaToKatakana(
+            r,
+          ).replaceAll('-', '').replaceAll(".", ""),
+        ),
+        orElse: () => '',
+      );
+    }
 
     // print(matchedOn);
     // print(matchedKun);
