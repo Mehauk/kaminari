@@ -41,6 +41,7 @@ class DiscoverScreen extends StatelessWidget {
                           Expanded(
                             child: TextField(
                               onChanged: context.read<DiscoverCubit>().setQuery,
+                              onSubmitted: (_) => importFromContext(context),
                               decoration: const InputDecoration(
                                 prefixIcon: Icon(Icons.link),
                                 labelText: 'Add a book or source',
