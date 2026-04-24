@@ -85,6 +85,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     int paragraphIndex,
     int tokenIndex,
   ) async {
+    if (token.trim().isEmpty) return;
     final (wordMap, kanjis) = await KanjiService.lookupToken(token);
 
     if (state.selectedParagraphIndex == paragraphIndex &&
