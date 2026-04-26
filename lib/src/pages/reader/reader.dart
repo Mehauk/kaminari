@@ -8,6 +8,7 @@ import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/globals/background_webview_cubit.dart';
+import 'package:kaminari/src/pages/reader/dict_orientation_dialog.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
@@ -26,8 +27,12 @@ class ReaderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          ReaderCubit(chapter, dbService: context.read(), bookId: bookId),
+      create: (context) => ReaderCubit(
+        chapter,
+        bookId: bookId,
+        dbService: context.read(),
+        settings: context.read(),
+      ),
       child: const _ReaderView(),
     );
   }
@@ -133,19 +138,33 @@ class _ReaderViewState extends State<_ReaderView> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => LightningBottomSheet(
+      builder: (ctx) => LightningBottomSheet(
         children: [
           (
             Icons.refresh,
             "Re-download current chapter.",
             () {
               print([readerCubit.chapter]);
-              Navigator.of(context).pop();
+              Navigator.of(ctx).pop();
               backgroundCubit.enqueueChapters(
                 bookId: readerCubit.bookId,
                 chapters: [readerCubit.chapter],
                 isPriority: true,
                 forceReloadSelectors: true,
+              );
+            },
+          ),
+          (
+            Icons.swap_vert_circle_outlined,
+            "Dictionary position",
+            () {
+              Navigator.of(ctx).pop();
+              showDialog<void>(
+                context: context,
+                builder: (_) => BlocProvider.value(
+                  value: readerCubit,
+                  child: const DictOrientationDialog(),
+                ),
               );
             },
           ),
@@ -332,11 +351,13 @@ class _ReaderViewState extends State<_ReaderView> {
                         physics: const BouncingScrollPhysics(),
                         slivers: [
                           SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(
+                            padding: EdgeInsets.fromLTRB(
                               24,
                               140,
                               24,
-                              100,
+                              state.dictOrientation == DictOrientation.bottom
+                                  ? 180
+                                  : 100,
                             ),
                             sliver: SliverList(
                               delegate: SliverChildBuilderDelegate((
@@ -553,7 +574,47 @@ class _ReaderViewState extends State<_ReaderView> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            AnimatedSwitcher(
+                            if (state.dictOrientation == DictOrientation.top)
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 300),
+                                transitionBuilder: (child, animation) =>
+                                    SizeTransition(
+                                      sizeFactor: animation,
+                                      child: child,
+                                    ),
+                                child: DictionaryView(
+                                  state.selectedEntry,
+                                  cubit.clearSelection,
+                                  orientation: state.dictOrientation,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // BOTTOM DICTIONARY VIEW
+                if (state.dictOrientation == DictOrientation.bottom)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: ClipRRect(
+                      child: BgFilter(
+                        bgColor: KaminariTheme.background.withAlpha(200),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: KaminariTheme.surfaceTint.withAlpha(40),
+                              ),
+                            ),
+                          ),
+                          child: SafeArea(
+                            top: false,
+                            child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 300),
                               transitionBuilder: (child, animation) =>
                                   SizeTransition(
@@ -563,14 +624,14 @@ class _ReaderViewState extends State<_ReaderView> {
                               child: DictionaryView(
                                 state.selectedEntry,
                                 cubit.clearSelection,
+                                orientation: state.dictOrientation,
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
                 // BACKGROUND PROGRESS BAR (Small Top Bar)
                 if (kDebugMode)

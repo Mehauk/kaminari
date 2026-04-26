@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:jp_transliterate/jp_transliterate.dart';
 import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 
@@ -12,7 +13,13 @@ part 'dictionary_view.freezed.dart';
 class DictionaryView extends StatelessWidget {
   final DictionaryEntry? entry;
   final void Function() clearSelection;
-  const DictionaryView(this.entry, this.clearSelection, {super.key});
+  final DictOrientation orientation;
+  const DictionaryView(
+    this.entry,
+    this.clearSelection, {
+    super.key,
+    required this.orientation,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +28,7 @@ class DictionaryView extends StatelessWidget {
       transitionBuilder: (Widget child, Animation<double> animation) {
         return SizeTransition(sizeFactor: animation, child: child);
       },
-      child: _DictionaryContent(entry, clearSelection),
+      child: _DictionaryContent(entry, clearSelection, orientation),
     );
   }
 }
@@ -29,7 +36,8 @@ class DictionaryView extends StatelessWidget {
 class _DictionaryContent extends StatelessWidget {
   final DictionaryEntry? entry;
   final void Function() clearSelection;
-  const _DictionaryContent(this.entry, this.clearSelection);
+  final DictOrientation orientation;
+  const _DictionaryContent(this.entry, this.clearSelection, this.orientation);
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +57,13 @@ class _DictionaryContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (orientation == .bottom) ...[
+            InkWell(
+              onTap: clearSelection,
+              child: Center(child: CustomText("\u25BC", .bodyLarge)),
+            ),
+            const SizedBox(height: 8),
+          ],
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -91,11 +106,13 @@ class _DictionaryContent extends StatelessWidget {
               letters: entry!.letters,
             ),
           ],
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: clearSelection,
-            child: Center(child: CustomText("\u25B2", .bodyLarge)),
-          ),
+          if (orientation == .top) ...[
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: clearSelection,
+              child: Center(child: CustomText("\u25B2", .bodyLarge)),
+            ),
+          ],
         ],
       ),
     );

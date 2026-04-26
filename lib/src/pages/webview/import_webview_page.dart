@@ -155,7 +155,11 @@ class _WebAddressBar extends StatelessWidget {
                       ),
                   ],
                 ),
-                DictionaryView(cubit.state.selectedEntry, cubit.clearSelection),
+                DictionaryView(
+                  cubit.state.selectedEntry,
+                  cubit.clearSelection,
+                  orientation: .top,
+                ),
               ],
             ),
           ),
