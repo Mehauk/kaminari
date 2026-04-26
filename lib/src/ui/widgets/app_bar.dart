@@ -10,8 +10,8 @@ class LightningAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BgFilter(
-      child: SafeArea(
+    return SafeArea(
+      child: BgFilter(
         child: Container(
           decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: Colors.white10, width: 1)),

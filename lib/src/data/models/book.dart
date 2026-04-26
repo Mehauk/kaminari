@@ -98,6 +98,7 @@ abstract class BookDetails with _$BookDetails {
 @freezed
 abstract class ChapterInfo with _$ChapterInfo {
   const factory ChapterInfo({
+    int? id,
     required String url,
     required int number,
     required String title,
