@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
-import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/pages/home/screens/bloc/discover_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
@@ -23,7 +22,7 @@ class DiscoverScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => DiscoverCubit(dbService: context.read<DatabaseService>()),
+      create: (_) => DiscoverCubit(dbService: context.read()),
       child: BlocBuilder<DiscoverCubit, DiscoverState>(
         builder: (context, state) {
           return SingleChildScrollView(

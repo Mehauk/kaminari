@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kaminari/src/data/repositories/extractor_cache.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
+import 'package:kaminari/src/data/services/local_storage_service.dart';
 import 'package:kaminari/src/pages/home/home_page.dart';
 import 'package:kaminari/src/pages/webview/import_webview_page.dart';
 
@@ -11,8 +13,11 @@ class KaminariApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-      create: (context) => DatabaseService(),
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider.value(value: DatabaseService()),
+        RepositoryProvider.value(value: ExtractorCache(LocalStorageService())),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Kaminari Browser',

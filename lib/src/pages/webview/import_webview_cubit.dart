@@ -7,6 +7,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/constants/prompt.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/repositories/extractor_cache.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -54,12 +55,16 @@ abstract class WebviewState with _$WebviewState {
 
 class WebviewCubit extends Cubit<WebviewState> {
   final LlmService llmService;
+  final ExtractorCache extractorCache;
   WebViewController controller = WebViewController();
   Completer<String>? _extractionCompleter;
   Completer<void>? _pageLoadCompleter;
 
-  WebviewCubit(String? initialUrl, this.llmService)
-    : super(const WebviewState()) {
+  WebviewCubit({
+    required this.llmService,
+    required this.extractorCache,
+    String? initialUrl,
+  }) : super(const WebviewState()) {
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -288,6 +293,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           // 3. Get selector from LLM
           final chapterPrompt = buildChapterExtractionAIPrompt(chapterTree);
           print(chapterPrompt);
+
           // String chapterLlmResponse = "";
           // await for (final chunk in llmService.streamResponse(chapterPrompt)) {
           //   chapterLlmResponse += chunk;
