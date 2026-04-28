@@ -30,7 +30,7 @@
 - [x] double tap highlight word webview
 - [x] next page from end of page
 - [x] chapter title clickability
-- [ ] dict view bottom/top depending on click position (so as to not cover clicked word)
+- [x] dict view bottom/top depending on click position (so as to not cover clicked word)
 - [ ] dict view swipe to close (additionally)
 - [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
 - [ ] injecter starts earlier

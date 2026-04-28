@@ -4,6 +4,7 @@ import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
+import 'package:kaminari/src/utils/string_extensions.dart';
 
 class DictOrientationDialog extends StatelessWidget {
   const DictOrientationDialog({super.key});
@@ -15,7 +16,10 @@ class DictOrientationDialog extends StatelessWidget {
       builder: (context, state) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 32,
+          ),
           child: LightningCard(
             type: .glowing,
             child: Padding(
@@ -34,23 +38,15 @@ class DictOrientationDialog extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   Row(
-                    children: [
-                      Expanded(
+                    spacing: 12,
+                    children: DictOrientation.values.map((orient) {
+                      return Expanded(
                         child: _OrientationCard(
-                          orientation: DictOrientation.bottom,
-                          isSelected:
-                              state.dictOrientation == DictOrientation.bottom,
+                          orientation: orient,
+                          isSelected: state.dictOrientation == orient,
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _OrientationCard(
-                          orientation: DictOrientation.top,
-                          isSelected:
-                              state.dictOrientation == DictOrientation.top,
-                        ),
-                      ),
-                    ],
+                      );
+                    }).toList(),
                   ),
                 ],
               ),
@@ -63,29 +59,22 @@ class DictOrientationDialog extends StatelessWidget {
 }
 
 class _OrientationCard extends StatelessWidget {
-  const _OrientationCard({
-    required this.orientation,
-    required this.isSelected,
-  });
+  const _OrientationCard({required this.orientation, required this.isSelected});
 
   final DictOrientation orientation;
   final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
-    final bool isBottom = orientation == DictOrientation.bottom;
-    final label = isBottom ? 'Bottom' : 'Top';
-
     return GestureDetector(
       onTap: () {
         context.read<ReaderCubit>().setDictOrientation(orientation);
         Navigator.of(context).pop();
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         decoration: BoxDecoration(
           color: KaminariTheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(KaminariTheme.borderRadius),
+          borderRadius: BorderRadius.circular(KaminariTheme.altBorderRadius),
           border: Border.all(
             color: isSelected
                 ? KaminariTheme.cyan
@@ -93,58 +82,31 @@ class _OrientationCard extends StatelessWidget {
             width: isSelected ? 2 : 1,
           ),
         ),
-        padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── Phone silhouette ─────────────────────────────────
-            Container(
-              width: double.infinity,
-              height: 130,
-              decoration: BoxDecoration(
-                color: KaminariTheme.background,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: KaminariTheme.surfaceTint.withAlpha(50),
-                ),
-              ),
-              clipBehavior: Clip.hardEdge,
-              child: Column(
-                children: isBottom
-                    ? [
-                        // Text lines fill the top
-                        Expanded(child: _TextLines()),
-                        // Dict panel anchored at bottom
-                        _DictBlock(),
-                      ]
-                    : [
-                        // Dict panel at top
-                        _DictBlock(),
-                        // Text lines fill the bottom
-                        Expanded(child: _TextLines()),
-                      ],
-              ),
+            Padding(
+              padding: const EdgeInsets.all(6.0),
+              child: _PhonePreviewSilhouette(orientation: orientation),
             ),
-            const SizedBox(height: 10),
-            // ── Label + check row ─────────────────────────────────
+            const SizedBox(height: 2),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (isSelected) ...[
+                if (isSelected)
                   const Icon(
                     Icons.check_circle_outline,
-                    size: 14,
+                    size: 12,
                     color: KaminariTheme.cyan,
                   ),
-                  const SizedBox(width: 4),
-                ],
+                if (isSelected) const SizedBox(width: 4),
                 CustomText(
-                  label,
+                  orientation.name.capitalize,
                   .labelMedium,
                   color: isSelected
                       ? KaminariTheme.cyan
                       : KaminariTheme.textSecondary,
-                  fontSize: 13,
+                  fontSize: 11,
                 ),
               ],
             ),
@@ -155,73 +117,133 @@ class _OrientationCard extends StatelessWidget {
   }
 }
 
-/// Thin horizontal lines that simulate text.
+class _PhonePreviewSilhouette extends StatelessWidget {
+  final DictOrientation orientation;
+  const _PhonePreviewSilhouette({required this.orientation});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      decoration: BoxDecoration(
+        color: KaminariTheme.background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: KaminariTheme.surfaceTint.withAlpha(50)),
+      ),
+      clipBehavior: Clip.hardEdge,
+      child: switch (orientation) {
+        DictOrientation.top => Column(
+          children: [
+            const _DictBlock(),
+            const Expanded(child: _TextLines()),
+          ],
+        ),
+        DictOrientation.bottom => Column(
+          children: [
+            const Expanded(child: _TextLines()),
+            const _DictBlock(),
+          ],
+        ),
+        DictOrientation.dynamic => Stack(
+          alignment: Alignment.center,
+          children: [
+            const _TextLines(),
+            const Align(
+              alignment: Alignment.topCenter,
+              child: _DictBlock(opacity: 0.3),
+            ),
+            const Align(
+              alignment: Alignment.bottomCenter,
+              child: _DictBlock(opacity: 0.3),
+            ),
+            Icon(
+              Icons.auto_awesome_outlined,
+              color: KaminariTheme.cyan.withAlpha(200),
+              size: 20,
+            ),
+          ],
+        ),
+      },
+    );
+  }
+}
+
 class _TextLines extends StatelessWidget {
+  const _TextLines();
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.all(8.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(5, (i) {
-          final isShort = i == 4; // last line is shorter
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 3),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor: isShort ? 0.55 : 1.0,
-                child: Container(
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: KaminariTheme.surfaceTint.withAlpha(50),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
+        children: List.generate(4, (i) => _Line(isShort: i == 3)),
       ),
     );
   }
 }
 
-/// The coloured block representing the dictionary panel.
-class _DictBlock extends StatelessWidget {
+class _Line extends StatelessWidget {
+  final bool isShort;
+  const _Line({required this.isShort});
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      height: 38,
+      height: 3,
+      margin: const EdgeInsets.symmetric(vertical: 3),
       decoration: BoxDecoration(
-        color: KaminariTheme.bronze.withAlpha(180),
-        border: Border(
-          top: BorderSide(color: KaminariTheme.surfaceTint.withAlpha(40)),
-          bottom: BorderSide(color: KaminariTheme.surfaceTint.withAlpha(40)),
+        color: KaminariTheme.surfaceTint.withAlpha(40),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      width: isShort ? 30 : double.infinity,
+    );
+  }
+}
+
+class _DictBlock extends StatelessWidget {
+  final double opacity;
+  const _DictBlock({this.opacity = 1.0});
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: double.infinity,
+        height: 32,
+        decoration: BoxDecoration(
+          color: KaminariTheme.bronze.withAlpha(180),
+          border: Border.symmetric(
+            horizontal: BorderSide(
+              color: KaminariTheme.surfaceTint.withAlpha(40),
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _Pill(width: 20, alpha: 100),
+            const SizedBox(width: 4),
+            _Pill(width: 30, alpha: 60),
+          ],
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 28,
-            height: 6,
-            decoration: BoxDecoration(
-              color: KaminariTheme.goldSoft.withAlpha(100),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Container(
-            width: 44,
-            height: 6,
-            decoration: BoxDecoration(
-              color: KaminariTheme.goldSoft.withAlpha(60),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-        ],
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  final double width;
+  final int alpha;
+  const _Pill({required this.width, required this.alpha});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: 4,
+      decoration: BoxDecoration(
+        color: KaminariTheme.goldSoft.withAlpha(alpha),
+        borderRadius: BorderRadius.circular(2),
       ),
     );
   }
