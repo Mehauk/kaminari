@@ -1,245 +1,212 @@
+// ignore_for_file: annotate_overrides
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:jp_transliterate/jp_transliterate.dart';
+import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 
-@immutable
-abstract class SoundsBase {
-  // Can be overridden
-  Iterable<T> map<T>(T Function(String e) toElement) sync* {
-    for (String? element in toList()) {
-      if (element != null) yield toElement(element.toUpperCase());
-    }
-  }
+part 'dictionary_view.freezed.dart';
 
-  // not to be changed by subclasses
-  List<String?> toList() => toMap().values.toList();
-
-  List<String> getKeys() => toMap().keys.toList();
-
-  String? operator [](String index) => toMap()[index];
-
-  @override
-  String toString() => toMap().toString();
-
-  // Need implementation
-  Map<String, String?> toMap();
-}
-
-class KanaModel extends SoundsBase {
-  final String? katakana;
-  final String? hiragana;
-  final String? sound;
-
-  final int ord;
-  final int difficulty;
-
-  KanaModel(Map<String, Object?> map)
-    : ord = map["ord"] as int,
-      difficulty = map["hard"] as int,
-      katakana = map["kata"] as String?,
-      hiragana = map["hira"] as String?,
-      sound = map["sound"] as String?;
-
-  KanaModel copywith(String? hira, String? kata, String? sound, {int? ord}) {
-    return KanaModel({
-      "sound": sound,
-      "kata": kata,
-      "hira": hira,
-      "ord": ord ?? this.ord,
-      "hard": difficulty,
-    });
-  }
-
-  @override
-  Map<String, String?> toMap() {
-    return {"sound": sound, "kata": katakana, "hira": hiragana};
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return (other is KanaModel) && other.ord == ord;
-  }
-
-  KanaModel operator +(KanaModel other) {
-    String eng = "";
-
-    if ((sound ?? "").contains("**")) {
-      eng =
-          (sound ?? "").replaceFirst("**", "") +
-          (other.sound?[0] ?? "") +
-          (other.sound ?? "");
-    } else {
-      eng = (sound ?? "") + (other.sound ?? "");
-    }
-
-    return copywith(
-      (hiragana ?? "") + (other.hiragana ?? ""),
-      (katakana ?? "") + (other.katakana ?? ""),
-      eng,
-    );
-  }
-
-  @override
-  int get hashCode => ord.hashCode;
-}
-
-class KanjiModel extends SoundsBase {
-  final String word;
-  final List<String> letters;
-  final List<String> sounds;
-  final List<String> meanings;
-  final int visits;
-  final double freq;
-
-  final String? fakeMean;
-
-  static const String _separator = "|0|0|";
-
-  KanjiModel(Map<String, Object?> map, {this.fakeMean})
-    : word = map["visitedword"] as String,
-      letters = (map["letters"] as String).split(" "),
-      sounds = (map["sounds"] as String).split(" "),
-      meanings = (map["mean"] as String).split(_separator),
-      visits = map["visits"] as int,
-      freq = map["freq"] as double;
-
-  @override
-  Map<String, String> toMap() => {
-    "word": word,
-    "letters": letters.toString(),
-    "sounds": sounds.toString(),
-    "mean": meanings.toString(),
-    "visits": visits.toString(),
-    "frequency": freq.toString(),
-  };
-}
-
-class DictionaryView extends StatelessWidget {
-  final DictionaryEntry _entry;
-  const DictionaryView(this._entry, {super.key});
+class ReaderDictionaryExtension extends StatelessWidget {
+  const ReaderDictionaryExtension({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle? theme = Theme.of(
-      context,
-    ).textTheme.bodyMedium?.copyWith(fontSize: 28);
-    return Center(
-      child: SingleChildScrollView(
-        child: Column(children: _createEntry(theme)),
-      ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return SizeTransition(sizeFactor: animation, child: child);
+      },
+      child: _DictionaryContent(),
     );
-  }
-
-  List<Widget> _createEntry(TextStyle? theme) {
-    bool color = false;
-    List<TextSpan> topChildren = [];
-    List<TextSpan> botChildren = [];
-    for (var i = 0; i < _entry.letters.length; i++) {
-      if (_entry.letters[i] != _entry.sounds[i]) {
-        color = !color;
-        topChildren.add(
-          TextSpan(
-            text: _entry.letters[i],
-            style: theme?.copyWith(
-              color: color ? Colors.amber : Colors.redAccent,
-            ),
-          ),
-        );
-        botChildren.add(
-          TextSpan(
-            text: _entry.sounds[i],
-            style: theme?.copyWith(
-              color: color ? Colors.amber : Colors.redAccent,
-            ),
-          ),
-        );
-      } else {
-        topChildren.add(TextSpan(text: _entry.letters[i]));
-        botChildren.add(TextSpan(text: _entry.sounds[i]));
-      }
-    }
-    topChildren.add(TextSpan(text: "\n"));
-    botChildren.add(TextSpan(text: "\n"));
-
-    // populate main spans
-    final List<TextSpan> mainSpans = [
-      TextSpan(children: topChildren),
-      TextSpan(children: botChildren),
-      TextSpan(
-        text: _entry.meanings.join("; "),
-        style: theme?.copyWith(fontSize: 14),
-      ),
-    ];
-
-    // create word reading
-    final RichText mainText = RichText(
-      textAlign: TextAlign.center,
-      text: TextSpan(style: theme, children: mainSpans),
-      textScaler: TextScaler.linear(1.4),
-    );
-
-    return [
-      mainText,
-      const SizedBox(height: 8),
-      ..._entry.kanjis.map((e) => KanjiReadingView(e)),
-    ];
   }
 }
 
-class KanjiReadingView extends StatelessWidget {
-  final KanjiEntry ke;
-  const KanjiReadingView(this.ke, {super.key});
+class _DictionaryContent extends StatelessWidget {
+  const _DictionaryContent();
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<ReaderCubit>();
+    if (cubit.state.selectedEntry == null) {
+      return const SizedBox.shrink();
+    }
+
+    final entry = cubit.state.selectedEntry!;
+
     return Container(
-      margin: const EdgeInsets.only(top: 2),
-      decoration: BoxDecoration(border: Border(top: BorderSide())),
-      child: Row(
-        children: [
-          Expanded(child: Center(child: CustomText(ke.kanji, .headlineMedium))),
-          Expanded(
-            flex: 7,
-            child: Column(
-              children: [
-                _TextDiv("Def", ke.meanings.join(";  ")),
-                SizedBox(height: 5),
-                _TextDiv("On", ke.onReading.join(",  ")),
-                SizedBox(height: 5),
-                _TextDiv("Kun", ke.kunReadings.join(",  ")),
-              ],
-            ),
-          ),
-        ],
+      key: ValueKey(entry.letters.join()), // Forces animation on word change
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: KaminariTheme.surfaceTint.withAlpha(40)),
+        ),
       ),
-    );
-  }
-}
-
-class _TextDiv extends StatelessWidget {
-  final String type;
-  final String text;
-  const _TextDiv(this.type, this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide())),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.start,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 2, child: CustomText(type, .headlineMedium)),
-          SizedBox(width: 5),
-          Expanded(
-            flex: 15,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              decoration: BoxDecoration(
-                border: Border(right: BorderSide(), left: BorderSide()),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      children: [
+                        CustomText(
+                          entry.letters.join(),
+                          TextType.headlineLarge,
+                          color: KaminariTheme.textTitle,
+                        ),
+                        const SizedBox(width: 12),
+                        CustomText(
+                          entry.sounds.join(),
+                          TextType.labelMedium,
+                          color: KaminariTheme.cyan,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    CustomText(
+                      entry.meanings.join("; "),
+                      TextType.bodyMedium,
+                      maxLines: 3,
+                      color: KaminariTheme.textPrimary,
+                    ),
+                  ],
+                ),
               ),
-              child: CustomText(text, .headlineMedium),
-            ),
+              IconButton(
+                onPressed: () => cubit.clearSelection(),
+                icon: const Icon(Icons.close, size: 20),
+              ),
+            ],
+          ),
+          if (entry.kanjis.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _KanjiRow(kanjis: entry.kanjis, wordReadings: entry.sounds),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _KanjiRow extends StatelessWidget {
+  const _KanjiRow({required this.kanjis, required this.wordReadings});
+
+  final List<KanjiEntry> kanjis;
+  final List<String> wordReadings; // Pass the full word readings for matching
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 85, // Increased height to accommodate reading text
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: kanjis.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, index) =>
+            _KanjiCard(entry: kanjis[index], wordReadings: wordReadings),
+      ),
+    );
+  }
+}
+
+class _KanjiCard extends StatelessWidget {
+  const _KanjiCard({required this.entry, required this.wordReadings});
+
+  final KanjiEntry entry;
+  final List<String> wordReadings;
+
+  @override
+  Widget build(BuildContext context) {
+    // Find if any of the kanji's readings are present in the word's reading
+    final String fullWordReading = wordReadings.join("");
+
+    print(entry.onReading);
+    print(entry.kunReadings);
+
+    final List<String> onReadings = [
+      ...entry.onReading,
+      ...entry.onReading.map((e) => e.split(".").first).toSet(),
+    ];
+    final List<String> kunReadings = [
+      ...entry.kunReadings,
+      ...entry.kunReadings.map((e) => e.split(".").first).toSet(),
+    ];
+
+    // Check On-readings (usually Katakana)
+    final String matchedOn = onReadings.firstWhere(
+      (r) =>
+          fullWordReading.contains(r.replaceAll('-', '').replaceAll(".", "")) ||
+          fullWordReading.contains(
+            JpTransliterate.katakanaToHiragana(
+              r,
+            ).replaceAll('-', '').replaceAll(".", ""),
+          ),
+      orElse: () => '',
+    );
+
+    // Check Kun-readings (usually Hiragana)
+    final String matchedKun = kunReadings.firstWhere(
+      (r) =>
+          fullWordReading.contains(r.replaceAll('-', '').replaceAll(".", "")) ||
+          fullWordReading.contains(
+            JpTransliterate.hiraganaToKatakana(
+              r,
+            ).replaceAll('-', '').replaceAll(".", ""),
+          ),
+      orElse: () => '',
+    );
+
+    final String displayReading = matchedOn.isNotEmpty
+        ? matchedOn
+        : (matchedKun.isNotEmpty ? matchedKun : entry.onReading.first);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: (matchedOn.isNotEmpty || matchedKun.isNotEmpty)
+              ? KaminariTheme.cyan.withAlpha(100)
+              : KaminariTheme.surfaceTint.withAlpha(50),
+          width: (matchedOn.isNotEmpty || matchedKun.isNotEmpty) ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CustomText(
+            entry.kanji,
+            TextType.labelMedium,
+            fontSize: 18,
+            color: KaminariTheme.textTitle,
+          ),
+          const SizedBox(height: 2),
+          // The matched Reading
+          CustomText(
+            displayReading,
+            TextType.labelSmall,
+            fontSize: 11,
+            color: (matchedOn.isNotEmpty || matchedKun.isNotEmpty)
+                ? KaminariTheme.cyan
+                : KaminariTheme.textSecondary,
+          ),
+          const SizedBox(height: 2),
+          // The Meaning
+          CustomText(
+            entry.meanings.isNotEmpty ? entry.meanings.first : '',
+            TextType.labelSmall,
+            fontSize: 10,
+            color: KaminariTheme.textSecondary.withAlpha(150),
           ),
         ],
       ),
@@ -247,14 +214,16 @@ class _TextDiv extends StatelessWidget {
   }
 }
 
-class DictionaryEntry {
+@freezed
+class DictionaryEntry with _$DictionaryEntry {
+  final Map<String, Object?> map;
   final List<String> letters;
   final List<String> sounds;
   final List<String> meanings;
   final List<KanjiEntry> kanjis;
   final double frequency;
 
-  DictionaryEntry(Map<String, Object?> map, {required this.kanjis})
+  DictionaryEntry(this.map, {required this.kanjis})
     : letters = (map["letters"] as String).split(" "),
       sounds = (map["sounds"] as String).split(" "),
       meanings = (map["mean"] as String).split("|0|0|"),
@@ -266,13 +235,15 @@ class DictionaryEntry {
   }
 }
 
-class KanjiEntry {
+@freezed
+class KanjiEntry with _$KanjiEntry {
+  final Map<String, Object?> map;
   final String kanji;
   final List<String> meanings;
   final List<String> onReading;
   final List<String> kunReadings;
 
-  KanjiEntry(Map<String, Object?> map)
+  KanjiEntry(this.map)
     : kanji = map["letter"] as String,
       meanings = (map["mean"] as String).split("|0|0|"),
       onReading = (map["kon"] as String).split("|0|0|"),

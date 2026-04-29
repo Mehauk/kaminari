@@ -6,3 +6,5 @@
 - [ ] extractAsShortStory on failure? (https://ncode.syosetu.com/n9674md/)
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [ ] handle reimport same
+- [ ] use jagger?
+- [ ] h-b-p, t-d, k-g, s-z/j
