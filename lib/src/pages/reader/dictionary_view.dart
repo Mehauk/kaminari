@@ -47,7 +47,7 @@ class _DictionaryContent extends StatelessWidget {
 
     return Container(
       key: ValueKey(entry!.letters.join()), // Forces animation on word change
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(color: KaminariTheme.surfaceTint.withAlpha(40)),
@@ -60,10 +60,15 @@ class _DictionaryContent extends StatelessWidget {
           if (orientation == .bottom) ...[
             InkWell(
               onTap: clearSelection,
-              child: Center(child: CustomText("\u25BC", .bodyLarge)),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 12),
+                  child: CustomText("\u25BC", .bodyLarge),
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-          ],
+          ] else
+            SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -107,12 +112,17 @@ class _DictionaryContent extends StatelessWidget {
             ),
           ],
           if (orientation == .top) ...[
-            const SizedBox(height: 8),
             InkWell(
               onTap: clearSelection,
-              child: Center(child: CustomText("\u25B2", .bodyLarge)),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: CustomText("\u25B2", .bodyLarge),
+                ),
+              ),
             ),
-          ],
+          ] else
+            SizedBox(height: 12),
         ],
       ),
     );
