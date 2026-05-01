@@ -68,7 +68,10 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (url) => resetForNewPage(url),
+          onPageStarted: (url) {
+            resetForNewPage(url);
+            _injectScanner();
+          },
           onPageFinished: (url) async {
             final title = await controller.getTitle();
 
