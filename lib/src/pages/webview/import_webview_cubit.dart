@@ -129,14 +129,14 @@ class WebviewCubit extends Cubit<WebviewState> {
       final prompt = buildDiscoveryAIPrompt(miniTree);
       print(prompt);
 
-      // 3. Get LLM Response (accumulate stream)
-      // String fullResponse = "";
-      // await for (final chunk in llmService.streamResponse(prompt)) {
-      //   fullResponse += chunk;
-      // }
+      final origin = await controller.runJavaScriptReturningResult(
+        "document.location.origin",
+      );
 
-      String fullResponse =
-          '{"\$schema": "https://json-schema.org/draft/2020-12/schema", "title": ".p-novel__title", "author": ".p-novel__author > a", "coverUrl": "N/A", "jlptLevel": "N/A", "synopsis": "#novel_ex.p-novel__summary", "firstPageUrl": ".c-pager__item--first", "nextPageUrl": ".c-pager__item--next", "chapter": ".p-eplist__sublist", "chapterDetails": {"url": "a.p-eplist__subtitle", "title": "a.p-eplist__subtitle", "updatedDate": ".p-eplist__update"}}';
+      final fullResponse = await extractorBuilder.buildBookExtractorSelectors(
+        origin as String,
+        prompt,
+      );
 
       // 4. Parse Selectors from JSON
       final selectors = _extractJsonFromResponse(
@@ -172,7 +172,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         final jsonString = response.substring(startIndex, endIndex + 1);
         final jsonMap = Map<String, dynamic>.from(jsonDecode(jsonString));
         print("JSON: $jsonMap");
-        return fromJson(jsonMap);
+        return fromJson(jsonMap['properties'] ?? jsonMap);
       }
 
       // Fallback to previous logic if braces not found
@@ -195,7 +195,7 @@ class WebviewCubit extends Cubit<WebviewState> {
     final jsonCMap = selectors.chapterDetails.toJson();
     final reCMap = {};
 
-    final firstPageSelector = jsonMap["firstPageUrl"] as String;
+    // final firstPageSelector = jsonMap["firstPageUrl"] as String;
     final nextPageSelector = jsonMap["nextPageUrl"] as String;
 
     for (var ckey in jsonCMap.keys) {
@@ -228,22 +228,13 @@ class WebviewCubit extends Cubit<WebviewState> {
       String selector = jsonMap[key];
       if (["null", "n/a", "none"].contains(selector.toLowerCase())) continue;
 
-      if (key == "chapter") {
-        reMap["chapters"] = null;
-      } else {
-        reMap[key] =
-            "document.body.querySelector('$selector').textContent.trim()";
-      }
+      reMap[key] =
+          "document.body.querySelector('$selector').textContent.trim()";
     }
 
     final js = generateBookExtrationJSPrompt(
       reMap,
-      cheaptersLoadingIIFE(
-        jsonMap["chapter"],
-        selectors.chapterDetails,
-        firstPageSelector,
-        nextPageSelector,
-      ),
+      cheaptersLoadingIIFE(selectors.chapterDetails, nextPageSelector),
     );
 
     print("js");
@@ -289,13 +280,8 @@ class WebviewCubit extends Cubit<WebviewState> {
           final chapterPrompt = buildChapterExtractionAIPrompt(chapterTree);
           print(chapterPrompt);
 
-          // String chapterLlmResponse = "";
-          // await for (final chunk in llmService.streamResponse(chapterPrompt)) {
-          //   chapterLlmResponse += chunk;
-          // }
-
-          final String chapterLlmResponse =
-              '{"contentSection": "div.js-novel-text.p-novel__text"}';
+          final chapterLlmResponse = await extractorBuilder
+              .buildBookExtractorSelectors(reMap['source'], chapterPrompt);
 
           print('chapterLlmResponse');
           print(chapterLlmResponse);

@@ -3,7 +3,7 @@ import 'package:kaminari/src/data/models/book.dart';
 String buildDiscoveryAIPrompt(String miniTree) {
   return """
 Analyze this minified DOM tree and identify the most likely CSS selectors for book metadata.
-I will use these selectors to run querySelector qrquerySelectorAll.
+I will use these selectors to run querySelector or querySelectorAll.
 Remember that url are most likely to be a tags.
 Tree: $miniTree
 
@@ -29,20 +29,30 @@ JSON:
 }
 
 String cheaptersLoadingIIFE(
-  String chapterSelector,
   ChapterInfoExtractor detailsSelector,
-  String firstPageSelector,
   String nextPageSelector,
 ) {
   return """
   (async () => {
     let chapters = [];
     let i = -1;
-    let nextUrl = document.querySelector('$firstPageSelector').href ?? document.location.href;
+    let nextUrl = document.location.href;
     while (nextUrl) {
-      const html = await (await fetch(nextUrl)).text();
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      const pageChapters = Array.from(doc.querySelectorAll('$chapterSelector')).map(e => {
+      let html;
+      let doc;
+      if (i == -1) {
+        html = '';
+        doc = document;
+      } else {
+        try{
+          html = await (await fetch(nextUrl)).text();
+          doc = new DOMParser().parseFromString(html, 'text/html');
+        } catch (e) {
+          break;
+        }
+      }
+      
+      const pageChapters = Array.from(doc.querySelectorAll('${detailsSelector.base}')).map(e => {
       i += 1;
       return ({
         url: e.querySelector('${detailsSelector.url}')?.href,
