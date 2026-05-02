@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
+import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
+import 'package:kaminari/src/ui/widgets/book_cards.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
 
@@ -28,7 +33,20 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 32),
-                // LastReadBookCard(mockBookDetails),
+                FutureBuilder<BookDetails?>(
+                  future: context.read<DatabaseService>().getLastAccessedBook(),
+                  builder: (context, snapshot) {
+                    final book = snapshot.data;
+                    print(book);
+                    if (book != null) {
+                      return LastReadBookCard(book);
+                    } else {
+                      return _PlaceholderBookCard(
+                        isLoading: snapshot.connectionState == .waiting,
+                      );
+                    }
+                  },
+                ),
                 SizedBox(height: 32),
                 Row(
                   children: [
@@ -111,6 +129,41 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PlaceholderBookCard extends StatelessWidget {
+  const _PlaceholderBookCard({required this.isLoading});
+
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return LightningCard(
+      type: LightningBorderEffectType.thin,
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Stack(
+          children: [
+            Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.book_outlined,
+                    size: 48,
+                    color: KaminariTheme.textSecondary,
+                  ),
+                  SizedBox(height: 16),
+                  CustomText("No recent activity", TextType.bodyMedium),
+                ],
+              ),
+            ),
+            if (isLoading)
+              BgFilter(child: Center(child: CircularProgressIndicator())),
+          ],
+        ),
       ),
     );
   }

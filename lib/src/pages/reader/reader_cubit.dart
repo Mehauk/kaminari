@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:jp_transliterate/jp_transliterate.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 
@@ -20,9 +21,13 @@ abstract class ReaderState with _$ReaderState {
 }
 
 class ReaderCubit extends Cubit<ReaderState> {
+  final int bookId;
   final ChapterInfo chapter;
+  final DatabaseService dbService;
 
-  ReaderCubit(this.chapter) : super(const ReaderState()) {
+  ReaderCubit(this.chapter, {required this.dbService, required this.bookId})
+    : super(const ReaderState()) {
+    dbService.updateBookAccessTime(bookId);
     _tokenizeContent();
   }
 

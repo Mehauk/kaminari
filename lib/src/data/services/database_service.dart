@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -133,6 +134,50 @@ class DatabaseService {
         .toList();
 
     return ChapterInfo.fromJson({...rows.first, 'content': content});
+  }
+
+  Future<BookDetails?> getLastAccessedBook() async {
+    final db = await database;
+
+    // 1. Get the last accessed book row
+    final rows = await db.rawQuery('''
+    SELECT * FROM BookDetails
+    ORDER BY accessedDate DESC LIMIT 1
+  ''');
+
+    if (rows.isEmpty) return null;
+
+    final bookRow = rows.first;
+    final bookId = bookRow['id'] as int;
+
+    // 2. Fetch its chapters
+    final chapterRows = await db.rawQuery(
+      '''
+    SELECT c.id, c.book_id, c.title, c.url, c.chapterNumber AS number FROM ChapterInfo c
+    WHERE book_id = ? 
+    ORDER BY chapterNumber ASC
+  ''',
+      [bookId],
+    );
+
+    // 3. Construct a map that matches the structure expected by .fromJson
+    final bookMap = Map<String, dynamic>.from(bookRow);
+    bookMap['chapters'] = chapterRows;
+
+    print("BOOOOK");
+    debugPrint(bookMap.toString());
+
+    return BookDetails.fromJson(bookMap);
+  }
+
+  Future<void> updateBookAccessTime(int bookId) async {
+    final db = await database;
+    await db.update(
+      'BookDetails',
+      {'accessedDate': DateTime.now().millisecondsSinceEpoch},
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
   }
 
   /// Helper to save a book (used in the WebviewCubit import flow)

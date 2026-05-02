@@ -1,5 +1,5 @@
-- [ ] cache selector scripts to reuse -> fallback to gemini on fail
-- [ ] cache last read book and chapter
+- [x] cache selector scripts to reuse -> fallback to gemini on fail
+- [x] cache last read book and chapter
 - [ ] cache/restore scroll position
 - [ ] download missing chapter (handle error with webview )
 
