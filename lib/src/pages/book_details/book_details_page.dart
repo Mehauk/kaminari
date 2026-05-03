@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kaminari/app.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
@@ -18,18 +19,44 @@ class BookDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => BookDetailsCubit(book),
+      create: (_) => BookDetailsCubit(book, dbService: context.read()),
       child: _BookDetailsView(),
     );
   }
 }
 
-class _BookDetailsView extends StatelessWidget {
+class _BookDetailsView extends StatefulWidget {
   const _BookDetailsView();
 
   @override
+  State<_BookDetailsView> createState() => _BookDetailsViewState();
+}
+
+class _BookDetailsViewState extends State<_BookDetailsView> with RouteAware {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 4. Subscribe this page to the route observer
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    // 5. Always unsubscribe on dispose
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  // 6. This is the "Lifecycle Hook" you are looking for!
+  // It triggers when the top route (the Reader) is popped and this page becomes visible.
+  @override
+  void didPopNext() {
+    context.read<BookDetailsCubit>().refreshProgress();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final cubit = context.read<BookDetailsCubit>();
+    final cubit = context.watch<BookDetailsCubit>();
     return Scaffold(
       backgroundColor: KaminariTheme.background,
       body: CustomScrollView(
@@ -59,24 +86,13 @@ class _BookDetailsView extends StatelessWidget {
             ),
           ),
 
-          //  for (int i = 0; i < cubit.book.chapters.length; i++) ...[
-          //   _ChapterTile(
-          //     chapter: cubit.book.chapters[i],
-          //     current: cubit.book.currentChapter,
-          //   ),
-          //   if (i < cubit.book.chapters.length - 1)
-          //     Divider(
-          //       height: 1,
-          //       color: KaminariTheme.surfaceTint.withAlpha(20),
-          //     ),
-          // ],
           SliverFixedExtentList.list(
             itemExtent: 50,
             children: cubit.book.chapters
                 .map(
                   (c) => _ChapterTile(
                     chapter: c,
-                    current: cubit.book.currentChapter,
+                    current: cubit.state.currentChapter,
                   ),
                 )
                 .toList(),
@@ -258,7 +274,7 @@ class _ProgressSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<BookDetailsCubit>();
+    final cubit = context.watch<BookDetailsCubit>();
     return LightningCard(
       type: .glowing,
       child: Padding(
@@ -290,7 +306,7 @@ class _ProgressSection extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: CustomText(
-                    cubit.book.chapters[cubit.book.currentChapter].title,
+                    cubit.book.chapters[cubit.state.currentChapter].title,
                     .bodyMedium,
                     fontSize: 13,
                   ),
@@ -299,7 +315,7 @@ class _ProgressSection extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             CustomText(
-              'Chapter ${cubit.book.currentChapter} of ${cubit.book.chapters.length}',
+              'Chapter ${cubit.state.currentChapter + 1} of ${cubit.book.chapters.length}',
               .labelSmall,
             ),
             const SizedBox(height: 16),
@@ -310,7 +326,7 @@ class _ProgressSection extends StatelessWidget {
                   final fullChapter = await context
                       .read<DatabaseService>()
                       .getChapterWithContent(
-                        cubit.book.chapters[cubit.book.currentChapter].id!,
+                        cubit.book.chapters[cubit.state.currentChapter].id!,
                       );
                   if (context.mounted) {
                     Navigator.of(context).push(
@@ -524,16 +540,16 @@ class _ChapterTile extends StatelessWidget {
     final bool isCurrent = current == chapter.number;
     return InkWell(
       onTap: () async {
-        final fullChapter = await context
-            .read<DatabaseService>()
-            .getChapterWithContent(chapter.id!);
+        final bookId = context.read<BookDetailsCubit>().book.id!;
+        final db = context.read<DatabaseService>();
+
+        final fullChapter = await db.getChapterWithContent(chapter.id!);
+
         if (context.mounted) {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => ReaderPage(
-                fullChapter!,
-                bookId: context.read<BookDetailsCubit>().book.id!,
-              ),
+              // 2. Use '_' to signify we aren't using the route's context
+              builder: (_) => ReaderPage(fullChapter!, bookId: bookId),
             ),
           );
         }
@@ -546,7 +562,7 @@ class _ChapterTile extends StatelessWidget {
             SizedBox(
               width: 36,
               child: CustomText(
-                '${chapter.number}'.padLeft(2, '0'),
+                '${chapter.number + 1}'.padLeft(2, '0'),
                 .labelSmall,
                 color: isCurrent
                     ? KaminariTheme.textTitle

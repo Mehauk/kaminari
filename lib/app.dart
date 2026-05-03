@@ -8,6 +8,8 @@ import 'package:kaminari/src/pages/webview/import_webview_page.dart';
 
 import 'src/config/theme.dart';
 
+final RouteObserver<ModalRoute> routeObserver = RouteObserver<ModalRoute>();
+
 class KaminariApp extends StatelessWidget {
   const KaminariApp({super.key});
 
@@ -29,6 +31,7 @@ class KaminariApp extends StatelessWidget {
             initialUrl: ModalRoute.of(context)?.settings.arguments as String?,
           ),
         },
+        navigatorObservers: [routeObserver],
       ),
     );
   }

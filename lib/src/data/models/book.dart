@@ -104,6 +104,7 @@ abstract class ChapterInfo with _$ChapterInfo {
     required String title,
     String? updatedDate,
     List<String>? content,
+    double? scrollPosition,
   }) = _ChapterInfo;
 
   factory ChapterInfo.fromJson(Map<String, dynamic> json) =>

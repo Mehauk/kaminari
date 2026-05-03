@@ -321,8 +321,6 @@ class WebviewCubit extends Cubit<WebviewState> {
 
       final book = BookDetails.fromJson(response);
 
-      print(book.chapters.first);
-
       return book;
     } on TimeoutException {
       throw Exception("Extraction timed out after 5 minutes");
