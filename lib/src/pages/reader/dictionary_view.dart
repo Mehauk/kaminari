@@ -7,6 +7,7 @@ import 'package:jp_transliterate/jp_transliterate.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
+import 'package:kaminari/src/ui/widgets/card.dart';
 
 part 'dictionary_view.freezed.dart';
 
@@ -169,46 +170,139 @@ class _KanjiCard extends StatelessWidget {
         ? matchedOn
         : (matchedKun.isNotEmpty ? matchedKun : entry.onReading.first);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(10),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: (matchedOn.isNotEmpty || matchedKun.isNotEmpty)
-              ? KaminariTheme.cyan.withAlpha(100)
-              : KaminariTheme.surfaceTint.withAlpha(50),
-          width: (matchedOn.isNotEmpty || matchedKun.isNotEmpty) ? 1.5 : 1,
+    return InkWell(
+      onTap: () {
+        showDialog<void>(
+          context: context,
+          builder: (ctx) => _KanjiDetailDialog(entry: entry),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(10),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: (matchedOn.isNotEmpty || matchedKun.isNotEmpty)
+                ? KaminariTheme.cyan.withAlpha(100)
+                : KaminariTheme.surfaceTint.withAlpha(50),
+            width: (matchedOn.isNotEmpty || matchedKun.isNotEmpty) ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CustomText(
+              entry.kanji,
+              TextType.labelMedium,
+              fontSize: 18,
+              color: KaminariTheme.textTitle,
+            ),
+            const SizedBox(height: 2),
+            // The matched Reading
+            CustomText(
+              displayReading,
+              TextType.labelSmall,
+              fontSize: 11,
+              color: (matchedOn.isNotEmpty || matchedKun.isNotEmpty)
+                  ? KaminariTheme.cyan
+                  : KaminariTheme.textSecondary,
+            ),
+            const SizedBox(height: 2),
+            // The Meaning
+            CustomText(
+              entry.meanings.isNotEmpty ? entry.meanings.first : '',
+              TextType.labelSmall,
+              fontSize: 10,
+              color: KaminariTheme.textSecondary.withAlpha(150),
+            ),
+          ],
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CustomText(
-            entry.kanji,
-            TextType.labelMedium,
-            fontSize: 18,
-            color: KaminariTheme.textTitle,
+    );
+  }
+}
+
+class _KanjiDetailDialog extends StatelessWidget {
+  const _KanjiDetailDialog({required this.entry});
+
+  final KanjiEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    // Wrap in Dialog to get standard constraints and centering
+    return Dialog(
+      backgroundColor:
+          Colors.transparent, // Let LightningCard handle the background
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 400,
+        ), // Prevent it from getting too wide on tablets
+        child: LightningCard(
+          type: .striking,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize
+                  .min, // Vital: Tells the column to only take required height
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomText(
+                      entry.kanji,
+                      TextType.displayLarge,
+                      color: KaminariTheme.textTitle,
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                CustomText(
+                  "Meanings",
+                  TextType.labelSmall,
+                  color: KaminariTheme.cyan,
+                ),
+                const SizedBox(height: 8),
+                CustomText(entry.meanings.join(", "), TextType.bodyLarge),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    CustomText("On:", TextType.bodyMedium),
+
+                    Expanded(
+                      child: CustomText(
+                        " ${entry.onReading.join(" , ")}",
+                        .bodyMedium,
+                        color: KaminariTheme.cyan,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    CustomText("kun:", TextType.bodyMedium),
+
+                    Expanded(
+                      child: CustomText(
+                        " ${entry.kunReadings.join(" , ")}",
+                        .bodyMedium,
+                        color: KaminariTheme.cyan,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 2),
-          // The matched Reading
-          CustomText(
-            displayReading,
-            TextType.labelSmall,
-            fontSize: 11,
-            color: (matchedOn.isNotEmpty || matchedKun.isNotEmpty)
-                ? KaminariTheme.cyan
-                : KaminariTheme.textSecondary,
-          ),
-          const SizedBox(height: 2),
-          // The Meaning
-          CustomText(
-            entry.meanings.isNotEmpty ? entry.meanings.first : '',
-            TextType.labelSmall,
-            fontSize: 10,
-            color: KaminariTheme.textSecondary.withAlpha(150),
-          ),
-        ],
+        ),
       ),
     );
   }
