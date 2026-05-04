@@ -35,6 +35,7 @@
 - [x] injecter starts earlier
 - [x] reading progress fix (+1 if accessedDate not null)
 - [x] match longest match first (dict)
+- [ ] chiisai tsu (not working?)
 - [ ] prereading kanji anki type shii
 - [ ] implement home screen functionality
 - [ ] Import builder loader update (with type selection)
