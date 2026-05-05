@@ -3,7 +3,7 @@
 - [x] cache/restore scroll position
 - [x] clickable kanji cards (more info)
 - [ ] download missing chapter (handle error with webview )
-- [ ] h-b-p, t-d, k-g, s-z/j
+- [x] h-b-p, t-d, k-g, s-z/j
 - [ ] implement history/favorites tab
 
 
