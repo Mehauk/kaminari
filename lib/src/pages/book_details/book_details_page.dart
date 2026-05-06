@@ -275,6 +275,7 @@ class _ProgressSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.watch<BookDetailsCubit>();
+    final progress = cubit.book.progress(cubit.state.currentChapter);
     return LightningCard(
       type: .glowing,
       child: Padding(
@@ -287,14 +288,14 @@ class _ProgressSection extends StatelessWidget {
               children: [
                 CustomText('READING PROGRESS', .labelSmall),
                 CustomText(
-                  '${(cubit.book.progress * 100).toStringAsFixed(0)}%',
+                  '${(progress * 100).toStringAsFixed(0)}%',
                   .labelSmall,
                   color: KaminariTheme.textTitle,
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            LinearProgressIndicator(value: cubit.book.progress),
+            LinearProgressIndicator(value: progress),
             const SizedBox(height: 12),
             Row(
               children: [
