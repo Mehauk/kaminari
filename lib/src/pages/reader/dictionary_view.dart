@@ -4,21 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:jp_transliterate/jp_transliterate.dart';
 import 'package:kaminari/src/config/theme.dart';
-import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 
 part 'dictionary_view.freezed.dart';
 
+enum KanjiAlignment { left, right }
+
+enum DictOrientation { top, bottom, dynamic }
+
 class DictionaryView extends StatelessWidget {
   final DictionaryEntry? entry;
   final void Function() clearSelection;
   final DictOrientation orientation;
+  final KanjiAlignment alignment;
   const DictionaryView(
     this.entry,
     this.clearSelection, {
     super.key,
     required this.orientation,
+    required this.alignment,
   });
 
   @override
@@ -28,7 +33,7 @@ class DictionaryView extends StatelessWidget {
       transitionBuilder: (Widget child, Animation<double> animation) {
         return SizeTransition(sizeFactor: animation, child: child);
       },
-      child: _DictionaryContent(entry, clearSelection, orientation),
+      child: _DictionaryContent(entry, clearSelection, orientation, alignment),
     );
   }
 }
@@ -37,7 +42,13 @@ class _DictionaryContent extends StatelessWidget {
   final DictionaryEntry? entry;
   final void Function() clearSelection;
   final DictOrientation orientation;
-  const _DictionaryContent(this.entry, this.clearSelection, this.orientation);
+  final KanjiAlignment alignment;
+  const _DictionaryContent(
+    this.entry,
+    this.clearSelection,
+    this.orientation,
+    this.alignment,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +75,7 @@ class _DictionaryContent extends StatelessWidget {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: alignment == .left ? .start : .end,
           children: [
             if (orientation == .bottom) ...[
               InkWell(
@@ -83,7 +94,7 @@ class _DictionaryContent extends StatelessWidget {
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: alignment == .left ? .start : .end,
                     children: [
                       Wrap(
                         children: [
@@ -102,7 +113,9 @@ class _DictionaryContent extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       CustomText(
-                        entry!.meanings.join("; "),
+                        entry!.meanings.join("; ").trim().isNotEmpty
+                            ? entry!.meanings.join("; ")
+                            : " --- ",
                         TextType.bodyMedium,
                         maxLines: 3,
                         color: KaminariTheme.textPrimary,
@@ -118,6 +131,7 @@ class _DictionaryContent extends StatelessWidget {
                 kanjis: entry!.kanjis,
                 wordReadings: entry!.sounds,
                 letters: entry!.letters,
+                alignment: alignment,
               ),
             ],
             if (orientation == .top) ...[
@@ -144,11 +158,13 @@ class _KanjiRow extends StatelessWidget {
     required this.kanjis,
     required this.wordReadings,
     required this.letters,
+    required this.alignment,
   });
 
   final List<String> letters;
   final List<KanjiEntry> kanjis;
   final List<String> wordReadings; // Pass the full word readings for matching
+  final KanjiAlignment alignment;
 
   @override
   Widget build(BuildContext context) {
@@ -170,16 +186,36 @@ class _KanjiRow extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 85, // Increased height to accommodate reading text
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: kanjis.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
-        itemBuilder: (context, index) => _KanjiCard(
-          entry: kanjis[index],
-          wordReadings: readings,
-          index: index,
-        ),
+      height: 85,
+      child: LayoutBuilder(
+        // 1. Use LayoutBuilder to get the screen width
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: alignment == .right,
+            child: ConstrainedBox(
+              // 2. Force the Row to be at least as wide as the visible area
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                spacing: 10,
+                // 3. Now "end" will actually push items to the right
+                mainAxisAlignment: alignment == .left
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.end,
+                children: [
+                  ...kanjis.asMap().entries.map(
+                    (e) => _KanjiCard(
+                      entry: e.value,
+                      wordReadings: readings,
+                      index: e.key,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
