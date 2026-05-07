@@ -215,13 +215,15 @@ class HistoryBookCard extends StatelessWidget {
                         Icon(CupertinoIcons.book, size: 14),
                         SizedBox(width: 4),
                         CustomText(
-                          "chapter ${book.currentChapter} / ${book.chapters.length}",
+                          "chapter ${book.currentChapter + 1} / ${book.chapters.length}",
                           .labelSmall,
                         ),
                       ],
                     ),
                     SizedBox(height: 12),
-                    LinearProgressIndicator(value: 156 / 200),
+                    LinearProgressIndicator(
+                      value: book.progress(book.currentChapter),
+                    ),
                   ],
                 ),
               ),
