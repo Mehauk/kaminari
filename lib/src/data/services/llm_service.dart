@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
@@ -56,6 +57,34 @@ class LlmService {
       } else {
         rethrow;
       }
+    }
+  }
+
+  static T extractJsonFromResponse<T>(
+    String response,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    // Gemini often wraps JSON in markdown code blocks or adds conversational filler.
+    // We attempt to extract the JSON block.
+    try {
+      final startIndex = response.indexOf('{');
+      final endIndex = response.lastIndexOf('}');
+
+      if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+        final jsonString = response.substring(startIndex, endIndex + 1);
+        final jsonMap = Map<String, dynamic>.from(jsonDecode(jsonString));
+        print("JSON: $jsonMap");
+        return fromJson(jsonMap['properties'] ?? jsonMap);
+      }
+
+      // Fallback to previous logic if braces not found
+      final cleanJson = response.replaceAll(RegExp(r'```json|```'), '').trim();
+      final jsonMap = Map<String, dynamic>.from(jsonDecode(cleanJson));
+      return fromJson(jsonMap);
+    } catch (e) {
+      print("JSON Parsing Error: $e");
+      print("Original Response: $response");
+      rethrow;
     }
   }
 }

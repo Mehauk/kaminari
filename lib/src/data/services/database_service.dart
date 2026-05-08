@@ -295,4 +295,44 @@ class DatabaseService {
       }
     });
   }
+
+  Future<int> saveChapterContent(int chapterId, List<String> content) async {
+    final db = await database;
+    return await db.transaction((txn) async {
+      await txn.delete(
+        'ChapterSection',
+        where: 'chapter_id = ?',
+        whereArgs: [chapterId],
+      );
+      for (var section in content) {
+        await txn.insert('ChapterSection', {
+          'chapter_id': chapterId,
+          'content': section,
+        });
+      }
+      return content.length;
+    });
+  }
+
+  Future<List<ChapterInfo>> getNextChaptersWithoutContent(
+    int bookId,
+    int currentChapterIndex,
+    int limit,
+  ) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT id, book_id, title, url, chapterNumber AS number, scrollPosition
+      FROM ChapterInfo
+      WHERE book_id = ? AND chapterNumber > ?
+        AND id NOT IN (
+          SELECT DISTINCT chapter_id FROM ChapterSection
+        )
+      ORDER BY chapterNumber ASC
+      LIMIT ?
+      ''',
+      [bookId, currentChapterIndex, limit],
+    );
+    return rows.map((row) => ChapterInfo.fromJson(row)).toList();
+  }
 }

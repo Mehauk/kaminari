@@ -9,6 +9,7 @@ import 'package:kaminari/src/data/constants/prompt.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
+import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 part 'import_webview_cubit.freezed.dart';
@@ -139,7 +140,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       );
 
       // 4. Parse Selectors from JSON
-      final selectors = _extractJsonFromResponse(
+      final selectors = LlmService.extractJsonFromResponse(
         fullResponse,
         BookDetailsExtractor.fromJson,
       );
@@ -155,34 +156,6 @@ class WebviewCubit extends Cubit<WebviewState> {
     } catch (e, stack) {
       print("Extraction Error: $e\n$stack");
       emit(state.copyWith(importStatus: .importFailure));
-    }
-  }
-
-  T _extractJsonFromResponse<T>(
-    String response,
-    T Function(Map<String, dynamic>) fromJson,
-  ) {
-    // Gemini often wraps JSON in markdown code blocks or adds conversational filler.
-    // We attempt to extract the JSON block.
-    try {
-      final startIndex = response.indexOf('{');
-      final endIndex = response.lastIndexOf('}');
-
-      if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
-        final jsonString = response.substring(startIndex, endIndex + 1);
-        final jsonMap = Map<String, dynamic>.from(jsonDecode(jsonString));
-        print("JSON: $jsonMap");
-        return fromJson(jsonMap['properties'] ?? jsonMap);
-      }
-
-      // Fallback to previous logic if braces not found
-      final cleanJson = response.replaceAll(RegExp(r'```json|```'), '').trim();
-      final jsonMap = Map<String, dynamic>.from(jsonDecode(cleanJson));
-      return fromJson(jsonMap);
-    } catch (e) {
-      print("JSON Parsing Error: $e");
-      print("Original Response: $response");
-      rethrow;
     }
   }
 
@@ -287,7 +260,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           print(chapterLlmResponse);
           print('chapterLlmResponse');
 
-          final chapterExtractor = _extractJsonFromResponse(
+          final chapterExtractor = LlmService.extractJsonFromResponse(
             chapterLlmResponse,
             ChapterExtractor.fromJson,
           );

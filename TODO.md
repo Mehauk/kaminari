@@ -5,7 +5,10 @@
 - [x] h-b-p, t-d, k-g, s-z/j
 - [x] implement history
 - [ ] implement favoriting and favorites tab on history page
-- [ ] download missing chapter using the cached chapter/page extractor (handle error by oepning the import webview at the pages location and manually clicking the import button) (note that the import button this time only targets the indivudal chapter and not the entire book.). also make sure that one chapter before and after are imported.
+- [x] prefetch next chapters
+- [ ] show downloading indicator on opened chapter without content
+- [ ] prioritize opened chapter downloading over the others
+- [ ] make a queue, with limitaions per 5 minutes on downloads (opening a chapter skips limit)
 
 
 - [ ] Images?
