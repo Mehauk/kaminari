@@ -59,7 +59,10 @@ class ChapterAnalysisService {
   static bool _isReviewWorthy(String text) {
     if (text.isEmpty) return false;
 
-    bool hasKanji = JpTransliterate.isKanji(input: text);
+    bool hasKanji = JpTransliterate.isKanji(
+      input: text,
+      confidenceThreshold: 1 / (text.length + 1),
+    );
 
     return hasKanji;
   }
