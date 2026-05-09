@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
+import 'package:kaminari/src/pages/home/prep/chapter_prep_page.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
@@ -37,11 +38,24 @@ class HomeScreen extends StatelessWidget {
                   stream: context.read<DatabaseService>().onBooksChanged,
                   builder: (context, _) {
                     return FutureBuilder<BookDetails?>(
-                      future: context.read<DatabaseService>().getLastAccessedBook(),
+                      future: context
+                          .read<DatabaseService>()
+                          .getLastAccessedBook(),
                       builder: (context, snapshot) {
                         final book = snapshot.data;
                         if (book != null) {
-                          return LastReadBookCard(book);
+                          final nextChapter =
+                              book.chapters[book.currentChapter];
+                          return Column(
+                            children: [
+                              LastReadBookCard(book),
+                              SizedBox(height: 16),
+                              _ReviewPrepCard(
+                                nextChapter: nextChapter,
+                                book: book,
+                              ),
+                            ],
+                          );
                         } else {
                           return _PlaceholderBookCard(
                             isLoading: snapshot.connectionState == .waiting,
@@ -133,6 +147,64 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ReviewPrepCard extends StatelessWidget {
+  const _ReviewPrepCard({required this.nextChapter, required this.book});
+
+  final ChapterInfo nextChapter;
+  final BookDetails book;
+
+  @override
+  Widget build(BuildContext context) {
+    return LightningCard(
+      type: LightningBorderEffectType.thin,
+      child: InkWell(
+        onTap: () async {
+          final fullChapter = await context
+              .read<DatabaseService>()
+              .getChapterWithContent(nextChapter.id!);
+          if (fullChapter != null && context.mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    ChapterPrepPage(book: book, chapter: fullChapter),
+              ),
+            );
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              LightningIcon(
+                Icons.psychology_alt_outlined,
+                type: LightningIconType.golden,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomText(
+                      "READING PREP",
+                      TextType.labelSmall,
+                      color: KaminariTheme.textTitle,
+                    ),
+                    CustomText(
+                      "0/100 key words reviewed for Chapter ${nextChapter.number + 1}",
+                      TextType.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 14),
+            ],
+          ),
+        ),
       ),
     );
   }
