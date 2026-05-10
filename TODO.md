@@ -52,8 +52,8 @@
 
 - [ ] implement home screen functionality
   - [x] prereading kanji anki type shii
-    - [ ] cache training data (for quicker reload)
-    - [ ] preload training data for next chapter when reaching end of current chapter (non blocking)
+    - [x] cache training data (for quicker reload)
+    - [] preload training data for next chapter when reaching end of current chapter (non blocking)
     - [ ] calculate show order (considering kanji level)
     - [ ] open prep screen from top of chapter?
     - [ ] implement word of the day with correct kanji level

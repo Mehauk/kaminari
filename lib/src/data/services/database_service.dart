@@ -29,7 +29,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 9,
+      version: 10,
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async {
@@ -64,6 +64,17 @@ class DatabaseService {
       await db.execute(
         'ALTER TABLE BookDetails ADD COLUMN language TEXT NOT NULL DEFAULT "ja"',
       );
+    }
+    if (oldVersion < 10) {
+      await db.execute('''
+        CREATE TABLE BookAnalysisCache (
+          book_id INTEGER PRIMARY KEY,
+          chapter_id INTEGER NOT NULL,
+          json_data TEXT NOT NULL,
+          last_accessed INTEGER NOT NULL,
+          FOREIGN KEY (book_id) REFERENCES BookDetails (id) ON DELETE CASCADE
+        )
+      ''');
     }
   }
 
@@ -113,6 +124,17 @@ class DatabaseService {
         chapter_id INTEGER NOT NULL,
         content TEXT NOT NULL,
         FOREIGN KEY (chapter_id) REFERENCES ChapterInfo (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // 4. Chapter Analysis Cache Table
+    await db.execute('''
+      CREATE TABLE BookAnalysisCache (
+        book_id INTEGER PRIMARY KEY,
+        chapter_id INTEGER NOT NULL,
+        json_data TEXT NOT NULL,
+        last_accessed INTEGER NOT NULL,
+        FOREIGN KEY (book_id) REFERENCES BookDetails (id) ON DELETE CASCADE
       )
     ''');
   }
@@ -463,5 +485,56 @@ class DatabaseService {
     );
     _notifyChange();
     return count;
+  }
+
+  Future<void> saveBookAnalysisCache({
+    required int bookId,
+    required int chapterId,
+    required String jsonData,
+  }) async {
+    final db = await database;
+    await db.insert('BookAnalysisCache', {
+      'book_id': bookId,
+      'chapter_id': chapterId,
+      'json_data': jsonData,
+      'last_accessed': DateTime.now().millisecondsSinceEpoch,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<String?> getBookAnalysisCache(int bookId, int chapterId) async {
+    final db = await database;
+
+    // Cleanup expired caches whenever we attempt to read
+    await _cleanupExpiredCaches(db);
+
+    final results = await db.query(
+      'BookAnalysisCache',
+      where: 'book_id = ? AND chapter_id = ?',
+      whereArgs: [bookId, chapterId],
+    );
+
+    if (results.isEmpty) return null;
+
+    // Update last_accessed because the book is being used
+    await db.update(
+      'BookAnalysisCache',
+      {'last_accessed': DateTime.now().millisecondsSinceEpoch},
+      where: 'book_id = ?',
+      whereArgs: [bookId],
+    );
+
+    return results.first['json_data'] as String;
+  }
+
+  Future<void> _cleanupExpiredCaches(Database db) async {
+    final hundredDaysAgo = DateTime.now()
+        .subtract(const Duration(days: 100))
+        .millisecondsSinceEpoch;
+
+    await db.delete(
+      'BookAnalysisCache',
+      where: 'last_accessed < ?',
+      whereArgs: [hundredDaysAgo],
+    );
   }
 }

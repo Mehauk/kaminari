@@ -539,6 +539,20 @@ class DictionaryEntry with _$DictionaryEntry {
   String toString() {
     return "Letters: $letters\nSounds: $sounds\nkanjis: \n${kanjis.fold<String>("", (previousValue, element) => "$previousValue$element\n")}";
   }
+
+  Map<String, dynamic> toJson() => {
+    'map': map,
+    'kanjis': kanjis.map((e) => e.toJson()).toList(),
+  };
+
+  factory DictionaryEntry.fromCacheJson(Map<String, dynamic> json) {
+    return DictionaryEntry(
+      Map<String, Object?>.from(json['map']),
+      kanjis: (json['kanjis'] as List)
+          .map((e) => KanjiEntry.fromCacheJson(Map<String, dynamic>.from(e)))
+          .toList(),
+    );
+  }
 }
 
 @freezed
@@ -559,9 +573,14 @@ class KanjiEntry with _$KanjiEntry {
   String toString() {
     return "$kanji -- $meanings";
   }
+
+  Map<String, dynamic> toJson() => {'map': map};
+
+  factory KanjiEntry.fromCacheJson(Map<String, dynamic> json) {
+    return KanjiEntry(Map<String, Object?>.from(json['map']));
+  }
 }
 
-// 1. Your original Map (corrected 'ぢ')
 const Map<String, List<String>> kanaDiacritics = {
   'か': ['が'],
   'き': ['ぎ'],
@@ -606,8 +625,6 @@ const Map<String, List<String>> kanaDiacritics = {
   'ウ': ['ヴ'],
 };
 
-// 2. Pre-process into a flat lookup map
-// This map will contain: 'は' -> [ば, ぱ], 'ば' -> [は, ぱ], 'ぱ' -> [は, ば]
 final Map<String, List<String>> fullVariantLookup = _buildFullLookup();
 
 Map<String, List<String>> _buildFullLookup() {
@@ -617,7 +634,6 @@ Map<String, List<String>> _buildFullLookup() {
     List<String> family = [base, ...diacritics];
 
     for (var char in family) {
-      // The variants for this char are all other members of the family
       lookup[char] = family.where((item) => item != char).toList();
     }
   });
@@ -628,21 +644,16 @@ Map<String, List<String>> _buildFullLookup() {
 Iterable<String>? getVariants(String kana) {
   if (kana.isEmpty) return null;
 
-  // 1. Determine where the character we want to change is
   int targetIndex = kana.startsWith('-') ? 1 : 0;
 
-  // Safety check: if string is just "-"
   if (targetIndex >= kana.length) return null;
 
-  // 2. Split the string into Prefix, Target, and Suffix
   final String prefix = kana.substring(0, targetIndex);
   final String targetChar = kana[targetIndex];
   final String suffix = kana.substring(targetIndex + 1);
 
-  // 3. Look up the variants for that specific character
   final variants = fullVariantLookup[targetChar];
   if (variants == null) return null;
 
-  // 4. Reassemble the full strings
   return variants.map((v) => prefix + v + suffix);
 }
