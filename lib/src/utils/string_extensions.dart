@@ -51,3 +51,8 @@ extension Similarity on String {
     return bigrams;
   }
 }
+
+extension IsPunctuation on String {
+  bool get containsPunctuation =>
+      RegExp(r'[^\p{L}\p{N}\p{Z}]', unicode: true).hasMatch(this);
+}
