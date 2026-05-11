@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/repositories/app_settings.dart';
+import 'package:kaminari/src/data/services/chapter_analysis_service.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
@@ -92,6 +93,22 @@ class ReaderCubit extends Cubit<ReaderState> {
       return _allChapters[currentIdx + 1];
     }
     return null;
+  }
+
+  void _precacheChapterAnalysis(ChapterInfo chapterInfo) {
+    if (chapterInfo.content == null || chapterInfo.content!.isEmpty) return;
+
+    // We don't await this; it runs in the background.
+    // The service handles DB caching internally.
+    ChapterAnalysisService.analyzeChapter(bookId, chapterInfo, db: dbService)
+        .then((_) {
+          print(
+            "[ReaderCubit] Precached Prep data for Chapter ${chapterInfo.number + 1}",
+          );
+        })
+        .catchError((e) {
+          print("[ReaderCubit] Precache failed: $e");
+        });
   }
 
   Future<void> reloadContent() async {
@@ -268,6 +285,7 @@ class ReaderCubit extends Cubit<ReaderState> {
           activeWaitingChapter: null,
         ),
       );
+      _precacheChapterAnalysis(dbCh);
     } catch (e) {
       print("Error appending chapter: $e");
       emit(state.copyWith(isLoadingNext: false));
