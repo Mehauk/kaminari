@@ -41,6 +41,7 @@ class ChapterPrepPage extends StatelessWidget {
                       children: [
                         Expanded(
                           child: FlashcardWidget(
+                            key: ValueKey(state.currentIndex),
                             item: state.items[state.currentIndex],
                             isFlipped: state.isFlipped,
                             onTap: () =>
