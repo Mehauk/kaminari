@@ -19,7 +19,9 @@ abstract class ChapterPrepState with _$ChapterPrepState {
 class ChapterPrepCubit extends Cubit<ChapterPrepState> {
   final int bookId;
   final DatabaseService dbService;
-  ChapterPrepCubit(this.bookId, ChapterInfo chapter, this.dbService)
+  ChapterInfo chapter;
+
+  ChapterPrepCubit(this.bookId, this.chapter, this.dbService)
     : super(const ChapterPrepState()) {
     _init(chapter);
   }
@@ -31,15 +33,37 @@ class ChapterPrepCubit extends Cubit<ChapterPrepState> {
       db: dbService,
     );
     emit(state.copyWith(items: items, isLoading: false));
+
+    // Save initial progress of 1 if the user opens the deck for the first time
+    if (items.isNotEmpty && chapter.prepReviewedCount == 0) {
+      await dbService.updateChapterPrepProgress(chapter.id!, 1);
+      this.chapter = chapter.copyWith(prepReviewedCount: 1);
+    }
   }
 
   void toggleFlip() => emit(state.copyWith(isFlipped: !state.isFlipped));
 
-  void nextCard() {
-    if (state.currentIndex < state.items.length - 1) {
+  Future<void> nextCard() async {
+    final nextIndex = state.currentIndex + 1;
+    if (nextIndex < state.items.length) {
+      emit(state.copyWith(currentIndex: nextIndex, isFlipped: false));
+      await _updatePrepProgress(nextIndex);
+    }
+  }
+
+  void previousCard() {
+    if (state.currentIndex > 0) {
       emit(
-        state.copyWith(currentIndex: state.currentIndex + 1, isFlipped: false),
+        state.copyWith(currentIndex: state.currentIndex - 1, isFlipped: false),
       );
+    }
+  }
+
+  Future<void> _updatePrepProgress(int nextIndex) async {
+    final progress = nextIndex + 1;
+    if (progress > chapter.prepReviewedCount) {
+      await dbService.updateChapterPrepProgress(chapter.id!, progress);
+      chapter = chapter.copyWith(prepReviewedCount: progress);
     }
   }
 }

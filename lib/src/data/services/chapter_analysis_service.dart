@@ -32,6 +32,22 @@ class EntryAnalysisModel {
 }
 
 class ChapterAnalysisService {
+  static Future<int> getPrepCount(
+    int bookId,
+    ChapterInfo chapter,
+    DatabaseService db,
+  ) async {
+    if (chapter.id == null) return 0;
+    try {
+      final cachedData = await db.getBookAnalysisCache(bookId, chapter.id!);
+      if (cachedData != null) {
+        final List decoded = jsonDecode(cachedData);
+        return decoded.length;
+      }
+    } catch (_) {}
+    return 100;
+  }
+
   static Future<List<EntryAnalysisModel>> analyzeChapter(
     int bookId,
     ChapterInfo chapter, {
