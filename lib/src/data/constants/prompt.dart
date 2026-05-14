@@ -34,46 +34,71 @@ String cheaptersLoadingIIFE(
 ) {
   return """
   (async () => {
+    console.log("[JS-Extractor] Initializing chapter extraction...");
     let chapters = [];
     let i = -1;
     let nextUrl = document.location.href;
+    
     while (nextUrl) {
-      let html;
+      console.log("[JS-Extractor] Processing URL: " + nextUrl);
       let doc;
-      if (i == -1) {
-        html = '';
+      
+      if (i === -1) {
+        console.log("[JS-Extractor] Using initial document DOM.");
         doc = document;
       } else {
-        try{
-          html = await (await fetch(nextUrl)).text();
+        try {
+          const response = await fetch(nextUrl, {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Accept': 'text/html' },
+          });
+          
+          if (!response.ok) throw new Error("HTTP Status " + response.status);
+          
+          let html = await response.text();
           doc = new DOMParser().parseFromString(html, 'text/html');
+          console.log("[JS-Extractor] Successfully fetched and parsed remote page.");
         } catch (e) {
+          console.error("[JS-Extractor] Fetch failed for: " + nextUrl, e);
           break;
         }
       }
       
-      const pageChapters = Array.from(doc.querySelectorAll('${detailsSelector.base}')).map(e => {
-      i += 1;
-      return ({
-        url: e.querySelector('${detailsSelector.url}')?.href,
-        title: e.querySelector('${detailsSelector.title}')?.textContent.trim(),
-        updatedDate: e.querySelector('${detailsSelector.updatedDate}')?.textContent.trim(),
-        number: i
-      })});
+      const elements = doc.querySelectorAll('${detailsSelector.base}');
+      console.log("[JS-Extractor] Found " + elements.length + " chapter elements on page.");
+      
+      const pageChapters = Array.from(elements).map(e => {
+        i += 1;
+        return ({
+          url: e.querySelector('${detailsSelector.url}')?.href,
+          title: e.querySelector('${detailsSelector.title}')?.textContent.trim(),
+          updatedDate: e.querySelector('${detailsSelector.updatedDate}')?.textContent.trim(),
+          number: i
+        })
+      });
+      
       chapters = chapters.concat(pageChapters);
-      let nextUrl = null;
+      
+      let currentUrl = nextUrl;
+      nextUrl = null;
+      
       try {
-        const nextBtn = document.querySelector('$nextPageSelector');
-        // Check if button exists and has a valid href
-        nextUrl = (nextBtn && nextBtn.href && nextBtn.href !== document.location.href) 
-          ? nextBtn.href 
-          : null;
+        // Look for the next button in 'doc' (the current page context)
+        const nextBtn = doc.querySelector('$nextPageSelector');
+        if (nextBtn && nextBtn.href && nextBtn.href !== currentUrl) {
+          nextUrl = nextBtn.href;
+          console.log("[JS-Extractor] Next page found: " + nextUrl);
+        } else {
+          console.log("[JS-Extractor] No next page link detected. Finishing.");
+        }
       } catch (e) {
-        // Invalid selector syntax causes error, catch it and keep nextUrl as null
-        console.warn("Invalid selector:", '$nextPageSelector');
+        console.warn("[JS-Extractor] Error parsing next selector '$nextPageSelector':", e);
         nextUrl = null;
       }
     }
+    
+    console.log("[JS-Extractor] Extraction complete. Total chapters: " + chapters.length);
     return chapters;
   })()
 """;

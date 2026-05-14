@@ -149,7 +149,9 @@ class WebviewCubit extends Cubit<WebviewState> {
       final bookData = await _extractBookMetadata(selectors);
 
       // 6. Save to DB
-      print("Extracted Book: ${bookData.title}");
+      print(
+        "Extracted Book: ${bookData.title} with ${bookData.chapters.length} chapters",
+      );
       await DatabaseService().saveBook(bookData);
 
       emit(state.copyWith(importStatus: .importedSuccessfully));
@@ -165,7 +167,7 @@ class WebviewCubit extends Cubit<WebviewState> {
     final jsonMap = selectors.toJson();
     final reMap = {};
 
-    final jsonCMap = selectors.chapterDetails.toJson();
+    final jsonCMap = selectors.individualChapterDetails.toJson();
     final reCMap = {};
 
     // final firstPageSelector = jsonMap["firstPageUrl"] as String;
@@ -191,14 +193,14 @@ class WebviewCubit extends Cubit<WebviewState> {
       if (key == "url") {
         continue;
       } else if ([
-        "chapterDetails",
+        "individualChapterDetails",
         "nextPageUrl",
         "firstPageUrl",
       ].contains(key)) {
         continue;
       }
 
-      String selector = jsonMap[key];
+      String selector = jsonMap[key] ?? "null";
       if (["null", "n/a", "none"].contains(selector.toLowerCase())) continue;
 
       reMap[key] =
@@ -207,7 +209,10 @@ class WebviewCubit extends Cubit<WebviewState> {
 
     final js = generateBookExtrationJSPrompt(
       reMap,
-      cheaptersLoadingIIFE(selectors.chapterDetails, nextPageSelector),
+      cheaptersLoadingIIFE(
+        selectors.individualChapterDetails,
+        nextPageSelector,
+      ),
     );
 
     print("js");
