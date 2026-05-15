@@ -48,7 +48,6 @@ abstract class WebviewState with _$WebviewState {
     @Default('') String url,
     @Default('Loading...') String title,
     @Default(true) bool isLoading,
-    @Default(false) bool hasAppliedPadding,
     @Default(ImportStatus.notImported) ImportStatus importStatus,
   }) = _WebviewState;
 }
@@ -65,20 +64,8 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onProgress: (progress) {
-            if (progress >= 30 && !state.hasAppliedPadding) {
-              emit(state.copyWith(hasAppliedPadding: true));
-              controller.runJavaScript(
-                "document.body.style.paddingTop = '120px'",
-              );
-            }
-          },
           onPageStarted: (_) => resetForNewPage(),
           onPageFinished: (url) async {
-            controller.runJavaScript(
-              "document.body.style.paddingTop = '120px'",
-            );
-
             final title = await controller.getTitle();
 
             if (_pageLoadCompleter != null &&
@@ -103,13 +90,7 @@ class WebviewCubit extends Cubit<WebviewState> {
   }
 
   void resetForNewPage() {
-    emit(
-      state.copyWith(
-        isLoading: true,
-        hasAppliedPadding: false,
-        importStatus: .notImported,
-      ),
-    );
+    emit(state.copyWith(isLoading: true, importStatus: .notImported));
   }
 
   void updateNavigation({String? url, String? title}) {

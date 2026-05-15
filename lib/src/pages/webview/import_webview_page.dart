@@ -41,6 +41,7 @@ class _ImportWebviewPage extends StatelessWidget {
             children: [
               Column(
                 children: [
+                  SizedBox(height: 60),
                   Expanded(
                     child: WebViewWidget(controller: webviewCubit.controller),
                   ),
@@ -49,6 +50,7 @@ class _ImportWebviewPage extends StatelessWidget {
               Column(
                 children: [
                   _WebAddressBar(controller: webviewCubit.controller),
+                  // show dictionaryview here if valid text selection
                   if (webviewState.isLoading)
                     LinearProgressIndicator(minHeight: 4),
                 ],
