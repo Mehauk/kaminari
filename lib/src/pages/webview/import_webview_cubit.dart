@@ -11,6 +11,7 @@ import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
+import 'package:kaminari/src/globals/background_webview_cubit.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/utils/string_extensions.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -58,12 +59,16 @@ abstract class WebviewState with _$WebviewState {
 
 class WebviewCubit extends Cubit<WebviewState> {
   final ExtractorBuilder extractorBuilder;
+  final BackgroundWebviewCubit backgroundWebviewCubit;
   WebViewController controller = WebViewController();
   Completer<String>? _extractionCompleter;
   Completer<void>? _pageLoadCompleter;
 
-  WebviewCubit({required this.extractorBuilder, String? initialUrl})
-    : super(const WebviewState()) {
+  WebviewCubit({
+    required this.extractorBuilder,
+    required this.backgroundWebviewCubit,
+    String? initialUrl,
+  }) : super(const WebviewState()) {
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -318,7 +323,26 @@ class WebviewCubit extends Cubit<WebviewState> {
       print(
         "Extracted Book: ${bookData.title} with ${bookData.chapters.length} chapters",
       );
-      await DatabaseService().saveBook(bookData);
+      final db = DatabaseService();
+      await db.saveBook(bookData);
+
+      // Query the database to retrieve the matching book with auto-generated IDs
+      final savedBooks = await db.getBooks();
+      final matchingBook = savedBooks.firstWhere(
+        (b) => b.title == bookData.title && b.source == bookData.source,
+        orElse: () => bookData,
+      );
+
+      if (matchingBook.id != null) {
+        final firstThree = matchingBook.chapters.take(3).toList();
+        if (firstThree.isNotEmpty) {
+          await backgroundWebviewCubit.enqueueChapters(
+            bookId: matchingBook.id!,
+            chapters: firstThree,
+            isPriority: false,
+          );
+        }
+      }
 
       emit(state.copyWith(importStatus: .importedSuccessfully));
     } catch (e, stack) {
@@ -337,7 +361,6 @@ class WebviewCubit extends Cubit<WebviewState> {
     final jsonCMap = selectors.individualChapterDetails.toJson();
     final reCMap = {};
 
-    // final firstPageSelector = jsonMap["firstPageUrl"] as String;
     final nextPageSelector = jsonMap["nextPageUrl"] as String?;
 
     for (var ckey in jsonCMap.keys) {
@@ -384,11 +407,6 @@ class WebviewCubit extends Cubit<WebviewState> {
       ),
     );
 
-    print("js");
-    debugPrint(js);
-    print("js");
-
-    // Run a small JS script to grab text content using the discovered selectors
     _extractionCompleter = Completer<String>();
     await controller.runJavaScript(js);
 
@@ -397,82 +415,10 @@ class WebviewCubit extends Cubit<WebviewState> {
         const Duration(minutes: 5),
       );
 
-      print(resultString);
       final Map<String, dynamic> response = jsonDecode(resultString);
 
       if (response.containsKey('error')) {
         throw Exception("JS Extraction Error: ${response['error']}");
-      }
-
-      // AI DO THIS:
-      // navigate to first chapter
-      // do chapter extraction prompt once
-      // extract the first 3 chapters
-      print("resultString");
-      debugPrint(response.toString());
-
-      final String extractedSource = response['source'] as String? ?? '';
-      print(
-        "[WebviewCubit] Extracted source from response: '$extractedSource'",
-      );
-
-      final List chapters = response['chapters'] ?? [];
-      if (chapters.isNotEmpty) {
-        final firstChapterUrl = chapters[0]['url'];
-        if (firstChapterUrl != null) {
-          // 1. Navigate to first chapter to find content selector
-          _pageLoadCompleter = Completer<void>();
-          await controller.loadRequest(Uri.parse(firstChapterUrl));
-          await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
-          _pageLoadCompleter = null;
-
-          // 2. Extract DOM tree of chapter page
-          final dynamic chapterTreeRaw = await controller
-              .runJavaScriptReturningResult(minTreeExtFn);
-          final String chapterTree = chapterTreeRaw as String;
-
-          // 3. Get selector from LLM
-          final chapterPrompt = buildChapterExtractionAIPrompt(chapterTree);
-          print("chapterpor");
-          debugPrint(chapterPrompt);
-
-          final chapterLlmResponse = await extractorBuilder
-              .buildChapterExtractorSelectors(extractedSource, chapterPrompt);
-
-          print('chapterLlmResponse');
-          print(chapterLlmResponse);
-          print('chapterLlmResponse');
-
-          final chapterExtractor = LlmService.extractJsonFromResponse(
-            chapterLlmResponse,
-            ChapterExtractor.fromJson,
-          );
-
-          // 4. Use selector to fetch content for first 3 chapters
-          final urlsToExtract = chapters
-              .take(3)
-              .map((c) => c['url'] as String)
-              .toList();
-          final contentJs = generateContentExtractionJSPrompt(
-            jsonEncode(urlsToExtract),
-            jsonEncode(chapterExtractor.contentSections),
-          );
-
-          _extractionCompleter = Completer<String>();
-          await controller.runJavaScript(contentJs);
-          final contentResultString = await _extractionCompleter!.future
-              .timeout(const Duration(minutes: 2));
-          final contentResponse = jsonDecode(contentResultString);
-
-          if (contentResponse.containsKey('error')) {
-            print("Content Extraction Error: ${contentResponse['error']}");
-          } else {
-            final List contents = contentResponse['contents'];
-            for (int i = 0; i < contents.length; i++) {
-              chapters[i]['content'] = List<String>.from(contents[i]);
-            }
-          }
-        }
       }
 
       if (response['jlptLevel'] == null || response['jlptLevel'] == "") {
@@ -481,17 +427,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
 
       response['firstChapterCharCount'] = 0;
-      if (chapters.isNotEmpty) {
-        final firstChapter = Map<String, dynamic>.from(chapters[0]);
-        if (firstChapter['content'] != null) {
-          final contentSections = List<String>.from(firstChapter['content']);
-          response['firstChapterCharCount'] = contentSections.join().length;
-        }
-      }
-
-      debugPrint(chapters.first.toString());
-      debugPrint(response['language']);
-
+      final List chapters = response['chapters'] ?? [];
       response['chapters'] = chapters;
 
       final rawLanguage = (response['language'] as String?)?.trim();
