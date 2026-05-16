@@ -21,7 +21,7 @@
 - [ ] confirmation step to set booktype and whatnot
 - [ ] extractAsShortStory on failure? (https://ncode.syosetu.com/n9674md/)
 - [ ] use jagger?
-- [ ] delete/cleanup read
+- [x] delete
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
-- [ ] BUG: inf linearprog on import webview
-- [ ] BUG: import webview url not showing
+- [x] BUG: inf linearprog on import webview
+- [x] BUG: import webview url not showing
