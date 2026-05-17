@@ -20,29 +20,37 @@ part 'import_webview_cubit.freezed.dart';
 
 enum ImportStatus {
   notImported,
-  importedSuccessfully,
-  importing,
-  importFailure;
+  extracting,
+  preview,
+  saving,
+  success,
+  failure;
 
   IconData get icon => switch (this) {
     ImportStatus.notImported => Icons.download_outlined,
-    ImportStatus.importedSuccessfully => Icons.download_done,
-    ImportStatus.importing => Icons.downloading,
-    ImportStatus.importFailure => Icons.cancel,
+    ImportStatus.extracting => Icons.downloading,
+    ImportStatus.preview => Icons.preview_outlined,
+    ImportStatus.saving => Icons.save_outlined,
+    ImportStatus.success => Icons.download_done,
+    ImportStatus.failure => Icons.cancel,
   };
 
   String get label => switch (this) {
     ImportStatus.notImported => "IMPORT",
-    ImportStatus.importedSuccessfully => "IMPORTED",
-    ImportStatus.importing => "IMPORTING",
-    ImportStatus.importFailure => "FAILED TO IMPORT",
+    ImportStatus.extracting => "EXTRACTING",
+    ImportStatus.preview => "CONFIRM",
+    ImportStatus.saving => "SAVING",
+    ImportStatus.success => "SUCCESS",
+    ImportStatus.failure => "RETRY",
   };
 
   Color get color => switch (this) {
     ImportStatus.notImported => KaminariTheme.textTitle,
-    ImportStatus.importedSuccessfully => KaminariTheme.success,
-    ImportStatus.importing => KaminariTheme.textPrimary,
-    ImportStatus.importFailure => KaminariTheme.error,
+    ImportStatus.extracting => KaminariTheme.textPrimary,
+    ImportStatus.preview => KaminariTheme.cyan,
+    ImportStatus.saving => KaminariTheme.textPrimary,
+    ImportStatus.success => KaminariTheme.success,
+    ImportStatus.failure => KaminariTheme.error,
   };
 }
 
@@ -54,6 +62,9 @@ abstract class WebviewState with _$WebviewState {
     @Default(true) bool isLoading,
     @Default(ImportStatus.notImported) ImportStatus importStatus,
     DictionaryEntry? selectedEntry,
+    @Default(0.0) double importProgress,
+    @Default('') String progressMessage,
+    BookDetails? previewBook,
   }) = _WebviewState;
 }
 
@@ -119,17 +130,14 @@ class WebviewCubit extends Cubit<WebviewState> {
     final String fullText = data['text'];
     final int tapOffset = data['offset'];
 
-    // 1. Tokenize the entire context chunk
     final tokens = await KanjiService.tokenizeText(fullText);
 
-    // 2. Find which token contains the tapOffset
     String? targetedWord;
     int currentPos = 0;
 
     for (final token in tokens) {
       int tokenEnd = currentPos + token.length;
 
-      // Check if the tap happened within this token's boundaries
       if (tapOffset >= currentPos && tapOffset < tokenEnd) {
         targetedWord = token;
         break;
@@ -214,7 +222,6 @@ class WebviewCubit extends Cubit<WebviewState> {
           const now = new Date().getTime();
           const timesince = now - lastTap;
 
-          // If the time between taps is less than 300ms, treat it as a double tap
           if (timesince < 300 && timesince > 0) {
             const touch = e.touches[0];
             const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
@@ -232,8 +239,6 @@ class WebviewCubit extends Cubit<WebviewState> {
                 window.LookupChannel.postMessage(JSON.stringify(message));
               }
             }
-            // Prevent zooming on double-tap if desired
-            // e.preventDefault(); 
           }
           lastTap = now;
         }, {passive: false});
@@ -264,6 +269,9 @@ class WebviewCubit extends Cubit<WebviewState> {
         isLoading: true,
         importStatus: .notImported,
         selectedEntry: null,
+        previewBook: null,
+        importProgress: 0.0,
+        progressMessage: '',
       ),
     );
   }
@@ -278,8 +286,36 @@ class WebviewCubit extends Cubit<WebviewState> {
     );
   }
 
-  Future<void> handleImport() async {
-    emit(state.copyWith(importStatus: .importing));
+  void updatePreviewBookType(BookType type) {
+    if (state.previewBook != null) {
+      emit(
+        state.copyWith(
+          previewBook: state.previewBook!.copyWith(bookType: type),
+        ),
+      );
+    }
+  }
+
+  void cancelImport() {
+    emit(
+      state.copyWith(
+        importStatus: ImportStatus.notImported,
+        previewBook: null,
+        importProgress: 0.0,
+        progressMessage: '',
+      ),
+    );
+  }
+
+  Future<void> handleImport({bool forceReload = false}) async {
+    emit(
+      state.copyWith(
+        importStatus: ImportStatus.extracting,
+        importProgress: 0.1,
+        progressMessage: "Minifying web structure...",
+        previewBook: null,
+      ),
+    );
 
     String? origin;
     try {
@@ -287,46 +323,90 @@ class WebviewCubit extends Cubit<WebviewState> {
         "(function() {return document.location.origin;})()",
       );
 
-      // runJavaScriptReturningResult returns a JSON-encoded string for string values,
-      // so we need to decode it to remove the quotes
       origin = originResult is String
           ? jsonDecode(originResult) as String
           : originResult.toString();
 
-      print("[WebviewCubit] Extracted origin: '$origin'");
+      emit(
+        state.copyWith(
+          importProgress: 0.3,
+          progressMessage: "Extracting DOM tree context...",
+        ),
+      );
 
-      // 1. Extract Minified DOM via JS
       final dynamic rawTree = await controller.runJavaScriptReturningResult(
         minTreeExtFn,
       );
       final String miniTree = rawTree as String;
 
-      // 2. Build Prompt
+      emit(
+        state.copyWith(
+          importProgress: 0.5,
+          progressMessage: "Consulting AI for selector mapping...",
+        ),
+      );
+
       final prompt = buildDiscoveryAIPrompt(miniTree);
-      print(prompt);
 
       final fullResponse = await extractorBuilder.buildBookExtractorSelectors(
         origin,
         prompt,
+        forceReload: forceReload,
       );
 
-      // 4. Parse Selectors from JSON
+      emit(
+        state.copyWith(
+          importProgress: 0.75,
+          progressMessage:
+              "Analyzing pages and compiling chapter directories...",
+        ),
+      );
+
       final selectors = LlmService.extractJsonFromResponse(
         fullResponse,
         BookDetailsExtractor.fromJson,
       );
 
-      // 5. Use selectors to grab real data from the page
       final bookData = await _extractBookMetadata(selectors);
 
-      // 6. Save to DB
-      print(
-        "Extracted Book: ${bookData.title} with ${bookData.chapters.length} chapters",
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.preview,
+          importProgress: 1.0,
+          progressMessage: "Extraction parsed successfully.",
+          previewBook: bookData,
+        ),
       );
+    } catch (e, stack) {
+      print("Extraction Error: $e\n$stack");
+      if (origin != null) {
+        await extractorBuilder.clearCacheForOrigin(origin);
+      }
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.failure,
+          progressMessage: "Extraction failed: ${e.toString()}",
+        ),
+      );
+    }
+  }
+
+  Future<void> confirmImport() async {
+    if (state.previewBook == null) return;
+
+    emit(
+      state.copyWith(
+        importStatus: ImportStatus.saving,
+        importProgress: 0.9,
+        progressMessage: "Saving entry into local SQL index...",
+      ),
+    );
+
+    try {
+      final bookData = state.previewBook!;
       final db = DatabaseService();
       await db.saveBook(bookData);
 
-      // Query the database to retrieve the matching book with auto-generated IDs
       final savedBooks = await db.getBooks();
       final matchingBook = savedBooks.firstWhere(
         (b) => b.title == bookData.title && b.source == bookData.source,
@@ -344,11 +424,20 @@ class WebviewCubit extends Cubit<WebviewState> {
         }
       }
 
-      emit(state.copyWith(importStatus: .importedSuccessfully));
-    } catch (e, stack) {
-      print("Extraction Error: $e\n$stack");
-      if (origin != null) extractorBuilder.clearCacheForOrigin(origin);
-      emit(state.copyWith(importStatus: .importFailure));
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.success,
+          importProgress: 1.0,
+          progressMessage: "Successfully imported!",
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.failure,
+          progressMessage: "Failed to persist book data: ${e.toString()}",
+        ),
+      );
     }
   }
 
@@ -451,7 +540,6 @@ class WebviewCubit extends Cubit<WebviewState> {
     }
   }
 
-  /// Get all cached extractors for debug purposes
   Map<String, Map<String, String>> getCachedExtractors() {
     return extractorBuilder.getCachedExtractors();
   }
