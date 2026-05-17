@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:jp_transliterate/jp_transliterate.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
@@ -65,45 +64,13 @@ class ReaderCubit extends Cubit<ReaderState> {
     int paragraphIndex,
     int tokenIndex,
   ) async {
-    print(token);
-    // Logic extracted from kanji_reader.dart
-    Map<String, Object?>? wordMap = await KanjiService.getEntry(token);
-    final transliteration = await JpTransliterate.transliterate(kanji: token);
-
-    // Fallback lookups
-    // 異世 -> イヨ for some reason
-    wordMap ??= await KanjiService.getEntry(transliteration.hiragana);
-    wordMap ??= await KanjiService.getEntry(transliteration.katakana);
-
-    print("wordMap: $wordMap");
-    print("token: $token");
-    print("word: ${wordMap?['word']}");
-    print(wordMap?["word"] != token);
+    final (wordMap, kanjis) = await KanjiService.lookupToken(token);
 
     if (state.selectedParagraphIndex == paragraphIndex &&
         state.selectedTokenIndex == tokenIndex) {
       clearSelection();
       return;
     }
-
-    if (wordMap == null || wordMap["word"] != token) {
-      wordMap = {
-        "letters": token,
-        "sounds": wordMap?["sounds"] ?? token,
-        "mean": wordMap?["mean"] ?? "",
-        "freq": 0.0,
-      };
-    }
-
-    // if (wordMap != null) {
-    //   KanjiService.visitEntry(wordMap["word"] as String);
-    // }
-
-    // Default structure if not found in dictionary
-
-    List<KanjiEntry> kanjis = (await KanjiService.getKanjiSounds(
-      wordMap["letters"] as String,
-    )).map((e) => KanjiEntry(e)).toList();
 
     emit(
       state.copyWith(

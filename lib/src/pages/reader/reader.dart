@@ -180,7 +180,10 @@ class _ReaderViewState extends State<_ReaderView> {
                                   sizeFactor: animation,
                                   child: child,
                                 ),
-                            child: ReaderDictionaryExtension(),
+                            child: DictionaryView(
+                              state.selectedEntry,
+                              cubit.clearSelection,
+                            ),
                           ),
                         ],
                       ),
