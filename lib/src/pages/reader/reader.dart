@@ -252,17 +252,13 @@ class _TokenizedParagraph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (tokens.length == 1 && tokens.first.startsWith("http")) {
-      return LightningCard(
-        type: .glowing,
-        child: Image.network(
-          tokens.first,
-          fit: .cover,
-          height: 400,
-          errorBuilder: (context, error, stackTrace) => SizedBox(height: 400),
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return SizedBox(height: 400);
-          },
+      return SizedBox(
+        height: 400,
+        child: Center(
+          child: LightningCard(
+            type: .glowing,
+            child: Image.network(tokens.first),
+          ),
         ),
       );
     }
