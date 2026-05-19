@@ -227,6 +227,11 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     );
     final response = jsonDecode(result);
 
+    // If JavaScript threw an error, catch and log it in Dart
+    if (response.containsKey('error')) {
+      throw Exception("JavaScript Extraction Failed: ${response['error']}");
+    }
+
     if (response.containsKey('contents')) {
       final List contents = response['contents'][0];
       final List<String> stringContents = contents
