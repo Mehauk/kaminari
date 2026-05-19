@@ -123,8 +123,10 @@ class _CoverAppBar extends StatelessWidget {
       ),
       actions: [
         LightningIconButton(
-          icon: Icons.bookmark_border_rounded,
-          onPressed: () => print(1),
+          icon: context.watch<BookDetailsCubit>().state.isFavorite
+              ? Icons.bookmark
+              : Icons.bookmark_border_rounded,
+          onPressed: () => context.read<BookDetailsCubit>().toggleFavorite(),
         ),
         LightningIconButton(
           icon: Icons.more_vert_rounded,

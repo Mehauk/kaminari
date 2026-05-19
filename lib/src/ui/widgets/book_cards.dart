@@ -154,9 +154,10 @@ class LastReadBookCard extends StatelessWidget {
 }
 
 class HistoryBookCard extends StatelessWidget {
-  const HistoryBookCard(this.book, {super.key});
+  const HistoryBookCard(this.book, {super.key, this.onFavoriteToggle});
 
   final BookDetails book;
+  final VoidCallback? onFavoriteToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -230,7 +231,14 @@ class HistoryBookCard extends StatelessWidget {
               Column(
                 spacing: 24,
                 children: [
-                  Icon(Icons.bookmark_border_rounded),
+                  IconButton(
+                    icon: Icon(
+                      book.isFavorite
+                          ? Icons.bookmark
+                          : Icons.bookmark_border_rounded,
+                    ),
+                    onPressed: onFavoriteToggle,
+                  ),
                   Icon(Icons.more_vert),
                   SizedBox(),
                 ],

@@ -10,14 +10,20 @@ abstract class BookDetailsState with _$BookDetailsState {
   const factory BookDetailsState({
     @Default(false) bool synopsisExpanded,
     @Default(0) int currentChapter,
+    @Default(false) bool isFavorite,
   }) = _BookDetailsState;
 }
 
 class BookDetailsCubit extends Cubit<BookDetailsState> {
-  final BookDetails book;
+  BookDetails book;
   final DatabaseService dbService;
   BookDetailsCubit(this.book, {required this.dbService})
-    : super(BookDetailsState(currentChapter: book.currentChapter));
+    : super(
+        BookDetailsState(
+          currentChapter: book.currentChapter,
+          isFavorite: book.isFavorite,
+        ),
+      );
 
   void toggleSynopsis() {
     emit(state.copyWith(synopsisExpanded: !state.synopsisExpanded));
@@ -27,5 +33,13 @@ class BookDetailsCubit extends Cubit<BookDetailsState> {
     if (book.id == null) return;
     final latestChapter = await dbService.getBookCurrentChapter(book.id!);
     emit(state.copyWith(currentChapter: latestChapter));
+  }
+
+  Future<void> toggleFavorite() async {
+    if (book.id == null) return;
+    final updatedFavorite = !state.isFavorite;
+    await dbService.updateBookFavorite(book.id!, updatedFavorite);
+    book = book.copyWith(isFavorite: updatedFavorite);
+    emit(state.copyWith(isFavorite: updatedFavorite));
   }
 }

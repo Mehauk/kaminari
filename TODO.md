@@ -7,21 +7,19 @@
 - [x] handle reimport same book
 - [x] prefetch next chapters
 - [x] images
+- [x] delete book
+- [x] dictionary view for webview
+- [x] implement favoriting and favorites tab on history page
 - [ ] show downloading indicator on opened chapter without content
 - [ ] prioritize opened chapter downloading over the others
 - [ ] make a queue, with limitaions per 5 minutes on downloads (opening a chapter skips limit)
-- [ ] implement favoriting and favorites tab on history page
-- [ ] dictionary view for webview
-
-
+- [ ] open import chapter webview on error (only for current)
 - [ ] importing indicators update
-- [ ] Import builder loader update
-- [ ] images with aspect ratio
+- [ ] Import builder loader update (with type selection)
+
+
 - [ ] empty states (favorites, history, discover (filtered/unfiltered))
-- [ ] confirmation step to set booktype and whatnot
-- [ ] extractAsShortStory on failure? (https://ncode.syosetu.com/n9674md/)
 - [ ] use jagger?
-- [x] delete
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
