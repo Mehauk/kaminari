@@ -37,12 +37,13 @@
 - [x] match longest match first (dict)
 - [x] chiisai tsu (not working?)
 - [x] dict view kanji card start alignment
-- [ ] import builder loader update (with type selection)
+- [x] import builder loader update (with type selection)
 - [ ] double tap on import webview to singletap normal + hold link?
 - [x] move the first three chapter downloading to the background cubit
 - [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
 - [ ] open import chapter webview on error (only for current)
 - [ ] icon/splash update
+- [ ] import builder loader ui update
 
 - [ ] BUG: why my chapter id in 3000's when its only 75ish chapters in?
 - [x] BUG: bottom nav covered by native nav bar
