@@ -163,89 +163,111 @@ class HistoryBookCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LightningCard(
       type: .thin,
-      child: InkWell(
-        onTap: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => BookDetailsPage(book))),
-        child: Padding(
-          padding: .all(16),
-          child: Row(
-            spacing: 16,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  border: LightningBorderEffectType.glowing.border(),
-                  borderRadius: .circular(KaminariTheme.borderRadius),
-                ),
-                position: .foreground,
-                child: ClipRRect(
-                  borderRadius: .circular(KaminariTheme.borderRadius),
-                  child: Image.network(
-                    book.coverUrl ?? '',
-                    width: 64,
-                    height: 80,
-                    fit: .cover,
-                    errorBuilder: (context, error, stackTrace) => Image.asset(
-                      'assets/images/placeholder_book.png',
-                      width: 64,
-                      height: 80,
-                      fit: .cover,
-                    ),
-                  ),
-                ),
+      child: Row(
+        // Moved Row outside the InkWell
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // This Expanded InkWell covers the Image and Book Info
+          Expanded(
+            child: InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => BookDetailsPage(book)),
               ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: .start,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    CustomText(book.title, .titleMedium),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.access_time, size: 14),
-                        SizedBox(width: 4),
-                        CustomText(
-                          book.accessedDate.toDateStringPrefRelative,
-                          .labelSmall,
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: LightningBorderEffectType.glowing.border(),
+                        borderRadius: .circular(KaminariTheme.borderRadius),
+                      ),
+                      position: .foreground,
+                      child: ClipRRect(
+                        borderRadius: .circular(KaminariTheme.borderRadius),
+                        child: Image.network(
+                          book.coverUrl ?? '',
+                          width: 64,
+                          height: 80,
+                          fit: .cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.asset(
+                                'assets/images/placeholder_book.png',
+                                width: 64,
+                                height: 80,
+                                fit: .cover,
+                              ),
                         ),
-                      ],
+                      ),
                     ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(CupertinoIcons.book, size: 14),
-                        SizedBox(width: 4),
-                        CustomText(
-                          "chapter ${book.currentChapter + 1} / ${book.chapters.length}",
-                          .labelSmall,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    LinearProgressIndicator(
-                      value: book.progress(book.currentChapter),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: .start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CustomText(book.title, .titleMedium),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 14),
+                              const SizedBox(width: 4),
+                              CustomText(
+                                book.accessedDate.toDateStringPrefRelative,
+                                .labelSmall,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(CupertinoIcons.book, size: 14),
+                              const SizedBox(width: 4),
+                              CustomText(
+                                "chapter ${book.currentChapter + 1} / ${book.chapters.length}",
+                                .labelSmall,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          LinearProgressIndicator(
+                            value: book.progress(book.currentChapter),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              Column(
-                spacing: 24,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      book.isFavorite
-                          ? Icons.bookmark
-                          : Icons.bookmark_border_rounded,
-                    ),
-                    onPressed: onFavoriteToggle,
-                  ),
-                  Icon(Icons.more_vert),
-                  SizedBox(),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
+
+          // This section is OUTSIDE the main navigation InkWell
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Column(
+              spacing: 24,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                InkWell(
+                  // Using IconButton for better hit targets
+                  onTap: onFavoriteToggle,
+                  child: Icon(
+                    book.isFavorite
+                        ? Icons.bookmark
+                        : Icons.bookmark_border_rounded,
+                  ),
+                ),
+                InkWell(
+                  onTap: () {
+                    // Handle more options
+                  },
+                  child: const Icon(Icons.more_vert),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
