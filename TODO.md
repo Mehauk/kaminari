@@ -10,10 +10,10 @@
 - [x] delete book
 - [x] dictionary view for webview
 - [x] implement favoriting and favorites tab on history page
-- [ ] empty states (favorites, history, discover (filtered/unfiltered))
-- [ ] show downloading indicator on opened chapter without content
-- [ ] prioritize opened chapter downloading over the others
+- [x] empty states (favorites, history, discover (filtered/unfiltered))
 - [ ] make a queue, with limitaions per 5 minutes on downloads (opening a chapter skips limit)
+- [ ] prioritize opened chapter downloading over the others
+- [ ] show downloading indicator on opened chapter without content
 - [ ] open import chapter webview on error (only for current)
 - [ ] importing indicators update
 - [ ] Import builder loader update (with type selection)

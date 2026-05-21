@@ -7,6 +7,7 @@ import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
 import 'package:kaminari/src/ui/widgets/book_cards.dart';
 import 'package:kaminari/src/ui/widgets/grid.dart';
+import 'package:kaminari/src/ui/widgets/empty_state.dart';
 
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
@@ -67,6 +68,21 @@ class DiscoverScreen extends StatelessWidget {
                       const SizedBox(height: 24),
                       LayoutBuilder(
                         builder: (context, constraints) {
+                          if (state.books.isEmpty) {
+                            final query = context.read<DiscoverCubit>().state.query;
+                            return EmptyState(
+                              icon: const Icon(Icons.search_off, size: 48),
+                              title: query.isEmpty
+                                  ? 'No books yet.'
+                                  : 'No results for "$query"',
+                              subtitle: query.isEmpty
+                                  ? 'Add a book or source to get started.'
+                                  : 'Try a different search or add this source.',
+                              actionLabel: 'Add / Search',
+                              onAction: () => importFromContext(context),
+                            );
+                          }
+
                           return Grid.fromColumns(
                             columns: 2,
                             totalWidth: constraints.maxWidth,
