@@ -58,6 +58,7 @@
     - [x] fix card back still showing when next pressed (reconstruct instead of reset)
     - [x] open prep screen from top of chapter?
     - [x] remember prep + 0/100 impl
+    - [x] kanji/word level
     - [ ] calculate show order (considering kanji level)
     - [ ] implement word of the day with correct kanji level
 
