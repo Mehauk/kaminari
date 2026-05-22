@@ -13,7 +13,16 @@ class LlmService {
   LlmService() {
     final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
     if (apiKey.isNotEmpty) {
-      _model = GenerativeModel(model: preferredModel, apiKey: apiKey);
+      _model = GenerativeModel(
+        model: preferredModel,
+        apiKey: apiKey,
+        generationConfig: GenerationConfig(
+          temperature: 0,
+          topK: 1,
+          topP: 1,
+          responseMimeType: 'application/json',
+        ),
+      );
     }
   }
 

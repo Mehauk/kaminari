@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -23,10 +24,7 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[
-              icon!,
-              const SizedBox(height: 20),
-            ],
+            if (icon != null) ...[icon!, const SizedBox(height: 20)],
             Text(
               title,
               style: Theme.of(context).textTheme.headlineMedium,
@@ -42,11 +40,8 @@ class EmptyState extends StatelessWidget {
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 20),
-              FilledButton(
-                onPressed: onAction,
-                child: Text(actionLabel!),
-              ),
-            ]
+              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
           ],
         ),
       ),

@@ -34,6 +34,27 @@ class ReaderCubit extends Cubit<ReaderState> {
     dbService.updateChapterScrollPosition(chapter.id!, pixels);
   }
 
+  Future<void> reloadContent() async {
+    emit(state.copyWith(isLoading: true));
+    final updatedChapter = await dbService.getChapterWithContent(chapter.id!);
+    if (updatedChapter != null && updatedChapter.content != null) {
+      // Replace current chapter data
+      // (Note: You might need to update the chapter field in your cubit class)
+      _tokenizeContentFromList(updatedChapter.content!);
+    } else {
+      emit(state.copyWith(isLoading: false));
+    }
+  }
+
+  Future<void> _tokenizeContentFromList(List<String> content) async {
+    List<List<String>> processed = [];
+    for (var paragraph in content) {
+      final tokens = await KanjiService.tokenizeText(paragraph);
+      processed.add(tokens);
+    }
+    emit(state.copyWith(isLoading: false, tokenizedParagraphs: processed));
+  }
+
   Future<void> _tokenizeContent() async {
     try {
       if (chapter.content == null || chapter.content!.isEmpty) {

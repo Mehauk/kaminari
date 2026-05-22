@@ -194,6 +194,7 @@ class WebviewCubit extends Cubit<WebviewState> {
   Future<void> handleImport() async {
     emit(state.copyWith(importStatus: .importing));
 
+    Object? origin;
     try {
       // 1. Extract Minified DOM via JS
       final dynamic rawTree = await controller.runJavaScriptReturningResult(
@@ -205,7 +206,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       final prompt = buildDiscoveryAIPrompt(miniTree);
       print(prompt);
 
-      final origin = await controller.runJavaScriptReturningResult(
+      origin = await controller.runJavaScriptReturningResult(
         "document.location.origin",
       );
 
@@ -232,6 +233,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       emit(state.copyWith(importStatus: .importedSuccessfully));
     } catch (e, stack) {
       print("Extraction Error: $e\n$stack");
+      if (origin is String) extractorBuilder.clearCacheForOrigin(origin);
       emit(state.copyWith(importStatus: .importFailure));
     }
   }
@@ -246,10 +248,10 @@ class WebviewCubit extends Cubit<WebviewState> {
     final reCMap = {};
 
     // final firstPageSelector = jsonMap["firstPageUrl"] as String;
-    final nextPageSelector = jsonMap["nextPageUrl"] as String;
+    final nextPageSelector = jsonMap["nextPageUrl"] as String?;
 
     for (var ckey in jsonCMap.keys) {
-      String selector = jsonCMap[ckey];
+      String selector = jsonCMap[ckey] ?? 'null';
       if (["null", "n/a", "none"].contains(selector.toLowerCase())) continue;
 
       if (ckey == "url") {
@@ -286,7 +288,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       reMap,
       cheaptersLoadingIIFE(
         selectors.individualChapterDetails,
-        nextPageSelector,
+        nextPageSelector ?? 'null',
       ),
     );
 

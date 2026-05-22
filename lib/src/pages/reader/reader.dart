@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/globals/background_webview_cubit.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/pages/reader/reader_cubit.dart';
@@ -41,18 +43,44 @@ class _ReaderViewState extends State<_ReaderView> {
   @override
   void initState() {
     super.initState();
-    final initialOffset =
-        context.read<ReaderCubit>().chapter.scrollPosition ?? 0.0;
+    final readerCubit = context.read<ReaderCubit>();
+    final initialOffset = readerCubit.chapter.scrollPosition ?? 0.0;
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final readerCubit = context.read<ReaderCubit>();
       final backgroundCubit = context.read<BackgroundWebviewCubit>();
-      backgroundCubit.prefetchNextChapters(
-        bookId: readerCubit.bookId,
-        currentChapter: readerCubit.chapter.number,
-      );
+
+      final isChapterEmpty =
+          readerCubit.chapter.content == null ||
+          readerCubit.chapter.content!.isEmpty;
+
+      // 1. If this chapter is empty, put it at the top of the download stack (Priority)
+      if (isChapterEmpty) {
+        backgroundCubit.enqueueChapters(
+          bookId: readerCubit.bookId,
+          chapters: [readerCubit.chapter],
+          isPriority: true,
+        );
+      }
+
+      // 2. Fetch the next 3 unloaded chapters and add them to the background queue (Standard priority)
+      context
+          .read<DatabaseService>()
+          .getNextChaptersWithoutContent(
+            readerCubit.bookId,
+            readerCubit.chapter.number,
+            3,
+          )
+          .then((nextChapters) {
+            if (mounted && nextChapters.isNotEmpty) {
+              backgroundCubit.enqueueChapters(
+                bookId: readerCubit.bookId,
+                chapters: nextChapters,
+                isPriority: false,
+              );
+            }
+          });
     });
   }
 
@@ -69,7 +97,6 @@ class _ReaderViewState extends State<_ReaderView> {
     int tokenIndex,
   ) async {
     final cubit = context.read<ReaderCubit>();
-
     await cubit.lookupToken(token, paragraphInex, tokenIndex);
   }
 
@@ -77,162 +104,215 @@ class _ReaderViewState extends State<_ReaderView> {
   Widget build(BuildContext context) {
     final cubit = context.read<ReaderCubit>();
 
-    return Scaffold(
-      backgroundColor: KaminariTheme.background,
-      body: BlocBuilder<ReaderCubit, ReaderState>(
-        builder: (context, state) {
-          return Stack(
-            children: [
-              Builder(
-                builder: (context) {
-                  if (state.isLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+    return MultiBlocListener(
+      listeners: [
+        // Listen to background cubit: if our current chapter ID moves into 'completed', reload content
+        BlocListener<BackgroundWebviewCubit, BackgroundWebviewState>(
+          listenWhen: (prev, curr) =>
+              curr.completedChapterIds.contains(cubit.chapter.id) &&
+              !prev.completedChapterIds.contains(cubit.chapter.id),
+          listener: (context, state) {
+            context.read<ReaderCubit>().reloadContent();
+          },
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: KaminariTheme.background,
+        body: BlocBuilder<ReaderCubit, ReaderState>(
+          builder: (context, state) {
+            return Stack(
+              children: [
+                // MAIN CONTENT LAYER
+                Builder(
+                  builder: (context) {
+                    if (state.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                  if (state.errorMessage != null) {
-                    return Center(
-                      child: CustomText(
-                        state.errorMessage!,
-                        TextType.bodyLarge,
-                      ),
-                    );
-                  }
-
-                  return NotificationListener<ScrollNotification>(
-                    onNotification: (notification) {
-                      if (notification is ScrollEndNotification) {
-                        cubit.saveScrollPosition(
-                          _scrollController.position.pixels,
-                        );
-                      }
-                      return false;
-                    },
-                    child: CustomScrollView(
-                      controller: _scrollController,
-                      physics: const BouncingScrollPhysics(),
-                      slivers: [
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(24, 140, 24, 100),
-                          sliver: SliverList(
-                            delegate: SliverChildBuilderDelegate((
-                              context,
-                              index,
-                            ) {
-                              final tokens = state.tokenizedParagraphs[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 24),
-                                child: _TokenizedParagraph(
-                                  tokens: tokens,
-                                  paragraphIndex: index,
-                                  onTokenTap: _onTokenTap,
-                                ),
-                              );
-                            }, childCount: state.tokenizedParagraphs.length),
-                          ),
+                    if (state.errorMessage != null) {
+                      return Center(
+                        child: CustomText(
+                          state.errorMessage!,
+                          TextType.bodyLarge,
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      );
+                    }
 
-              // Header Bar
-              ClipRRect(
-                child: BgFilter(
-                  bgColor: KaminariTheme.background.withAlpha(200),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: KaminariTheme.surfaceTint.withAlpha(40),
-                        ),
-                      ),
-                    ),
-                    child: SafeArea(
-                      bottom: false,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              LightningIconButton(
-                                icon: Icons.arrow_back_ios_new,
-                                onPressed: () => Navigator.of(context).pop(),
-                              ),
-                              Expanded(
-                                child: CustomText(
-                                  cubit.chapter.title,
-                                  TextType.labelMedium,
-                                  fontSize: 16,
-                                  color: KaminariTheme.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 48,
-                              ), // Balance for back button
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            transitionBuilder: (child, animation) =>
-                                SizeTransition(
-                                  sizeFactor: animation,
-                                  child: child,
-                                ),
-                            child: DictionaryView(
-                              state.selectedEntry,
-                              cubit.clearSelection,
+                    if (state.tokenizedParagraphs.isEmpty) {
+                      return const SizedBox.shrink(); // Handled by the Downloading overlay
+                    }
+
+                    return NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is ScrollEndNotification) {
+                          cubit.saveScrollPosition(
+                            _scrollController.position.pixels,
+                          );
+                        }
+                        return false;
+                      },
+                      child: CustomScrollView(
+                        controller: _scrollController,
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(
+                              24,
+                              140,
+                              24,
+                              100,
+                            ),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
+                                final tokens = state.tokenizedParagraphs[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 24),
+                                  child: _TokenizedParagraph(
+                                    tokens: tokens,
+                                    paragraphIndex: index,
+                                    onTokenTap: _onTokenTap,
+                                  ),
+                                );
+                              }, childCount: state.tokenizedParagraphs.length),
                             ),
                           ),
                         ],
+                      ),
+                    );
+                  },
+                ),
+
+                // DOWNLOAD STATUS OVERLAY (Full Center)
+                BlocBuilder<BackgroundWebviewCubit, BackgroundWebviewState>(
+                  builder: (context, bgState) {
+                    final isDownloadingThis =
+                        bgState.activeChapterId == cubit.chapter.id;
+                    final needsContent =
+                        state.tokenizedParagraphs.isEmpty && !state.isLoading;
+
+                    if (needsContent) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isDownloadingThis)
+                              const CircularProgressIndicator()
+                            else
+                              const Icon(
+                                Icons.cloud_download_outlined,
+                                size: 48,
+                                color: KaminariTheme.textSecondary,
+                              ),
+                            const SizedBox(height: 24),
+                            CustomText(
+                              isDownloadingThis
+                                  ? "Downloading chapter..."
+                                  : "Waiting in download queue...",
+                              TextType.bodyLarge,
+                              color: KaminariTheme.textSecondary,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+
+                // HEADER / DICTIONARY BAR
+                ClipRRect(
+                  child: BgFilter(
+                    bgColor: KaminariTheme.background.withAlpha(200),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: KaminariTheme.surfaceTint.withAlpha(40),
+                          ),
+                        ),
+                      ),
+                      child: SafeArea(
+                        bottom: false,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                LightningIconButton(
+                                  icon: Icons.arrow_back_ios_new,
+                                  onPressed: () => Navigator.of(context).pop(),
+                                ),
+                                Expanded(
+                                  child: CustomText(
+                                    cubit.chapter.title,
+                                    TextType.labelMedium,
+                                    fontSize: 16,
+                                    color: KaminariTheme.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(width: 48),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              transitionBuilder: (child, animation) =>
+                                  SizeTransition(
+                                    sizeFactor: animation,
+                                    child: child,
+                                  ),
+                              child: DictionaryView(
+                                state.selectedEntry,
+                                cubit.clearSelection,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              BlocBuilder<BackgroundWebviewCubit, BackgroundWebviewState>(
-                builder: (context, backgroundState) {
-                  final shouldShowIndicator =
-                      backgroundState.isPrefetching &&
-                      backgroundState.activeBookId == cubit.bookId;
-                  if (!shouldShowIndicator) return const SizedBox.shrink();
 
-                  return Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      color: KaminariTheme.background.withAlpha(220),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 4,
-                        horizontal: 16,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                // BACKGROUND PROGRESS BAR (Small Top Bar)
+                if (kDebugMode)
+                  BlocBuilder<BackgroundWebviewCubit, BackgroundWebviewState>(
+                    builder: (context, backgroundState) {
+                      final isDownloadingOthers =
+                          backgroundState.isProcessing &&
+                          backgroundState.activeChapterId != cubit.chapter.id;
+
+                      if (!isDownloadingOthers) return const SizedBox.shrink();
+
+                      return Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: SafeArea(
+                          child: Container(
+                            color: KaminariTheme.gold.withAlpha(200),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: const Center(
+                              child: Text(
+                                'Downloading next chapters in background...',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Downloading chapters in background...',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          );
-        },
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -263,30 +343,17 @@ class _TokenizedParagraph extends StatelessWidget {
       );
     }
 
-    // Wrap with BlocBuilder to react to selection changes for *this* paragraph only
     return BlocBuilder<ReaderCubit, ReaderState>(
-      // Only rebuild this paragraph if:
-      // 1. Its tokens or content changes (unlikely after initial load)
-      // 2. The global selectedParagraphIndex matches *this* paragraph's index (it's the current selection)
-      // 3. The global selectedParagraphIndex *was* this paragraph's index (it was previously selected and needs to deselect)
       buildWhen: (previous, current) {
         final bool wasSelectedParagraph =
             previous.selectedParagraphIndex == paragraphIndex;
         final bool isSelectedParagraph =
             current.selectedParagraphIndex == paragraphIndex;
-
-        // Rebuild if this paragraph's selection status changes
-        if (wasSelectedParagraph != isSelectedParagraph) {
-          return true;
-        }
-
-        // Rebuild if this paragraph was selected and its *specific token index* changed
-        // (i.e., a different token within the *same* paragraph was selected)
+        if (wasSelectedParagraph != isSelectedParagraph) return true;
         if (isSelectedParagraph &&
             previous.selectedTokenIndex != current.selectedTokenIndex) {
           return true;
         }
-
         return false;
       },
       builder: (context, state) {
@@ -298,7 +365,6 @@ class _TokenizedParagraph extends StatelessWidget {
             children: List.generate(tokens.length, (tokenIndex) {
               final token = tokens[tokenIndex];
               final bool isPunctuation = token.containsPunctuation;
-
               final isSelected =
                   selectedParagraphIndex == paragraphIndex &&
                   selectedTokenIndex == tokenIndex;
@@ -312,10 +378,10 @@ class _TokenizedParagraph extends StatelessWidget {
                       ? KaminariTheme.textSecondary.withAlpha(150)
                       : (isSelected
                             ? KaminariTheme.textTitle
-                            : KaminariTheme.textPrimary), // Highlighted color
+                            : KaminariTheme.textPrimary),
                   backgroundColor: isSelected
                       ? KaminariTheme.bronze.withAlpha(125)
-                      : Colors.transparent, // Highlight background
+                      : Colors.transparent,
                 ),
                 recognizer: isPunctuation
                     ? null
