@@ -44,6 +44,8 @@
 - [ ] open import chapter webview on error (only for current)
 - [ ] icon/splash update
 - [ ] import builder loader ui update
+- [ ] persist linebreaks/spacing?
+- [ ] auto-update for new chapters
 
 - [ ] BUG: why my chapter id in 3000's when its only 75ish chapters in?
 - [x] BUG: bottom nav covered by native nav bar
@@ -67,6 +69,8 @@
   - [ ] epub/ebook/pdf? importing
   - [ ] additional language features?
   - [ ] paragraphg transliteration/translation?
+
+- [ ] manga features
   
 - [ ] use jagger or jptransliterate?
 - [ ] replace ai with heuristical analysis across the board?
