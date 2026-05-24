@@ -82,3 +82,7 @@
   - [ ] download over mobile network?
   - [ ] dict view in reader page orientation
   - [ ] kanji start orientaion (for dict view)?
+
+- [ ] backend/backups
+  - [ ] books (ignoring content?)
+  - [ ] usersettings
