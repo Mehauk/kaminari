@@ -21,7 +21,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async {

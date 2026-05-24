@@ -16,6 +16,8 @@
 - [x] prioritize opened chapter downloading over the others
 - [x] show downloading indicator on opened chapter without content
 - [x] importing indicators update
+- [x] heuristics to check japanese level
+- [ ] word count of first page * pages
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
 - [ ] responsive home tabs

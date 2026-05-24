@@ -12,6 +12,7 @@ import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
+import 'package:kaminari/src/utils/string_extensions.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 part 'import_webview_cubit.freezed.dart';
@@ -372,6 +373,11 @@ class WebviewCubit extends Cubit<WebviewState> {
             }
           }
         }
+      }
+
+      if (response['jlptLevel'] == null || response['jlptLevel'] == "") {
+        response['jlptLevel'] =
+            await (response['synopsis'] as String).jlptEstimate;
       }
 
       final book = BookDetails.fromJson(response);
