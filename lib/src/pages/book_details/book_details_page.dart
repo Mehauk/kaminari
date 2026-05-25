@@ -435,8 +435,9 @@ class _StatsRow extends StatelessWidget {
       children: [
         _StatTile(
           icon: Icons.text_fields_rounded,
-          value: '${(0 / 1000).toStringAsFixed(1)}k',
-          label: 'Words',
+          value:
+              '${(cubit.book.firstChapterCharCount * cubit.book.chapters.length / 1000).toStringAsFixed(1)}k',
+          label: 'Chars',
         ),
         const SizedBox(width: 12),
         _StatTile(

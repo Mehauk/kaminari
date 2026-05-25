@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
@@ -147,6 +148,11 @@ class _WebAddressBar extends StatelessWidget {
                       icon: Icons.refresh,
                       onPressed: () => controller.reload(),
                     ),
+                    if (kDebugMode)
+                      LightningIconButton(
+                        icon: Icons.bug_report_outlined,
+                        onPressed: () => _showCachedExtractorsDialog(context),
+                      ),
                   ],
                 ),
                 DictionaryView(cubit.state.selectedEntry, cubit.clearSelection),
@@ -154,6 +160,89 @@ class _WebAddressBar extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showCachedExtractorsDialog(BuildContext context) {
+    final cubit = context.read<WebviewCubit>();
+    final cachedExtractors = cubit.getCachedExtractors();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cached Extractors'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (cachedExtractors.isEmpty)
+                const Text('No cached extractors found')
+              else
+                ...cachedExtractors.entries.map((entry) {
+                  final origin = entry.key;
+                  final extractors = entry.value;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        origin,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      ...extractors.entries.map((extEntry) {
+                        final type = extEntry.key;
+                        final extractor = extEntry.value;
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 16, bottom: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$type:',
+                                style: const TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[900],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  extractor.length > 200
+                                      ? '${extractor.substring(0, 200)}...'
+                                      : extractor,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontFamily: 'monospace',
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 12),
+                    ],
+                  );
+                }),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

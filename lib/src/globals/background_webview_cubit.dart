@@ -181,7 +181,7 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
 
     final contentJs = generateContentExtractionJSPrompt(
       jsonEncode([chapter.url]),
-      jsonEncode(chapterExtractor.contentSection),
+      jsonEncode(chapterExtractor.contentSections),
     );
 
     _extractionCompleter = Completer<String>();

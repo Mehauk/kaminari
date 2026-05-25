@@ -58,7 +58,7 @@ abstract class ChapterInfoExtractor with _$ChapterInfoExtractor {
 
 @freezed
 abstract class ChapterExtractor with _$ChapterExtractor {
-  const factory ChapterExtractor({required String contentSection}) =
+  const factory ChapterExtractor({required String contentSections}) =
       _ChapterExtractor;
 
   factory ChapterExtractor.fromJson(Map<String, dynamic> json) =>
@@ -85,6 +85,7 @@ abstract class BookDetails with _$BookDetails {
     int? accessedDate,
     @Default(BookType.webNovel) BookType bookType,
     @Default(0) int currentChapter,
+    @Default(0) int firstChapterCharCount,
     @Default(false) bool isFavorite,
     @Default(false) bool synopsisExpanded,
   }) = _BookDetails;

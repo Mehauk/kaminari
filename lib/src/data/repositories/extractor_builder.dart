@@ -14,6 +14,7 @@ class ExtractorBuilder {
   }) async {
     if (!forceReload) {
       String? fullResponse = await _cache.loadBookExtractorForOrigin(origin);
+      print("book cache hit!: $fullResponse");
       if (fullResponse != null) return fullResponse;
     }
 
@@ -33,6 +34,7 @@ class ExtractorBuilder {
   }) async {
     if (!forceReload) {
       String? fullResponse = await _cache.loadPageExtractorForOrigin(origin);
+      print("chapter cache hit!: $fullResponse");
       if (fullResponse != null) return fullResponse;
     }
 
@@ -47,10 +49,14 @@ class ExtractorBuilder {
 
   Future<void> clearCacheForOrigin(String origin) =>
       _cache.clearCacheForOrigin(origin);
+
+  /// Get all cached extractors for debug purposes
+  Map<String, Map<String, String>> getCachedExtractors() =>
+      _cache.getAllCachedExtractors();
 }
 
 // fullResponse0 =
 //         '{"\$schema": "https://json-schema.org/draft/2020-12/schema", "title": ".p-novel__title", "author": ".p-novel__author > a", "coverUrl": "N/A", "jlptLevel": "N/A", "synopsis": "#novel_ex.p-novel__summary", "paginationFirstUrl": ".c-pager__item--first", "paginationNextUrl": ".c-pager__item--next", "chapter": ".p-eplist__sublist", "individualChapterDetails": {"url": "a.p-eplist__subtitle", "title": "a.p-eplist__subtitle", "updatedDate": ".p-eplist__update"}}';
    
     // chapterLlmResponse0 =
-    //     '{"contentSection": "div.js-novel-text.p-novel__text"}';
+    //     '{"contentSections": "div.js-novel-text.p-novel__text"}';

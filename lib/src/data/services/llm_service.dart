@@ -17,9 +17,6 @@ class LlmService {
         model: preferredModel,
         apiKey: apiKey,
         generationConfig: GenerationConfig(
-          temperature: 0,
-          topK: 1,
-          topP: 1,
           responseMimeType: 'application/json',
         ),
       );
