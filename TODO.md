@@ -61,7 +61,7 @@
     - [x] open prep screen from top of chapter?
     - [x] remember prep + 0/100 impl
     - [x] kanji/word level
-    - [ ] calculate show order (considering kanji level)
+    - [-] calculate show order (considering kanji level)
     - [ ] implement word of the day with correct kanji level
 
 - [ ] complete book features
