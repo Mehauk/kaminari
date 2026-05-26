@@ -32,18 +32,22 @@ class KaminariApp extends StatelessWidget {
           ),
         ),
         lazy: true,
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Kaminari Browser',
-          theme: KaminariTheme.theme,
-          initialRoute: '/',
-          routes: {
-            '/': (_) => const HomePage(),
-            '/import-view': (context) => ImportWebviewPage(
-              initialUrl: ModalRoute.of(context)?.settings.arguments as String?,
-            ),
-          },
-          navigatorObservers: [routeObserver],
+        child: SafeArea(
+          top: false,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Kaminari Browser',
+            theme: KaminariTheme.theme,
+            initialRoute: '/',
+            routes: {
+              '/': (_) => const HomePage(),
+              '/import-view': (context) => ImportWebviewPage(
+                initialUrl:
+                    ModalRoute.of(context)?.settings.arguments as String?,
+              ),
+            },
+            navigatorObservers: [routeObserver],
+          ),
         ),
       ),
     );
