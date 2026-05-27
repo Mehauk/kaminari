@@ -10,6 +10,7 @@ import 'package:kaminari/src/pages/reader/reader.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
+import 'package:kaminari/src/utils/date_extensions.dart';
 
 class BookDetailsPage extends StatelessWidget {
   const BookDetailsPage(this.book, {super.key});
@@ -187,8 +188,9 @@ class _CoverAppBar extends StatelessWidget {
                         final bookId = cubit.book.id;
                         if (bookId == null) return;
                         await cubit.dbService.deleteBook(bookId);
-                        if (pageContext.mounted)
+                        if (pageContext.mounted) {
                           Navigator.of(pageContext).pop(true);
+                        }
                       },
                     ),
                     const SizedBox(height: 12),
@@ -265,13 +267,6 @@ class _BookHeader extends StatelessWidget {
       children: [
         // title
         CustomText(cubit.book.title, .titleMedium, fontSize: 22),
-        // const SizedBox(height: 4),
-        // // alt title
-        // CustomText(
-        //   cubit.book.titleRomaji,
-        //   .headlineMedium,
-        //   color: KaminariTheme.textTitle,
-        // ),
         const SizedBox(height: 8),
         // Author
         Row(
@@ -427,10 +422,6 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<BookDetailsCubit>();
-    final hours = 0 ~/ 60;
-    final mins = 0 % 60;
-    final timeLabel = hours > 0 ? '${hours}h ${mins}m' : '${mins}m';
-
     return Row(
       children: [
         _StatTile(
@@ -442,8 +433,8 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 12),
         _StatTile(
           icon: Icons.timer_outlined,
-          value: timeLabel,
-          label: 'Est. Read',
+          value: cubit.book.accessedDate.toDateStringPrefRelativeShort,
+          label: 'Last Read',
         ),
         const SizedBox(width: 12),
         _StatTile(
@@ -486,6 +477,7 @@ class _StatTile extends StatelessWidget {
                 .headlineMedium,
                 fontSize: 18,
                 color: valueColor ?? KaminariTheme.textTitle,
+                alignment: .center,
               ),
               const SizedBox(height: 2),
               CustomText(label, .labelSmall, fontSize: 11),
