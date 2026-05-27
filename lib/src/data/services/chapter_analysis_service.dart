@@ -1,10 +1,11 @@
 import 'dart:convert';
 
-import 'package:jp_transliterate/jp_transliterate.dart'; // Ensure this is imported
+import 'package:jp_transliterate/jp_transliterate.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
+import 'package:kaminari/src/utils/string_extensions.dart';
 
 class EntryAnalysisModel {
   final String word;
@@ -75,18 +76,28 @@ class ChapterAnalysisService {
       frequencies[t] = (frequencies[t] ?? 0) + 1;
     }
 
-    final sorted = frequencies.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    // Compute the Priority Score for each token: Frequency * (1.0 + Difficulty)
+    final Map<String, double> priorityScores = {};
+    for (var entry in frequencies.entries) {
+      final token = entry.key;
+      final freq = entry.value;
+      final difficulty = token.calculateJapaneseDifficulty();
+      priorityScores[token] = freq * (1.0 + difficulty);
+    }
+
+    // Sort tokens descending based on Priority Score
+    final sorted = frequencies.keys.toList()
+      ..sort((a, b) => priorityScores[b]!.compareTo(priorityScores[a]!));
 
     final topTokens = sorted.take(100).toList();
 
     List<EntryAnalysisModel> results = [];
-    for (var item in topTokens) {
-      final (wordMap, kanjis) = await KanjiService.lookupToken(item.key);
+    for (var token in topTokens) {
+      final (wordMap, kanjis) = await KanjiService.lookupToken(token);
       results.add(
         EntryAnalysisModel(
-          word: item.key,
-          count: item.value,
+          word: token,
+          count: frequencies[token]!, // Retain the real occurrence count for UI
           entry: DictionaryEntry(wordMap, kanjis: kanjis),
         ),
       );
