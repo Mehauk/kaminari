@@ -421,7 +421,7 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<BookDetailsCubit>();
+    final cubit = context.watch<BookDetailsCubit>();
     return Row(
       children: [
         _StatTile(
@@ -433,7 +433,7 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 12),
         _StatTile(
           icon: Icons.timer_outlined,
-          value: cubit.book.accessedDate.toDateStringPrefRelativeShort,
+          value: cubit.state.lastAccessed.toDateStringPrefRelativeShort,
           label: 'Last Read',
         ),
         const SizedBox(width: 12),

@@ -25,6 +25,8 @@
 - [ ] responsive home tabs
 - [ ] use most common/first meaning of word
 - [ ] fix JLPT estimator
+- [ ] implement home screen functionality
+- [ ] Prereading kanji anki type shii
 
 
 - [ ] use jagger?

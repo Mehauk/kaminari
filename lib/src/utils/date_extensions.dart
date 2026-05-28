@@ -52,6 +52,10 @@ extension ToTimeString on int? {
       return parts.take(2).join(" ");
     }
 
-    return "${parts.first}${parts[1][0]} ${parts[2]}";
+    try {
+      return "${parts.first}${parts[1][0]} ${parts[2]}";
+    } catch (e) {
+      return parts.join(" ");
+    }
   }
 }
