@@ -63,7 +63,7 @@ class ChapterAnalysisService {
       return decoded.map((e) => EntryAnalysisModel.fromJson(e)).toList();
     }
 
-    // 2. If no cache, perform expensive analysis
+    // 2. If no cache, perform analysis
     if (chapter.content == null || chapter.content!.isEmpty) return [];
 
     final String fullText = chapter.content!.join(" ");
@@ -89,18 +89,34 @@ class ChapterAnalysisService {
     final sorted = frequencies.keys.toList()
       ..sort((a, b) => priorityScores[b]!.compareTo(priorityScores[a]!));
 
-    final topTokens = sorted.take(100).toList();
-
     List<EntryAnalysisModel> results = [];
-    for (var token in topTokens) {
+
+    // Look up and filter candidates on the fly until we collect up to 100 valid entries
+    for (var token in sorted) {
+      if (results.length >= 100) break;
+
       final (wordMap, kanjis) = await KanjiService.lookupToken(token);
-      results.add(
-        EntryAnalysisModel(
-          word: token,
-          count: frequencies[token]!, // Retain the real occurrence count for UI
-          entry: DictionaryEntry(wordMap, kanjis: kanjis),
-        ),
-      );
+      final entry = DictionaryEntry(wordMap, kanjis: kanjis);
+
+      // Validate reading and meaning exist
+      final hasMeaning = entry.meanings.join("").trim().isNotEmpty;
+
+      // Since the tokens are Kanji-worthy, the reading must not be empty
+      // and must differ from the raw written Kanji string (which indicates a dummy fallback lookup)
+      final hasReading =
+          entry.sounds.join("").trim().isNotEmpty &&
+          entry.sounds.join("") != entry.letters.join("");
+
+      if (hasMeaning && hasReading) {
+        results.add(
+          EntryAnalysisModel(
+            word: token,
+            count:
+                frequencies[token]!, // Retain the real occurrence count for UI
+            entry: entry,
+          ),
+        );
+      }
     }
 
     // 3. Save results to cache for next time
