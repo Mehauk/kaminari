@@ -20,9 +20,9 @@
 - [x] character count of first page * pages
 - [x] change dictionary close action to bottom of display
 - [x] BUG: bottom nav covered by native nav bar
+- [ ] responsive home tabs
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
-- [ ] responsive home tabs
 - [ ] use most common/first meaning of word
 - [ ] fix JLPT estimator
 - [ ] implement home screen functionality
