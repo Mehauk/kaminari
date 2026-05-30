@@ -62,7 +62,7 @@
     - [x] remember prep + 0/100 impl
     - [x] kanji/word level
     - [x] calculate show order (considering kanji level)
-      - [ ] Ignore words for which reading/meaning cannot be found
+      - [x] Ignore words for which reading/meaning cannot be found
     - [ ] implement word of the day with correct kanji level
 
 - [ ] complete book features
