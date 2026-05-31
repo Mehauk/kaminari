@@ -346,6 +346,7 @@ class DiscoverableBookCard extends StatelessWidget {
                     fontSize: 14,
                     color: Colors.white,
                     fontWeight: .w300,
+                    maxLines: 1,
                   ),
                   SizedBox(height: 4),
                   Row(
@@ -362,6 +363,7 @@ class DiscoverableBookCard extends StatelessWidget {
                           .titleMedium,
                           fontSize: 12,
                           fontWeight: .w300,
+                          maxLines: 1,
                         ),
                       ),
                     ],

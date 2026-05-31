@@ -20,15 +20,16 @@
 - [x] character count of first page * pages
 - [x] change dictionary close action to bottom of display
 - [x] BUG: bottom nav covered by native nav bar
-- [ ] responsive home tabs
+- [x] responsive home tabs
+- [ ] fix JLPT estimator
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
 - [ ] use most common/first meaning of word
-- [ ] fix JLPT estimator
 - [ ] implement home screen functionality
 - [ ] Prereading kanji anki type shii
+- [ ] reading progress fix (+1 if accessedDate not null)
 
-
+- [ ] add language (use meta tags?)
 - [ ] use jagger?
 - [ ] replace ai with heuristical analysis across the board?
 - [ ] icons update
