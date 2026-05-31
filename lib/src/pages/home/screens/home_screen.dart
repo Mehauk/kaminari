@@ -11,6 +11,7 @@ import 'package:kaminari/src/ui/widgets/app_bar.dart';
 import 'package:kaminari/src/ui/widgets/book_cards.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
+import 'package:kaminari/src/ui/widgets/word_of_the_day_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -91,57 +92,7 @@ class HomeScreen extends StatelessWidget {
                   type: .thin,
                 ),
                 SizedBox(height: 32),
-                LightningCard(
-                  type: .striking,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: AlignmentGeometry.centerLeft,
-                        end: AlignmentGeometry.centerRight,
-                        colors: [
-                          KaminariTheme.surfaceTint.withAlpha(25),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                    child: Padding(
-                      padding: .all(24),
-                      child: Column(
-                        crossAxisAlignment: .start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: .spaceBetween,
-                            children: [
-                              CustomText(
-                                "KANJI OF THE DAY",
-                                .labelSmall,
-                                color: KaminariTheme.textTitle,
-                              ),
-                              CustomText("ONYOMI", .labelSmall),
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: .spaceBetween,
-                            crossAxisAlignment: .start,
-                            children: [
-                              CustomText("電", .bodyLarge, fontSize: 42),
-                              CustomText(
-                                "デン (Den)",
-                                .bodyLarge,
-                                color: KaminariTheme.textTitle,
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 4),
-                          Divider(thickness: 0.5),
-                          SizedBox(height: 12),
-                          CustomText("Electricity, Lightning", .bodyMedium),
-                          SizedBox(height: 12),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                WordOfTheDayCard(),
                 SizedBox(height: 32),
               ],
             ),
