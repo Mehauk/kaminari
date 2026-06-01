@@ -21,7 +21,7 @@
 - [x] change dictionary close action to bottom of display
 - [x] BUG: bottom nav covered by native nav bar
 - [x] responsive home tabs
-- [ ] fix JLPT estimator
+- [x] fix JLPT estimator
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
 - [ ] use most common/first meaning of word
