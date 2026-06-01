@@ -63,7 +63,8 @@
     - [x] kanji/word level
     - [x] calculate show order (considering kanji level)
       - [x] Ignore words for which reading/meaning cannot be found
-    - [ ] implement word of the day with correct kanji level
+    - [x] implement word of the day with correct kanji level
+    - [ ] implement words/days read (or remove)
 
 - [ ] complete book features
   - [ ] eng dict
