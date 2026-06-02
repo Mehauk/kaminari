@@ -22,12 +22,15 @@
 - [x] BUG: bottom nav covered by native nav bar
 - [x] responsive home tabs
 - [x] fix JLPT estimator
+- [ ] show scroll progress/bar
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
 - [ ] use most common/first meaning of word
 - [ ] implement home screen functionality
 - [ ] Prereading kanji anki type shii
 - [ ] reading progress fix (+1 if accessedDate not null)
+- [ ] fix readings matcher for dict view
+- [ ] handle offline mode
 
 - [ ] add language (use meta tags?)
 - [ ] use jagger?
@@ -36,4 +39,4 @@
 - [ ] BUG: you dont get all the chapters if you dont start on the first page.
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
-- [ ] BUG: first three chapters not autmatic?
+- [x] BUG: first three chapters not autmatic?
