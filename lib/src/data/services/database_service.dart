@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/services/local_storage_service.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -41,6 +42,10 @@ class DatabaseService {
     try {
       if (!_booksChangeController.isClosed) _booksChangeController.add(null);
     } catch (_) {}
+  }
+
+  void notifyBooksChanged() {
+    _notifyChange();
   }
 
   static Future<void> _onUpgrade(
@@ -186,7 +191,20 @@ class DatabaseService {
         booksMap[bookId]!["chapters"].add(chapter);
       }
     }
-    return booksMap.values.map((m) => BookDetails.fromJson(m)).toList();
+
+    final showArchived = LocalStorageService().getData('show_archived') == true;
+    final booksList = booksMap.values
+        .map((m) => BookDetails.fromJson(m))
+        .toList();
+    if (showArchived) {
+      return booksList;
+    } else {
+      return booksList
+          .where(
+            (b) => LocalStorageService().getData('archived_${b.id}') != true,
+          )
+          .toList();
+    }
   }
 
   Future<List<BookDetails>> getHistoryBooks() async {
@@ -222,7 +240,20 @@ class DatabaseService {
         });
       }
     }
-    return booksMap.values.map((m) => BookDetails.fromJson(m)).toList();
+
+    final showArchived = LocalStorageService().getData('show_archived') == true;
+    final booksList = booksMap.values
+        .map((m) => BookDetails.fromJson(m))
+        .toList();
+    if (showArchived) {
+      return booksList;
+    } else {
+      return booksList
+          .where(
+            (b) => LocalStorageService().getData('archived_${b.id}') != true,
+          )
+          .toList();
+    }
   }
 
   Future<ChapterInfo?> getChapterWithContent(int chapterId) async {
@@ -252,13 +283,28 @@ class DatabaseService {
     final db = await database;
     final rows = await db.rawQuery('''
       SELECT *, currentChapterIndex AS currentChapter FROM BookDetails
-      ORDER BY accessedDate DESC LIMIT 1
+      WHERE accessedDate IS NOT NULL
+      ORDER BY accessedDate DESC
     ''');
 
     if (rows.isEmpty) return null;
 
-    final bookRow = rows.first;
-    final bookId = bookRow['id'] as int;
+    final showArchived = LocalStorageService().getData('show_archived') == true;
+
+    Map<String, dynamic>? activeBookRow;
+    for (final row in rows) {
+      final bookId = row['id'] as int;
+      final isArchived =
+          LocalStorageService().getData('archived_$bookId') == true;
+      if (showArchived || !isArchived) {
+        activeBookRow = row;
+        break;
+      }
+    }
+
+    if (activeBookRow == null) return null;
+
+    final bookId = activeBookRow['id'] as int;
 
     final chapterRows = await db.rawQuery(
       '''
@@ -269,7 +315,7 @@ class DatabaseService {
       [bookId],
     );
 
-    final bookMap = Map<String, dynamic>.from(bookRow);
+    final bookMap = Map<String, dynamic>.from(activeBookRow);
     bookMap['isFavorite'] = (bookMap['isFavorite'] as int?) == 1;
     bookMap['chapters'] = chapterRows;
 
