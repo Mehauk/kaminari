@@ -23,7 +23,7 @@
 - [x] responsive home tabs
 - [x] fix JLPT estimator
 - [x] show scroll progress/bar
-- [ ] add language (use meta tags?)
+- [x] add language (use meta tags?)
 - [ ] open import chapter webview on error (only for current)
 - [ ] Import builder loader update (with type selection)
 - [ ] use most common/first meaning of word

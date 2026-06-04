@@ -200,13 +200,13 @@ class WebviewCubit extends Cubit<WebviewState> {
       final originResult = await controller.runJavaScriptReturningResult(
         "(function() {return document.location.origin;})()",
       );
-      
+
       // runJavaScriptReturningResult returns a JSON-encoded string for string values,
       // so we need to decode it to remove the quotes
       origin = originResult is String
           ? jsonDecode(originResult) as String
           : originResult.toString();
-      
+
       print("[WebviewCubit] Extracted origin: '$origin'");
 
       // 1. Extract Minified DOM via JS
@@ -275,6 +275,8 @@ class WebviewCubit extends Cubit<WebviewState> {
 
     reMap["url"] = "document.location.href";
     reMap["source"] = "document.location.origin";
+    reMap["language"] =
+        "document.documentElement.lang || document.querySelector('meta[http-equiv=\"content-language\"]')?.content || document.querySelector('meta[name=\"language\"]')?.content || document.querySelector('meta[name=\"lang\"]')?.content || 'en'";
     for (var key in jsonMap.keys) {
       if (key == "url") {
         continue;
@@ -327,10 +329,12 @@ class WebviewCubit extends Cubit<WebviewState> {
       // extract the first 3 chapters
       print("resultString");
       debugPrint(response.toString());
-      
+
       final String extractedSource = response['source'] as String? ?? '';
-      print("[WebviewCubit] Extracted source from response: '$extractedSource'");
-      
+      print(
+        "[WebviewCubit] Extracted source from response: '$extractedSource'",
+      );
+
       final List chapters = response['chapters'] ?? [];
       if (chapters.isNotEmpty) {
         final firstChapterUrl = chapters[0]['url'];
@@ -352,10 +356,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           debugPrint(chapterPrompt);
 
           final chapterLlmResponse = await extractorBuilder
-              .buildChapterExtractorSelectors(
-                extractedSource,
-                chapterPrompt,
-              );
+              .buildChapterExtractorSelectors(extractedSource, chapterPrompt);
 
           print('chapterLlmResponse');
           print(chapterLlmResponse);
@@ -373,10 +374,7 @@ class WebviewCubit extends Cubit<WebviewState> {
               .toList();
           final contentJs = generateContentExtractionJSPrompt(
             jsonEncode(urlsToExtract),
-            jsonEncode(
-              chapterExtractor
-                  .contentSections,
-            ),
+            jsonEncode(chapterExtractor.contentSections),
           );
 
           _extractionCompleter = Completer<String>();
@@ -411,8 +409,20 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
 
       debugPrint(chapters.first.toString());
+      debugPrint(response['language']);
 
       response['chapters'] = chapters;
+
+      final rawLanguage = (response['language'] as String?)?.trim();
+      if (rawLanguage != null && rawLanguage.isNotEmpty) {
+        response['language'] = rawLanguage
+            .split(',')
+            .first
+            .trim()
+            .toLowerCase();
+      } else {
+        response['language'] = 'en';
+      }
 
       final book = BookDetails.fromJson(response);
 

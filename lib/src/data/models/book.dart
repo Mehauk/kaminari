@@ -84,6 +84,7 @@ abstract class BookDetails with _$BookDetails {
     String? updatedDate,
     int? accessedDate,
     @Default(BookType.webNovel) BookType bookType,
+    @Default('en') String language,
     @Default(0) int currentChapter,
     @Default(0) int firstChapterCharCount,
     @Default(false) bool isFavorite,
