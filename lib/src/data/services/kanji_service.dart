@@ -22,49 +22,32 @@ class KanjiService {
 
   static Future<void> _initMecab() async {
     if (_mecab != null) return;
-
-    // NOTE: Depending on your mecab_for_dart version, you may need
-    // to copy the ipadic folder to ApplicationDocumentsDirectory
-    // similar to how you handled the Words DB.
-
     _mecab = TinySegmenter();
   }
 
   static Future<List<String>> tokenizeText(String text) async {
     if (text.startsWith("http")) return [text];
-    await _initMecab(); // Ensure initialized once
+    await _initMecab();
     final res = _mecab!.segment(text);
 
-    return res
-        .expand((e) {
-          // This regex matches either:
-          // 1. A single punctuation character: [^\p{L}\p{N}\p{Z}]
-          // 2. OR a sequence of non-punctuation characters: [\p{L}\p{N}\p{Z}]+
-          return RegExp(
-            r'[^\p{L}\p{N}\p{Z}]|[\p{L}\p{N}\p{Z}]+',
-            unicode: true,
-          ).allMatches(e).map((m) => m.group(0)!);
-        })
-        // .where((token) => token.trim().isNotEmpty)
-        .toList();
+    return res.expand((e) {
+      return RegExp(
+        r'[^\p{L}\p{N}\p{Z}]|[\p{L}\p{N}\p{Z}]+',
+        unicode: true,
+      ).allMatches(e).map((m) => m.group(0)!);
+    }).toList();
   }
 
   static Future<(Map<String, Object?>, List<KanjiEntry>)> lookupToken(
     String token,
   ) async {
     print(token);
-    // Logic extracted from kanji_reader.dart
+
     Map<String, Object?>? wordMap = await KanjiService.getEntry(token);
     final transliteration = await JpTransliterate.transliterate(kanji: token);
 
-    // Fallback lookups
     wordMap ??= await KanjiService.getEntry(transliteration.hiragana);
     wordMap ??= await KanjiService.getEntry(transliteration.katakana);
-
-    print("wordMap: $wordMap");
-    print("token: $token");
-    print("word: ${wordMap?['word']}");
-    print(wordMap?["word"] != token);
 
     if (wordMap == null || wordMap["word"] != token) {
       wordMap = {
@@ -75,11 +58,12 @@ class KanjiService {
       };
     }
 
-    // if (wordMap != null) {
-    //   KanjiService.visitEntry(wordMap["word"] as String);
-    // }
-
-    // Default structure if not found in dictionary
+    // Register word as visited for "Words Learned" functionality
+    final String? visitedWord =
+        (wordMap["word"] ?? wordMap["letters"]) as String?;
+    if (visitedWord != null && visitedWord.trim().isNotEmpty) {
+      KanjiService.visitEntry(visitedWord); // Background registration
+    }
 
     List<KanjiEntry> kanjis = (await KanjiService.getKanjiSounds(
       wordMap["letters"] as String,
@@ -129,7 +113,6 @@ class KanjiService {
         }
       }
     }
-
     return true;
   }
 
@@ -137,9 +120,7 @@ class KanjiService {
     String basePath = await getDatabasesPath();
     String dbPath = path.join(basePath, "$soundsTable.sqlite3");
 
-    Database db = await openDatabase(dbPath);
-
-    return db;
+    return await openDatabase(dbPath);
   }
 
   static Future<int> getMaxSounds() async {
@@ -157,14 +138,12 @@ class KanjiService {
     bool dbExistsEnglish = await File(dbPath).exists();
 
     if (!dbExistsEnglish) {
-      // Copy from asset
       ByteData data = await rootBundle.load(wordsDBPath);
       List<int> bytes = data.buffer.asUint8List(
         data.offsetInBytes,
         data.lengthInBytes,
       );
 
-      // Write and flush the bytes written
       await File(dbPath).writeAsBytes(bytes, flush: true);
     }
     return await openDatabase(dbPath);
@@ -183,7 +162,6 @@ class KanjiService {
 
       return lister.first;
     } catch (e) {
-      // BAD STATE (IDK) happens with chiisai-tsu
       return null;
     }
   }
@@ -225,18 +203,7 @@ class KanjiService {
       await db.execute(
         "CREATE TABLE $visitedTable (visitedword TEXT PRIMARY KEY, visits INT)",
       );
-
-      // List _kana = await getBaseKanji();
-
-      // for (var _l in _kana) {
-      //   await _db.insert(
-      //     WORDS_TABLE,
-      //     {"kanji": _l},
-      //     conflictAlgorithm: ConflictAlgorithm.ignore,
-      //   );
-      // }
     }
-
     return true;
   }
 
