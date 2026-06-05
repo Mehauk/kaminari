@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/constants/prompt.dart';
@@ -8,6 +9,7 @@ import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
+import 'package:kaminari/src/data/services/network_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 part 'background_webview_cubit.freezed.dart';
@@ -34,7 +36,9 @@ abstract class BackgroundWebviewState with _$BackgroundWebviewState {
 class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
   final DatabaseService dbService;
   final ExtractorBuilder extractorBuilder;
+  final NetworkService networkService;
   late final WebViewController _controller;
+  late final StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
   Completer<String>? _extractionCompleter;
   Completer<void>? _pageLoadCompleter;
@@ -47,8 +51,18 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
   BackgroundWebviewCubit({
     required this.dbService,
     required this.extractorBuilder,
+    required this.networkService,
   }) : super(const BackgroundWebviewState()) {
     _initController();
+    _connectivitySubscription = networkService.onConnectivityChanged.listen((
+      connectivityResult,
+    ) {
+      if (_queue.isNotEmpty &&
+          !_isLoopRunning &&
+          networkService.isWifiOrEthernet(connectivityResult)) {
+        _processQueue();
+      }
+    });
   }
 
   void _initController() {
@@ -104,14 +118,26 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     }
 
     if (!_isLoopRunning) {
+      _isLoopRunning = true;
       _processQueue();
     }
   }
 
   Future<void> _processQueue() async {
-    _isLoopRunning = true;
+    if (_queue.isEmpty || !await _isDownloadAllowed()) {
+      _isLoopRunning = false;
+      return;
+    }
 
-    while (_queue.isNotEmpty) {
+    while (true) {
+      if (_queue.isEmpty) {
+        break;
+      }
+
+      if (!await _isDownloadAllowed()) {
+        break;
+      }
+
       final task = _queue.removeAt(0);
 
       // Rate limit check: 5 per minute (ignore if priority)
@@ -208,5 +234,25 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     await _controller.loadRequest(Uri.parse(url));
     await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
     _pageLoadCompleter = null;
+  }
+
+  Future<bool> _isDownloadAllowed() async {
+    if (await networkService.hasAllowedDownloadConnection) {
+      return true;
+    }
+
+    final connectivityResult = await networkService.checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      print('Background downloads paused: offline mode.');
+    } else {
+      print('Background downloads paused: mobile data connection.');
+    }
+    return false;
+  }
+
+  @override
+  Future<void> close() {
+    _connectivitySubscription.cancel();
+    return super.close();
   }
 }
