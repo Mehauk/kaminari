@@ -81,7 +81,7 @@
   - [ ] finder (wrapper around a singular source search?)
 
 - [ ] settings page
-  - [ ] download over mobile network?
+  - [ ] download over mobile network (default false)
   - [ ] dict view in reader page orientation
   - [ ] kanji start orientaion (for dict view)?
 
