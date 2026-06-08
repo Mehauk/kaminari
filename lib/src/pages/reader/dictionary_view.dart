@@ -112,24 +112,41 @@ class _KanjiRow extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         itemCount: kanjis.length,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
-        itemBuilder: (context, index) =>
-            _KanjiCard(entry: kanjis[index], wordReadings: wordReadings),
+        itemBuilder: (context, index) => _KanjiCard(
+          entry: kanjis[index],
+          wordReadings: wordReadings,
+          index: index,
+        ),
       ),
     );
   }
 }
 
 class _KanjiCard extends StatelessWidget {
-  const _KanjiCard({required this.entry, required this.wordReadings});
+  const _KanjiCard({
+    required this.entry,
+    required this.wordReadings,
+    required this.index,
+  });
 
   final KanjiEntry entry;
   final List<String> wordReadings;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
     // Find if any of the kanji's readings are present in the word's reading
-    final String fullWordReading = wordReadings.join("");
+    // final String fullWordReading = wordReadings.join("");
 
+    final String reading;
+
+    if (wordReadings.length > index) {
+      reading = wordReadings[index];
+    } else {
+      reading = wordReadings.join("");
+    }
+
+    print(reading);
     print(entry.onReading);
     print(entry.kunReadings);
 
@@ -143,6 +160,13 @@ class _KanjiCard extends StatelessWidget {
       ...onReadings.expand((e) => getVariants(e) ?? [e]),
     };
 
+    onReadings = {
+      ...onReadings,
+      ...onReadings
+          .where((s) => s.length > 1)
+          .map((e) => "${e.substring(0, e.length - 1)}っ"),
+    };
+
     Set<String> kunReadings = {
       ...entry.kunReadings,
       ...entry.kunReadings.map((e) => e.split(".").first),
@@ -153,11 +177,18 @@ class _KanjiCard extends StatelessWidget {
       ...kunReadings.expand((e) => getVariants(e) ?? [e]),
     };
 
+    kunReadings = {
+      ...kunReadings,
+      ...kunReadings
+          .where((s) => s.length > 1)
+          .map((e) => "${e.substring(0, e.length - 1)}っ"),
+    };
+
     // Check On-readings (usually Katakana)
     final String matchedOn = onReadings.firstWhere(
       (r) =>
-          fullWordReading.contains(r.replaceAll('-', '').replaceAll(".", "")) ||
-          fullWordReading.contains(
+          reading.contains(r.replaceAll('-', '').replaceAll(".", "")) ||
+          reading.contains(
             JpTransliterate.katakanaToHiragana(
               r,
             ).replaceAll('-', '').replaceAll(".", ""),
@@ -168,8 +199,8 @@ class _KanjiCard extends StatelessWidget {
     // Check Kun-readings (usually Hiragana)
     final String matchedKun = kunReadings.firstWhere(
       (r) =>
-          fullWordReading.contains(r.replaceAll('-', '').replaceAll(".", "")) ||
-          fullWordReading.contains(
+          reading.contains(r.replaceAll('-', '').replaceAll(".", "")) ||
+          reading.contains(
             JpTransliterate.hiraganaToKatakana(
               r,
             ).replaceAll('-', '').replaceAll(".", ""),
