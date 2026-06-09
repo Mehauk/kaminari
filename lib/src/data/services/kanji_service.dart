@@ -58,7 +58,6 @@ class KanjiService {
     final transliteration = await JpTransliterate.transliterate(kanji: token);
 
     // Fallback lookups
-    // 異世 -> イヨ for some reason
     wordMap ??= await KanjiService.getEntry(transliteration.hiragana);
     wordMap ??= await KanjiService.getEntry(transliteration.katakana);
 
