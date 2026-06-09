@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/local_storage_service.dart';
 import 'package:kaminari/src/pages/home/home_nav_cubit.dart';
+import 'package:kaminari/src/pages/settings/settings_page.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
@@ -33,7 +33,7 @@ class LightningAppBar extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
           child: Row(
             children: [
               GestureDetector(
@@ -88,7 +88,14 @@ class LightningAppBar extends StatelessWidget {
                 color: KaminariTheme.textTitle,
               ),
               const Expanded(child: SizedBox.shrink()),
-              const LightningIcon(CupertinoIcons.person_alt_circle),
+              LightningIconButton(
+                icon: Icons.settings_outlined,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  );
+                },
+              ),
             ],
           ),
         ),

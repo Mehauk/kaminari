@@ -9,6 +9,7 @@ class AppSettings {
 
   static const _dictOrientationKey = 'pref_dict_orientation';
   static const _kanjiAlignmentKey = 'pref_kanji_alignment';
+  static const _downloadOverMobileKey = 'pref_download_over_mobile';
 
   DictOrientation getDictOrientation() {
     final val = _storage.getData(_dictOrientationKey);
@@ -32,5 +33,13 @@ class AppSettings {
 
   Future<void> setKanjiAlignment(KanjiAlignment alignment) async {
     await _storage.saveData(_kanjiAlignmentKey, alignment.name);
+  }
+
+  bool getDownloadOverMobile() {
+    return _storage.getData(_downloadOverMobileKey) == true;
+  }
+
+  Future<void> setDownloadOverMobile(bool value) async {
+    await _storage.saveData(_downloadOverMobileKey, value);
   }
 }
