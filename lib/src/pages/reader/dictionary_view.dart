@@ -85,7 +85,11 @@ class _DictionaryContent extends StatelessWidget {
           ),
           if (entry!.kanjis.isNotEmpty) ...[
             const SizedBox(height: 16),
-            _KanjiRow(kanjis: entry!.kanjis, wordReadings: entry!.sounds),
+            _KanjiRow(
+              kanjis: entry!.kanjis,
+              wordReadings: entry!.sounds,
+              letters: entry!.letters,
+            ),
           ],
           const SizedBox(height: 8),
           InkWell(
@@ -99,8 +103,13 @@ class _DictionaryContent extends StatelessWidget {
 }
 
 class _KanjiRow extends StatelessWidget {
-  const _KanjiRow({required this.kanjis, required this.wordReadings});
+  const _KanjiRow({
+    required this.kanjis,
+    required this.wordReadings,
+    required this.letters,
+  });
 
+  final List<String> letters;
   final List<KanjiEntry> kanjis;
   final List<String> wordReadings; // Pass the full word readings for matching
 
@@ -114,7 +123,9 @@ class _KanjiRow extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) => _KanjiCard(
           entry: kanjis[index],
-          wordReadings: wordReadings,
+          wordReadings: wordReadings
+              .where((reading) => !letters.contains(reading))
+              .toList(),
           index: index,
         ),
       ),
@@ -146,6 +157,8 @@ class _KanjiCard extends StatelessWidget {
       reading = wordReadings.join("");
     }
 
+    print(wordReadings);
+    print(entry.kanji);
     print(reading);
     print(entry.onReading);
     print(entry.kunReadings);
@@ -208,8 +221,8 @@ class _KanjiCard extends StatelessWidget {
       orElse: () => '',
     );
 
-    print(matchedOn);
-    print(matchedKun);
+    // print(matchedOn);
+    // print(matchedKun);
 
     final String displayReading = matchedOn.isNotEmpty
         ? matchedOn
