@@ -27,8 +27,10 @@
 - [x] fix readings matcher for dict view
 - [x] chiisai tsu
 - [x] reading line indicator
-- [ ] double tap highlight word webview
-- [ ] jlpt level indicator on webview
+- [ ] fix broken chapter
+- [x] double tap highlight word webview
+- [ ] next page from end of page
+- [ ] jlpt level indicator on webview (if lang is `ja`)
 - [ ] use most common/first meaning of word
 - [ ] Import builder loader update (with type selection)
 - [ ] implement home screen functionality
@@ -38,8 +40,8 @@
 - [ ] icons update
 - [ ] move the first three chapter downloading to the background cubit
 - [ ] chapter title clickability
-- [ ] next page from end of page
 - [ ] double tap on import pwebview to singletap normal + hold link?
+- [ ] no segmenter?
 
 - [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
