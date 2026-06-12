@@ -70,7 +70,6 @@ class _ReaderViewState extends State<_ReaderView> {
       _chapterStartOffsets[readerCubit.chapter.id!] = 0.0;
     }
 
-    // Listen for scroll updates to show a slim progress thumb and check infinite scroll threshold
     _scrollController.addListener(() {
       if (!_scrollController.hasClients) return;
 
@@ -82,7 +81,6 @@ class _ReaderViewState extends State<_ReaderView> {
         });
       }
 
-      // Hide the thumb shortly after scrolling stops
       _hideThumbTimer?.cancel();
       _hideThumbTimer = Timer(const Duration(milliseconds: 1200), () {
         if (mounted) setState(() => _showScrollThumb = false);
@@ -97,7 +95,6 @@ class _ReaderViewState extends State<_ReaderView> {
           readerCubit.chapter.content == null ||
           readerCubit.chapter.content!.isEmpty;
 
-      // 1. If this chapter is empty, put it at the top of the download stack (Priority)
       if (isChapterEmpty) {
         backgroundCubit.enqueueChapters(
           bookId: readerCubit.bookId,
@@ -106,7 +103,6 @@ class _ReaderViewState extends State<_ReaderView> {
         );
       }
 
-      // 2. Fetch the next 3 unloaded chapters and add them to the background queue (Standard priority)
       context
           .read<DatabaseService>()
           .getNextChaptersWithoutContent(
@@ -210,14 +206,12 @@ class _ReaderViewState extends State<_ReaderView> {
 
     final cubit = context.read<ReaderCubit>();
 
-    // 1. Trigger infinite scroll when near bottom
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
     if (maxScroll - currentScroll < 400) {
       cubit.loadNextChapter();
     }
 
-    // 2. Cache start offsets of visible chapter title keys
     for (var loaded in cubit.loadedChapters) {
       if (_chapterStartOffsets.containsKey(loaded.id)) continue;
       final key = _chapterKeys[loaded.id];
@@ -232,16 +226,11 @@ class _ReaderViewState extends State<_ReaderView> {
       }
     }
 
-    // 3. Track which chapter is active using cached start offsets.
-    // This works even when chapter header widgets are off-screen and recycled,
-    // and handles both scroll-down and scroll-up correctly.
     ChapterInfo? activeChapter;
     final currentOffset = _scrollController.offset;
     for (var loaded in cubit.loadedChapters) {
       final startOffset = _chapterStartOffsets[loaded.id];
       if (startOffset == null) continue;
-      // The active chapter is the last one whose start is at or before the
-      // current scroll offset. We keep overwriting so the last match wins.
       if (startOffset <= currentOffset) {
         activeChapter = loaded;
       }
@@ -264,10 +253,8 @@ class _ReaderViewState extends State<_ReaderView> {
       orElse: () => cubit.chapter,
     );
 
-    // Try to retrieve cached start offset
     double? startOffset = _chapterStartOffsets[activeChapter.id];
 
-    // If not cached yet, try to compute it now
     if (startOffset == null) {
       final key = _chapterKeys[activeChapter.id];
       final context = key?.currentContext;
@@ -317,13 +304,11 @@ class _ReaderViewState extends State<_ReaderView> {
             final readerCubit = context.read<ReaderCubit>();
             final readerState = readerCubit.state;
 
-            // Check if initial chapter is completed
             if (bgState.completedChapterIds.contains(readerCubit.chapter.id) &&
                 readerState.items.isEmpty) {
               readerCubit.reloadContent();
             }
 
-            // Check if waiting chapter is completed
             if (readerState.activeWaitingChapter != null &&
                 bgState.completedChapterIds.contains(
                   readerState.activeWaitingChapter!.id,
@@ -341,7 +326,6 @@ class _ReaderViewState extends State<_ReaderView> {
           builder: (context, state) {
             return Stack(
               children: [
-                // MAIN CONTENT LAYER
                 Builder(
                   builder: (context) {
                     if (state.isLoading) {
@@ -358,7 +342,7 @@ class _ReaderViewState extends State<_ReaderView> {
                     }
 
                     if (state.items.isEmpty) {
-                      return const SizedBox.shrink(); // Handled by the Downloading overlay
+                      return const SizedBox.shrink();
                     }
 
                     return NotificationListener<ScrollNotification>(
@@ -449,7 +433,6 @@ class _ReaderViewState extends State<_ReaderView> {
                   },
                 ),
 
-                // SLIM READING PROGRESS SCROLLBAR
                 Positioned(
                   top: 140,
                   bottom: 50,
@@ -531,7 +514,6 @@ class _ReaderViewState extends State<_ReaderView> {
                   ),
                 ),
 
-                // DOWNLOAD STATUS OVERLAY (Full Center)
                 BlocBuilder<BackgroundWebviewCubit, BackgroundWebviewState>(
                   builder: (context, bgState) {
                     final isDownloadingThis =
@@ -568,7 +550,6 @@ class _ReaderViewState extends State<_ReaderView> {
                   },
                 ),
 
-                // HEADER / DICTIONARY BAR
                 ClipRRect(
                   child: BgFilter(
                     bgColor: KaminariTheme.background.withAlpha(200),
@@ -618,8 +599,15 @@ class _ReaderViewState extends State<_ReaderView> {
                                       child: child,
                                     ),
                                 child: DictionaryView(
-                                  state.selectedEntry,
-                                  cubit.clearSelection,
+                                  entry: state.selectedEntry,
+                                  englishEntry: state.selectedEnglishEntry,
+                                  showDownloadPrompt:
+                                      state.showEnglishDictDownloadPrompt,
+                                  isDownloading: state.isEnglishDictDownloading,
+                                  downloadProgress:
+                                      state.englishDictDownloadProgress,
+                                  onDownload: cubit.downloadEnglishDictionary,
+                                  clearSelection: cubit.clearSelection,
                                   orientation: state.computedDictOrientation,
                                   alignment: state.kanjiAlignment,
                                 ),
@@ -631,7 +619,6 @@ class _ReaderViewState extends State<_ReaderView> {
                   ),
                 ),
 
-                // BOTTOM DICTIONARY VIEW
                 if (state.computedDictOrientation == DictOrientation.bottom)
                   Positioned(
                     bottom: 0,
@@ -658,8 +645,15 @@ class _ReaderViewState extends State<_ReaderView> {
                                     child: child,
                                   ),
                               child: DictionaryView(
-                                state.selectedEntry,
-                                cubit.clearSelection,
+                                entry: state.selectedEntry,
+                                englishEntry: state.selectedEnglishEntry,
+                                showDownloadPrompt:
+                                    state.showEnglishDictDownloadPrompt,
+                                isDownloading: state.isEnglishDictDownloading,
+                                downloadProgress:
+                                    state.englishDictDownloadProgress,
+                                onDownload: cubit.downloadEnglishDictionary,
+                                clearSelection: cubit.clearSelection,
                                 orientation: state.computedDictOrientation,
                                 alignment: state.kanjiAlignment,
                               ),
@@ -670,7 +664,6 @@ class _ReaderViewState extends State<_ReaderView> {
                     ),
                   ),
 
-                // BACKGROUND PROGRESS BAR (Small Top Bar)
                 if (kDebugMode)
                   BlocBuilder<BackgroundWebviewCubit, BackgroundWebviewState>(
                     builder: (context, backgroundState) {

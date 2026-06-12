@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:jp_transliterate/jp_transliterate.dart';
 import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/data/services/english_dictionary_service.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 
@@ -15,13 +16,25 @@ enum DictOrientation { top, bottom, dynamic }
 
 class DictionaryView extends StatelessWidget {
   final DictionaryEntry? entry;
+  final EnglishDictionaryEntry? englishEntry;
+  final bool showDownloadPrompt;
+  final bool isDownloading;
+  final double downloadProgress;
+  final void Function()? onDownload;
+
   final void Function() clearSelection;
   final DictOrientation orientation;
   final KanjiAlignment alignment;
-  const DictionaryView(
-    this.entry,
-    this.clearSelection, {
+
+  const DictionaryView({
     super.key,
+    this.entry,
+    this.englishEntry,
+    this.showDownloadPrompt = false,
+    this.isDownloading = false,
+    this.downloadProgress = 0.0,
+    this.onDownload,
+    required this.clearSelection,
     required this.orientation,
     required this.alignment,
   });
@@ -33,40 +46,68 @@ class DictionaryView extends StatelessWidget {
       transitionBuilder: (Widget child, Animation<double> animation) {
         return SizeTransition(sizeFactor: animation, child: child);
       },
-      child: _DictionaryContent(entry, clearSelection, orientation, alignment),
+      child: _DictionaryContent(
+        entry: entry,
+        englishEntry: englishEntry,
+        showDownloadPrompt: showDownloadPrompt,
+        isDownloading: isDownloading,
+        downloadProgress: downloadProgress,
+        onDownload: onDownload,
+        clearSelection: clearSelection,
+        orientation: orientation,
+        alignment: alignment,
+      ),
     );
   }
 }
 
 class _DictionaryContent extends StatelessWidget {
   final DictionaryEntry? entry;
+  final EnglishDictionaryEntry? englishEntry;
+  final bool showDownloadPrompt;
+  final bool isDownloading;
+  final double downloadProgress;
+  final void Function()? onDownload;
+
   final void Function() clearSelection;
   final DictOrientation orientation;
   final KanjiAlignment alignment;
-  const _DictionaryContent(
+
+  const _DictionaryContent({
     this.entry,
-    this.clearSelection,
-    this.orientation,
-    this.alignment,
-  );
+    this.englishEntry,
+    required this.showDownloadPrompt,
+    required this.isDownloading,
+    required this.downloadProgress,
+    this.onDownload,
+    required this.clearSelection,
+    required this.orientation,
+    required this.alignment,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (entry == null) {
+    if (entry == null && englishEntry == null && !showDownloadPrompt) {
       return const SizedBox.shrink();
     }
 
     return GestureDetector(
       onVerticalDragEnd: (details) {
         final velocity = details.velocity;
-        if (orientation == .bottom && velocity.pixelsPerSecond.dy > 0) {
+        if (orientation == DictOrientation.bottom &&
+            velocity.pixelsPerSecond.dy > 0) {
           clearSelection();
-        } else if (velocity.pixelsPerSecond.dy < 0) {
+        } else if (orientation == DictOrientation.top &&
+            velocity.pixelsPerSecond.dy < 0) {
           clearSelection();
         }
       },
       child: Container(
-        key: ValueKey(entry!.letters.join()), // Forces animation on word change
+        key: ValueKey(
+          entry?.letters.join() ??
+              englishEntry?.word ??
+              showDownloadPrompt.toString(),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
           border: Border(
@@ -75,80 +116,190 @@ class _DictionaryContent extends StatelessWidget {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: alignment == .left ? .start : .end,
+          crossAxisAlignment: alignment == KanjiAlignment.left
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.end,
           children: [
-            if (orientation == .bottom) ...[
+            if (orientation == DictOrientation.bottom) ...[
               InkWell(
                 onTap: clearSelection,
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 12, bottom: 12),
-                    child: CustomText("\u25BC", .bodyLarge),
+                    child: CustomText("\u25BC", TextType.bodyLarge),
                   ),
                 ),
               ),
             ] else
-              SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: alignment == .left ? .start : .end,
-                    children: [
-                      Wrap(
-                        children: [
-                          CustomText(
-                            entry!.letters.join(),
-                            TextType.headlineLarge,
-                            color: KaminariTheme.textTitle,
-                          ),
-                          const SizedBox(width: 12),
-                          CustomText(
-                            entry!.sounds.join(),
-                            TextType.labelMedium,
-                            color: KaminariTheme.cyan,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      CustomText(
-                        entry!.meanings.join("; ").trim().isNotEmpty
-                            ? entry!.meanings.join("; ")
-                            : " --- ",
-                        TextType.bodyMedium,
-                        maxLines: 3,
-                        color: KaminariTheme.textPrimary,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (entry!.kanjis.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _KanjiRow(
-                kanjis: entry!.kanjis,
-                wordReadings: entry!.sounds,
-                letters: entry!.letters,
-                alignment: alignment,
-              ),
+              const SizedBox(height: 12),
+
+            if (showDownloadPrompt) ...[
+              _buildDownloadPrompt(),
+            ] else if (englishEntry != null) ...[
+              _buildEnglishEntry(),
+            ] else if (entry != null) ...[
+              _buildJapaneseEntry(context),
             ],
-            if (orientation == .top) ...[
+
+            if (orientation == DictOrientation.top) ...[
               InkWell(
                 onTap: clearSelection,
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: CustomText("\u25B2", .bodyLarge),
+                    child: CustomText("\u25B2", TextType.bodyLarge),
                   ),
                 ),
               ),
             ] else
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDownloadPrompt() {
+    return Column(
+      crossAxisAlignment: alignment == KanjiAlignment.left
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.end,
+      children: [
+        CustomText(
+          "Offline Dictionary Required",
+          TextType.titleMedium,
+          color: KaminariTheme.textTitle,
+        ),
+        const SizedBox(height: 8),
+        CustomText(
+          "To look up English words, you need to download the offline dictionary database.",
+          TextType.bodyMedium,
+          color: KaminariTheme.textPrimary,
+        ),
+        const SizedBox(height: 16),
+        if (isDownloading) ...[
+          LinearProgressIndicator(value: downloadProgress),
+          const SizedBox(height: 8),
+          CustomText(
+            "Downloading... ${(downloadProgress * 100).toStringAsFixed(1)}%",
+            TextType.labelSmall,
+            color: KaminariTheme.textSecondary,
+          ),
+        ] else ...[
+          FilledButton.icon(
+            onPressed: onDownload,
+            icon: const Icon(Icons.download),
+            label: const Text("Download Dictionary (~15MB)"),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildEnglishEntry() {
+    return Column(
+      crossAxisAlignment: alignment == KanjiAlignment.left
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.end,
+      children: [
+        Wrap(
+          children: [
+            CustomText(
+              englishEntry!.word,
+              TextType.headlineLarge,
+              color: KaminariTheme.textTitle,
+            ),
+            if (englishEntry!.pronunciation.isNotEmpty) ...[
+              const SizedBox(width: 12),
+              CustomText(
+                "/${englishEntry!.pronunciation}/",
+                TextType.labelMedium,
+                color: KaminariTheme.cyan,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        CustomText(
+          englishEntry!.definitions.isNotEmpty
+              ? englishEntry!.definitions.join("\n\n")
+              : "No definition found.",
+          TextType.bodyMedium,
+          maxLines: 10,
+          color: KaminariTheme.textPrimary,
+        ),
+        if (englishEntry!.etymology.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          CustomText(
+            "Etymology:",
+            TextType.labelSmall,
+            color: KaminariTheme.textTitle,
+          ),
+          CustomText(
+            englishEntry!.etymology,
+            TextType.bodyMedium,
+            maxLines: 6,
+            color: KaminariTheme.textSecondary,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildJapaneseEntry(BuildContext context) {
+    return Column(
+      crossAxisAlignment: alignment == KanjiAlignment.left
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.end,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: alignment == KanjiAlignment.left
+                    ? CrossAxisAlignment.start
+                    : CrossAxisAlignment.end,
+                children: [
+                  Wrap(
+                    children: [
+                      CustomText(
+                        entry!.letters.join(),
+                        TextType.headlineLarge,
+                        color: KaminariTheme.textTitle,
+                      ),
+                      const SizedBox(width: 12),
+                      CustomText(
+                        entry!.sounds.join(),
+                        TextType.labelMedium,
+                        color: KaminariTheme.cyan,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  CustomText(
+                    entry!.meanings.join("; ").trim().isNotEmpty
+                        ? entry!.meanings.join("; ")
+                        : " --- ",
+                    TextType.bodyMedium,
+                    maxLines: 3,
+                    color: KaminariTheme.textPrimary,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (entry!.kanjis.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _KanjiRow(
+            kanjis: entry!.kanjis,
+            wordReadings: entry!.sounds,
+            letters: entry!.letters,
+            alignment: alignment,
+          ),
+        ],
+      ],
     );
   }
 }
@@ -163,14 +314,11 @@ class _KanjiRow extends StatelessWidget {
 
   final List<String> letters;
   final List<KanjiEntry> kanjis;
-  final List<String> wordReadings; // Pass the full word readings for matching
+  final List<String> wordReadings;
   final KanjiAlignment alignment;
 
   @override
   Widget build(BuildContext context) {
-    print(":letters");
-    print(letters);
-    print(wordReadings);
     List<String> readings = [];
     if (wordReadings.length != letters.length) {
       readings = wordReadings;
@@ -188,19 +336,16 @@ class _KanjiRow extends StatelessWidget {
     return SizedBox(
       height: 85,
       child: LayoutBuilder(
-        // 1. Use LayoutBuilder to get the screen width
         builder: (context, constraints) {
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            reverse: alignment == .right,
+            reverse: alignment == KanjiAlignment.right,
             child: ConstrainedBox(
-              // 2. Force the Row to be at least as wide as the visible area
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 spacing: 10,
-                // 3. Now "end" will actually push items to the right
-                mainAxisAlignment: alignment == .left
+                mainAxisAlignment: alignment == KanjiAlignment.left
                     ? MainAxisAlignment.start
                     : MainAxisAlignment.end,
                 children: [
@@ -234,9 +379,6 @@ class _KanjiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Find if any of the kanji's readings are present in the word's reading
-    // final String fullWordReading = wordReadings.join("");
-
     final String reading;
 
     if (wordReadings.length > index) {
@@ -244,10 +386,6 @@ class _KanjiCard extends StatelessWidget {
     } else {
       reading = wordReadings.join("");
     }
-
-    print(wordReadings);
-    print(entry.kanji);
-    print(reading);
 
     Set<String> onReadings = {
       ...entry.onReading,
@@ -285,9 +423,6 @@ class _KanjiCard extends StatelessWidget {
         )
         .toSet();
 
-    print("on: $onReadings");
-    print("kun: $kunReadings");
-
     String? matchedOn = onReadings
         .where(
           (r) => reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
@@ -320,7 +455,6 @@ class _KanjiCard extends StatelessWidget {
         )
         .longest;
 
-    // take longest match on -> kun -> onInverse -> kunInverse
     final matches = [
       matchedOn,
       matchedKun,
@@ -329,9 +463,6 @@ class _KanjiCard extends StatelessWidget {
     ];
 
     String longestMatch = matches.longest ?? '';
-
-    // print(matchedOn);
-    // print(matchedKun);
 
     final String displayReading = longestMatch.isNotEmpty
         ? longestMatch
@@ -366,7 +497,6 @@ class _KanjiCard extends StatelessWidget {
               color: KaminariTheme.textTitle,
             ),
             const SizedBox(height: 2),
-            // The matched Reading
             CustomText(
               displayReading,
               TextType.labelSmall,
@@ -376,7 +506,6 @@ class _KanjiCard extends StatelessWidget {
                   : KaminariTheme.textSecondary,
             ),
             const SizedBox(height: 2),
-            // The Meaning
             CustomText(
               entry.meanings.isNotEmpty ? entry.meanings.first : '',
               TextType.labelSmall,
@@ -397,22 +526,17 @@ class _KanjiDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap in Dialog to get standard constraints and centering
     return Dialog(
-      backgroundColor:
-          Colors.transparent, // Let LightningCard handle the background
+      backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 400,
-        ), // Prevent it from getting too wide on tablets
+        constraints: const BoxConstraints(maxWidth: 400),
         child: LightningCard(
           type: .striking,
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
-              mainAxisSize: MainAxisSize
-                  .min, // Vital: Tells the column to only take required height
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -441,11 +565,10 @@ class _KanjiDetailDialog extends StatelessWidget {
                 Row(
                   children: [
                     CustomText("On:", TextType.bodyMedium),
-
                     Expanded(
                       child: CustomText(
                         " ${entry.onReading.join(" , ")}",
-                        .bodyMedium,
+                        TextType.bodyMedium,
                         color: KaminariTheme.cyan,
                         fontSize: 20,
                       ),
@@ -455,11 +578,10 @@ class _KanjiDetailDialog extends StatelessWidget {
                 Row(
                   children: [
                     CustomText("kun:", TextType.bodyMedium),
-
                     Expanded(
                       child: CustomText(
                         " ${entry.kunReadings.join(" , ")}",
-                        .bodyMedium,
+                        TextType.bodyMedium,
                         color: KaminariTheme.cyan,
                         fontSize: 20,
                       ),
