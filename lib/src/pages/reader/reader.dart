@@ -111,6 +111,62 @@ class _ReaderViewState extends State<_ReaderView> {
     super.dispose();
   }
 
+  void _showRefetchBottomSheet(BuildContext context) {
+    final backgroundCubit = context.read<BackgroundWebviewCubit>();
+    final readerCubit = context.read<ReaderCubit>();
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).canvasColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 48,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.refresh_outlined),
+              title: const Text('Refetch current chapter'),
+              subtitle: const Text(
+                'Ignore cached extractors and prioritize download',
+              ),
+              onTap: () {
+                print([readerCubit.chapter]);
+                Navigator.of(context).pop();
+                backgroundCubit.enqueueChapters(
+                  bookId: readerCubit.bookId,
+                  chapters: [readerCubit.chapter],
+                  isPriority: true,
+                  forceReloadSelectors: true,
+                );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Refetching current chapter with priority'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _onTokenTap(
     BuildContext context,
     String token,
@@ -356,7 +412,11 @@ class _ReaderViewState extends State<_ReaderView> {
                                     color: KaminariTheme.textSecondary,
                                   ),
                                 ),
-                                const SizedBox(width: 48),
+                                LightningIconButton(
+                                  icon: Icons.more_vert,
+                                  onPressed: () =>
+                                      _showRefetchBottomSheet(context),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 8),

@@ -17,7 +17,7 @@ JSON:
 
 String buildChapterExtractionAIPrompt(String miniTree) {
   return """
-Analyze this minified DOM tree and identify the most likely CSS selectors for the chapter's content.
+Analyze this minified DOM tree and identify the most likely CSS selectors in proper format for the chapter's content.
 
 Tree: $miniTree
 
@@ -228,9 +228,9 @@ String generateContentExtractionJSPrompt(String urls, String selector) =>
             const res = await fetch(url);
             const html = await res.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
-            const el = doc.querySelector(selector);
-            if (el) {
-              const lines = Array.from(el.children)
+            const children = Array.from(doc.querySelectorAll(selector)).flatMap(e => Array.from(e.children));
+            if (children) {
+              const lines = children
                 .map(function(c) {
                   let text = c.textContent.trim();
                   if ((text?.length ?? 0) > 0) return text;

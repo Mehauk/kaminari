@@ -27,8 +27,9 @@
 - [x] fix readings matcher for dict view
 - [x] chiisai tsu
 - [x] reading line indicator
-- [ ] fix broken chapter
+- [ ] fix broken chapter (auto realod when finished downloading)
 - [x] double tap highlight word webview
+- [ ] injecter starts earlier
 - [ ] next page from end of page
 - [ ] jlpt level indicator on webview (if lang is `ja`)
 - [ ] use most common/first meaning of word
@@ -43,6 +44,7 @@
 - [ ] double tap on import pwebview to singletap normal + hold link?
 - [ ] no segmenter?
 
+- [ ] BUG: why my chapter id in 3000's when im only 75ish chapters in?
 - [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
