@@ -67,7 +67,7 @@
     - [x] implement daily streak and words learnt
 
 - [ ] complete book features
-  - [ ] eng dict
+  - [x] eng dict
   - [ ] epub/ebook/pdf? importing
   - [ ] additional language features?
   - [ ] paragraphg transliteration/translation?
