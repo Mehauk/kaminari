@@ -8,7 +8,9 @@ import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/pages/book_details/book_details_cubit.dart';
 import 'package:kaminari/src/pages/reader/reader.dart';
 import 'package:kaminari/src/ui/units/text.dart';
+import 'package:kaminari/src/ui/widgets/bottom_sheet.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
+import 'package:kaminari/src/ui/widgets/confirmation_dialog.dart';
 import 'package:kaminari/src/ui/widgets/icon.dart';
 import 'package:kaminari/src/utils/date_extensions.dart';
 
@@ -137,65 +139,27 @@ class _CoverAppBar extends StatelessWidget {
             await showModalBottomSheet<void>(
               context: pageContext,
               backgroundColor: Colors.transparent,
-              builder: (context) => Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).canvasColor,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
+              builder: (context) => LightningBottomSheet(
+                children: [
+                  (
+                    Icons.delete_outline_rounded,
+                    "Delete book",
+                    () async {
+                      Navigator.of(context).pop();
+                      final confirmed = await showDialog<bool>(
+                        context: pageContext,
+                        builder: (context) => ConfirmationDialog(),
+                      );
+                      if (confirmed != true) return;
+                      final bookId = cubit.book.id;
+                      if (bookId == null) return;
+                      await cubit.dbService.deleteBook(bookId);
+                      if (pageContext.mounted) {
+                        Navigator.of(pageContext).pop(true);
+                      }
+                    },
                   ),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 8),
-                    Container(
-                      width: 48,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[400],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ListTile(
-                      leading: const Icon(Icons.delete_outline_rounded),
-                      title: const Text('Delete book'),
-                      onTap: () async {
-                        Navigator.of(context).pop();
-                        final confirmed = await showDialog<bool>(
-                          context: pageContext,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Delete book'),
-                            content: const Text(
-                              'Are you sure you want to delete this book?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(true),
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirmed != true) return;
-                        final bookId = cubit.book.id;
-                        if (bookId == null) return;
-                        await cubit.dbService.deleteBook(bookId);
-                        if (pageContext.mounted) {
-                          Navigator.of(pageContext).pop(true);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
+                ],
               ),
             );
           },

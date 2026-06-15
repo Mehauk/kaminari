@@ -27,7 +27,7 @@
 - [x] fix readings matcher for dict view
 - [x] chiisai tsu
 - [x] reading line indicator
-- [ ] fix broken chapter (auto realod when finished downloading) (fix ui as well)
+- [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
 - [x] double tap highlight word webview
 - [ ] injecter starts earlier
 - [ ] next page from end of page
@@ -58,3 +58,4 @@
 
 - [ ] settings page
   - [ ] download over mobile network?
+  - [ ] dict view in reader page orientation
