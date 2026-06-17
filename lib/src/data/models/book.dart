@@ -9,6 +9,7 @@ enum BookType {
   all("All"),
   webNovel("Web Novel"),
   lightNovel("Light Novel"),
+  novel("Traditional Novel"),
   shortStory("Short Story");
 
   final String text;
@@ -18,6 +19,7 @@ enum BookType {
     BookType.all => text,
     BookType.webNovel => "WEB",
     BookType.lightNovel => "LN",
+    BookType.novel => "NOVEL",
     BookType.shortStory => "SS",
   };
 }

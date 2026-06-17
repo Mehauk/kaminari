@@ -172,7 +172,8 @@ class ImportPreviewView extends StatelessWidget {
             segments: BookType.values
                 .where((t) => t != BookType.all)
                 .map(
-                  (t) => ButtonSegment<BookType>(value: t, label: Text(t.text)),
+                  (t) =>
+                      ButtonSegment<BookType>(value: t, label: Text(t.short)),
                 )
                 .toList(),
             selected: {book.bookType},
