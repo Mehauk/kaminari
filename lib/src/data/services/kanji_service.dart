@@ -45,8 +45,8 @@ class KanjiService {
             unicode: true,
           ).allMatches(e).map((m) => m.group(0)!);
         })
-        .where((token) => token.trim().isNotEmpty)
-        .toList(); // Optional: remove empty/whitespace tokens
+        // .where((token) => token.trim().isNotEmpty)
+        .toList();
   }
 
   static Future<(Map<String, Object?>, List<KanjiEntry>)> lookupToken(
