@@ -27,10 +27,13 @@
 - [x] fix readings matcher for dict view
 - [x] chiisai tsu
 - [x] reading line indicator
-- [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
 - [x] double tap highlight word webview
+- [x] next page from end of page
+- [x] chapter title clickability
+- [ ] dict view bottom/top depending on click position (so as to not cover clicked word)
+- [ ] dict view swipe to close (additionally)
+- [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
 - [ ] injecter starts earlier
-- [ ] next page from end of page
 - [ ] jlpt level indicator on webview (if lang is `ja`)
 - [ ] use most common/first meaning of word
 - [ ] Import builder loader update (with type selection)
@@ -40,7 +43,6 @@
 - [ ] open import chapter webview on error (only for current)
 - [ ] icons update
 - [ ] move the first three chapter downloading to the background cubit
-- [ ] chapter title clickability
 - [ ] double tap on import pwebview to singletap normal + hold link?
 - [ ] no segmenter?
 

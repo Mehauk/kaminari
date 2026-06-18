@@ -44,6 +44,12 @@ class _ReaderViewState extends State<_ReaderView> {
   late ScrollController _scrollController;
   bool _showScrollThumb = false;
   Timer? _hideThumbTimer;
+  final Map<int, GlobalKey> _chapterKeys = {};
+  final Map<int, double> _chapterStartOffsets = {};
+
+  GlobalKey _getKeyForChapter(int chapterId) {
+    return _chapterKeys.putIfAbsent(chapterId, () => GlobalKey());
+  }
 
   @override
   void initState() {
@@ -52,9 +58,17 @@ class _ReaderViewState extends State<_ReaderView> {
     final initialOffset = readerCubit.chapter.scrollPosition ?? 0.0;
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
 
-    // Listen for scroll updates to show a slim progress thumb
+    // The initial chapter is always at the top (start offset 0.0)
+    if (readerCubit.chapter.id != null) {
+      _chapterStartOffsets[readerCubit.chapter.id!] = 0.0;
+    }
+
+    // Listen for scroll updates to show a slim progress thumb and check infinite scroll threshold
     _scrollController.addListener(() {
       if (!_scrollController.hasClients) return;
+
+      _onScroll();
+
       if (!_showScrollThumb) {
         setState(() {
           _showScrollThumb = true;
@@ -143,11 +157,98 @@ class _ReaderViewState extends State<_ReaderView> {
   void _onTokenTap(
     BuildContext context,
     String token,
-    int paragraphInex,
+    int paragraphIndex,
     int tokenIndex,
   ) async {
     final cubit = context.read<ReaderCubit>();
-    await cubit.lookupToken(token, paragraphInex, tokenIndex);
+    await cubit.lookupToken(token, paragraphIndex, tokenIndex);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    final cubit = context.read<ReaderCubit>();
+
+    // 1. Trigger infinite scroll when near bottom
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    if (maxScroll - currentScroll < 400) {
+      cubit.loadNextChapter();
+    }
+
+    // 2. Cache start offsets of visible chapter title keys
+    for (var loaded in cubit.loadedChapters) {
+      if (_chapterStartOffsets.containsKey(loaded.id)) continue;
+      final key = _chapterKeys[loaded.id];
+      final context = key?.currentContext;
+      if (context != null) {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box != null) {
+          final position = box.localToGlobal(Offset.zero);
+          final startOffset = _scrollController.offset + position.dy - 140.0;
+          _chapterStartOffsets[loaded.id!] = startOffset;
+        }
+      }
+    }
+
+    // 3. Track which chapter is active using cached start offsets.
+    // This works even when chapter header widgets are off-screen and recycled,
+    // and handles both scroll-down and scroll-up correctly.
+    ChapterInfo? activeChapter;
+    final currentOffset = _scrollController.offset;
+    for (var loaded in cubit.loadedChapters) {
+      final startOffset = _chapterStartOffsets[loaded.id];
+      if (startOffset == null) continue;
+      // The active chapter is the last one whose start is at or before the
+      // current scroll offset. We keep overwriting so the last match wins.
+      if (startOffset <= currentOffset) {
+        activeChapter = loaded;
+      }
+    }
+
+    if (activeChapter != null) {
+      cubit.updateActiveChapter(activeChapter);
+    }
+  }
+
+  void _saveActiveChapterScrollPosition() {
+    if (!_scrollController.hasClients) return;
+
+    final cubit = context.read<ReaderCubit>();
+    final activeTitle = cubit.state.activeChapterTitle;
+    if (activeTitle == null) return;
+
+    final activeChapter = cubit.loadedChapters.firstWhere(
+      (c) => c.title == activeTitle,
+      orElse: () => cubit.chapter,
+    );
+
+    // Try to retrieve cached start offset
+    double? startOffset = _chapterStartOffsets[activeChapter.id];
+
+    // If not cached yet, try to compute it now
+    if (startOffset == null) {
+      final key = _chapterKeys[activeChapter.id];
+      final context = key?.currentContext;
+      if (context != null) {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box != null) {
+          final position = box.localToGlobal(Offset.zero);
+          startOffset = _scrollController.offset + position.dy - 140.0;
+          _chapterStartOffsets[activeChapter.id!] = startOffset;
+        }
+      }
+    }
+
+    if (startOffset != null) {
+      final relativeScroll = _scrollController.offset - startOffset;
+      cubit.saveScrollPosition(
+        activeChapter.id!,
+        relativeScroll.clamp(0.0, double.infinity),
+      );
+    } else {
+      cubit.saveScrollPosition(activeChapter.id!, 0.0);
+    }
   }
 
   @override
@@ -156,13 +257,40 @@ class _ReaderViewState extends State<_ReaderView> {
 
     return MultiBlocListener(
       listeners: [
-        // Listen to background cubit: if our current chapter ID moves into 'completed', reload content
+        BlocListener<ReaderCubit, ReaderState>(
+          listenWhen: (prev, curr) =>
+              curr.activeWaitingChapter != null &&
+              prev.activeWaitingChapter?.id != curr.activeWaitingChapter?.id,
+          listener: (context, state) {
+            context.read<BackgroundWebviewCubit>().enqueueChapters(
+              bookId: cubit.bookId,
+              chapters: [state.activeWaitingChapter!],
+              isPriority: true,
+            );
+          },
+        ),
         BlocListener<BackgroundWebviewCubit, BackgroundWebviewState>(
           listenWhen: (prev, curr) =>
-              curr.completedChapterIds.contains(cubit.chapter.id) &&
-              !prev.completedChapterIds.contains(cubit.chapter.id),
-          listener: (context, state) {
-            context.read<ReaderCubit>().reloadContent();
+              curr.completedChapterIds.length > prev.completedChapterIds.length,
+          listener: (context, bgState) {
+            final readerCubit = context.read<ReaderCubit>();
+            final readerState = readerCubit.state;
+
+            // Check if initial chapter is completed
+            if (bgState.completedChapterIds.contains(readerCubit.chapter.id) &&
+                readerState.items.isEmpty) {
+              readerCubit.reloadContent();
+            }
+
+            // Check if waiting chapter is completed
+            if (readerState.activeWaitingChapter != null &&
+                bgState.completedChapterIds.contains(
+                  readerState.activeWaitingChapter!.id,
+                )) {
+              readerCubit.onChapterDownloaded(
+                readerState.activeWaitingChapter!.id!,
+              );
+            }
           },
         ),
       ],
@@ -188,16 +316,14 @@ class _ReaderViewState extends State<_ReaderView> {
                       );
                     }
 
-                    if (state.tokenizedParagraphs.isEmpty) {
+                    if (state.items.isEmpty) {
                       return const SizedBox.shrink(); // Handled by the Downloading overlay
                     }
 
                     return NotificationListener<ScrollNotification>(
                       onNotification: (notification) {
                         if (notification is ScrollEndNotification) {
-                          cubit.saveScrollPosition(
-                            _scrollController.position.pixels,
-                          );
+                          _saveActiveChapterScrollPosition();
                         }
                         return false;
                       },
@@ -217,18 +343,51 @@ class _ReaderViewState extends State<_ReaderView> {
                                 context,
                                 index,
                               ) {
-                                final tokens = state.tokenizedParagraphs[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 24),
-                                  child: _TokenizedParagraph(
-                                    tokens: tokens,
-                                    paragraphIndex: index,
-                                    onTokenTap: _onTokenTap,
-                                  ),
-                                );
-                              }, childCount: state.tokenizedParagraphs.length),
+                                final item = state.items[index];
+                                switch (item.type) {
+                                  case ReaderItemType.title:
+                                    return Padding(
+                                      key: _getKeyForChapter(item.chapterId),
+                                      padding: const EdgeInsets.only(
+                                        top: 32,
+                                        bottom: 24,
+                                      ),
+                                      child: _TokenizedParagraph(
+                                        tokens: item.tokens,
+                                        paragraphIndex: index,
+                                        onTokenTap: _onTokenTap,
+                                        isTitle: true,
+                                      ),
+                                    );
+                                  case ReaderItemType.paragraph:
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 24,
+                                      ),
+                                      child: _TokenizedParagraph(
+                                        tokens: item.tokens,
+                                        paragraphIndex: index,
+                                        onTokenTap: _onTokenTap,
+                                      ),
+                                    );
+                                  case ReaderItemType.pageBreak:
+                                    return _PageBreak(
+                                      nextChapterTitle: item.chapterTitle,
+                                      nextChapterNumber: item.chapterNumber,
+                                    );
+                                }
+                              }, childCount: state.items.length),
                             ),
                           ),
+                          if (state.isLoadingNext)
+                            const SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.only(bottom: 64),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     );
@@ -323,7 +482,7 @@ class _ReaderViewState extends State<_ReaderView> {
                     final isDownloadingThis =
                         bgState.activeChapterId == cubit.chapter.id;
                     final needsContent =
-                        state.tokenizedParagraphs.isEmpty && !state.isLoading;
+                        state.items.isEmpty && !state.isLoading;
 
                     if (needsContent) {
                       return Center(
@@ -379,7 +538,8 @@ class _ReaderViewState extends State<_ReaderView> {
                                 ),
                                 Expanded(
                                   child: CustomText(
-                                    cubit.chapter.title,
+                                    state.activeChapterTitle ??
+                                        cubit.chapter.title,
                                     TextType.labelMedium,
                                     fontSize: 16,
                                     color: KaminariTheme.textSecondary,
@@ -445,21 +605,69 @@ class _ReaderViewState extends State<_ReaderView> {
                       );
                     },
                   ),
-                Positioned(
-                  top: 400,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.chevron_right,
-                        color: KaminariTheme.textSecondary.withAlpha(100),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _PageBreak extends StatelessWidget {
+  const _PageBreak({
+    required this.nextChapterTitle,
+    required this.nextChapterNumber,
+  });
+
+  final String nextChapterTitle;
+  final int nextChapterNumber;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Divider(
+                  color: KaminariTheme.bronze,
+                  thickness: 1,
+                  endIndent: 16,
+                ),
+              ),
+              Icon(
+                Icons.menu_book_rounded,
+                color: KaminariTheme.goldSoft.withAlpha(180),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              CustomText(
+                "CHAPTER ${nextChapterNumber + 1}",
+                TextType.labelSmall,
+                color: KaminariTheme.goldSoft,
+                fontWeight: FontWeight.bold,
+              ),
+              const Expanded(
+                child: Divider(
+                  color: KaminariTheme.bronze,
+                  thickness: 1,
+                  indent: 16,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          CustomText(
+            "Coming up: $nextChapterTitle",
+            TextType.bodyMedium,
+            color: KaminariTheme.textSecondary.withAlpha(120),
+            fontSize: 13,
+            fontWeight: FontWeight.w300,
+          ),
+        ],
       ),
     );
   }
@@ -470,11 +678,13 @@ class _TokenizedParagraph extends StatelessWidget {
     required this.tokens,
     required this.paragraphIndex,
     required this.onTokenTap,
+    this.isTitle = false,
   });
 
   final List<String> tokens;
   final int paragraphIndex;
   final Function(BuildContext, String, int, int) onTokenTap;
+  final bool isTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -519,13 +729,16 @@ class _TokenizedParagraph extends StatelessWidget {
               return TextSpan(
                 text: token,
                 style: TextStyle(
-                  fontSize: 19,
-                  height: 1.8,
+                  fontSize: isTitle ? 26 : 19,
+                  height: isTitle ? 1.5 : 1.8,
+                  fontWeight: isTitle ? FontWeight.bold : FontWeight.w500,
                   color: isPunctuation
                       ? KaminariTheme.textSecondary.withAlpha(150)
                       : (isSelected
                             ? KaminariTheme.textTitle
-                            : KaminariTheme.textPrimary),
+                            : (isTitle
+                                  ? KaminariTheme.textTitle
+                                  : KaminariTheme.textPrimary)),
                   backgroundColor: isSelected
                       ? KaminariTheme.bronze.withAlpha(125)
                       : Colors.transparent,
