@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kaminari/src/data/repositories/app_settings.dart';
 import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/repositories/extractor_cache.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
@@ -24,6 +25,7 @@ class KaminariApp extends StatelessWidget {
         RepositoryProvider.value(value: DatabaseService()),
         RepositoryProvider.value(value: ExtractorCache(LocalStorageService())),
         RepositoryProvider.value(value: NetworkService()),
+        RepositoryProvider.value(value: AppSettings(LocalStorageService())),
       ],
       child: BlocProvider<BackgroundWebviewCubit>(
         create: (context) => BackgroundWebviewCubit(

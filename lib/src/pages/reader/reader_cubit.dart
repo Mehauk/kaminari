@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/repositories/app_settings.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
@@ -8,6 +9,8 @@ import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 part 'reader_cubit.freezed.dart';
 
 enum ReaderItemType { title, paragraph, pageBreak }
+
+enum DictOrientation { top, bottom }
 
 class ReaderItem {
   final ReaderItemType type;
@@ -37,6 +40,7 @@ abstract class ReaderState with _$ReaderState {
     int? selectedParagraphIndex,
     int? selectedTokenIndex,
     String? activeChapterTitle,
+    @Default(DictOrientation.bottom) DictOrientation dictOrientation,
   }) = _ReaderState;
 }
 
@@ -44,6 +48,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   final int bookId;
   final ChapterInfo chapter;
   final DatabaseService dbService;
+  final AppSettings settings;
 
   final List<int> _loadedChapterIds = [];
   final List<ChapterInfo> _loadedChapters = [];
@@ -52,8 +57,12 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   List<ChapterInfo> get loadedChapters => _loadedChapters;
 
-  ReaderCubit(this.chapter, {required this.dbService, required this.bookId})
-    : super(const ReaderState()) {
+  ReaderCubit(
+    this.chapter, {
+    required this.bookId,
+    required this.dbService,
+    required this.settings,
+  }) : super(ReaderState(dictOrientation: settings.getDictOrientation())) {
     dbService.updateBookAccess(bookId, chapter.number);
     _tokenizeContent();
   }
@@ -309,5 +318,10 @@ class ReaderCubit extends Cubit<ReaderState> {
         selectedTokenIndex: null,
       ),
     );
+  }
+
+  void setDictOrientation(DictOrientation orientation) {
+    settings.setDictOrientation(orientation);
+    emit(state.copyWith(dictOrientation: orientation));
   }
 }
