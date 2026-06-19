@@ -522,26 +522,44 @@ class _ReaderViewState extends State<_ReaderView> {
                         state.items.isEmpty && !state.isLoading;
 
                     if (needsContent) {
+                      final isLocal =
+                          cubit.chapter.url.startsWith('epub://') ||
+                          cubit.chapter.url.startsWith('file://');
+
                       return Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (isDownloadingThis)
-                              const CircularProgressIndicator()
-                            else
+                            if (isLocal) ...[
                               const Icon(
-                                Icons.cloud_download_outlined,
+                                Icons.book_outlined,
                                 size: 48,
                                 color: KaminariTheme.textSecondary,
                               ),
-                            const SizedBox(height: 24),
-                            CustomText(
-                              isDownloadingThis
-                                  ? "Downloading chapter..."
-                                  : "Waiting in download queue...",
-                              TextType.bodyLarge,
-                              color: KaminariTheme.textSecondary,
-                            ),
+                              const SizedBox(height: 24),
+                              const CustomText(
+                                "No content found in this local chapter.",
+                                TextType.bodyLarge,
+                                color: KaminariTheme.textSecondary,
+                              ),
+                            ] else ...[
+                              if (isDownloadingThis)
+                                const CircularProgressIndicator()
+                              else
+                                const Icon(
+                                  Icons.cloud_download_outlined,
+                                  size: 48,
+                                  color: KaminariTheme.textSecondary,
+                                ),
+                              const SizedBox(height: 24),
+                              CustomText(
+                                isDownloadingThis
+                                    ? "Downloading chapter..."
+                                    : "Waiting in download queue...",
+                                TextType.bodyLarge,
+                                color: KaminariTheme.textSecondary,
+                              ),
+                            ],
                           ],
                         ),
                       );

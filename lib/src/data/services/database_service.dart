@@ -485,6 +485,21 @@ class DatabaseService {
             where: 'id = ?',
             whereArgs: [existingId],
           );
+
+          // Force-save chapter sections if we have content payload
+          if (chapter.content != null) {
+            await txn.delete(
+              'ChapterSection',
+              where: 'chapter_id = ?',
+              whereArgs: [existingId],
+            );
+            for (var section in chapter.content!) {
+              await txn.insert('ChapterSection', {
+                'chapter_id': existingId,
+                'content': section,
+              });
+            }
+          }
         }
       }
     });
