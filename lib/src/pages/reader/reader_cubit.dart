@@ -10,7 +10,7 @@ part 'reader_cubit.freezed.dart';
 
 enum ReaderItemType { title, paragraph, pageBreak }
 
-enum DictOrientation { top, bottom }
+enum DictOrientation { top, bottom, dynamic }
 
 class ReaderItem {
   final ReaderItemType type;
@@ -41,6 +41,7 @@ abstract class ReaderState with _$ReaderState {
     int? selectedTokenIndex,
     String? activeChapterTitle,
     @Default(DictOrientation.bottom) DictOrientation dictOrientation,
+    @Default(DictOrientation.bottom) DictOrientation computedDictOrientation,
   }) = _ReaderState;
 }
 
@@ -290,9 +291,18 @@ class ReaderCubit extends Cubit<ReaderState> {
   Future<void> lookupToken(
     String token,
     int paragraphIndex,
-    int tokenIndex,
-  ) async {
+    int tokenIndex, {
+    double? tapY,
+  }) async {
     if (token.trim().isEmpty) return;
+
+    DictOrientation newComputed = state.dictOrientation;
+    if (state.dictOrientation == DictOrientation.dynamic && tapY != null) {
+      newComputed = (tapY > 345) ? DictOrientation.top : DictOrientation.bottom;
+    } else if (state.dictOrientation == DictOrientation.dynamic) {
+      newComputed = DictOrientation.bottom;
+    }
+
     final (wordMap, kanjis) = await KanjiService.lookupToken(token);
 
     if (state.selectedParagraphIndex == paragraphIndex &&
@@ -306,6 +316,7 @@ class ReaderCubit extends Cubit<ReaderState> {
         selectedEntry: DictionaryEntry(wordMap, kanjis: kanjis),
         selectedParagraphIndex: paragraphIndex,
         selectedTokenIndex: tokenIndex,
+        computedDictOrientation: newComputed,
       ),
     );
   }
@@ -322,6 +333,14 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   void setDictOrientation(DictOrientation orientation) {
     settings.setDictOrientation(orientation);
-    emit(state.copyWith(dictOrientation: orientation));
+    final computed = orientation == DictOrientation.dynamic
+        ? state.computedDictOrientation
+        : orientation;
+    emit(
+      state.copyWith(
+        dictOrientation: orientation,
+        computedDictOrientation: computed,
+      ),
+    );
   }
 }

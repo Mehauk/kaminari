@@ -178,9 +178,15 @@ class _ReaderViewState extends State<_ReaderView> {
     String token,
     int paragraphIndex,
     int tokenIndex,
+    TapUpDetails details,
   ) async {
     final cubit = context.read<ReaderCubit>();
-    await cubit.lookupToken(token, paragraphIndex, tokenIndex);
+    await cubit.lookupToken(
+      token,
+      paragraphIndex,
+      tokenIndex,
+      tapY: details.globalPosition.dy,
+    );
   }
 
   void _onScroll() {
@@ -355,7 +361,8 @@ class _ReaderViewState extends State<_ReaderView> {
                               24,
                               140,
                               24,
-                              state.dictOrientation == DictOrientation.bottom
+                              state.computedDictOrientation ==
+                                      DictOrientation.bottom
                                   ? 180
                                   : 100,
                             ),
@@ -574,7 +581,8 @@ class _ReaderViewState extends State<_ReaderView> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            if (state.dictOrientation == DictOrientation.top)
+                            if (state.computedDictOrientation ==
+                                DictOrientation.top)
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 300),
                                 transitionBuilder: (child, animation) =>
@@ -585,7 +593,7 @@ class _ReaderViewState extends State<_ReaderView> {
                                 child: DictionaryView(
                                   state.selectedEntry,
                                   cubit.clearSelection,
-                                  orientation: state.dictOrientation,
+                                  orientation: state.computedDictOrientation,
                                 ),
                               ),
                           ],
@@ -596,7 +604,7 @@ class _ReaderViewState extends State<_ReaderView> {
                 ),
 
                 // BOTTOM DICTIONARY VIEW
-                if (state.dictOrientation == DictOrientation.bottom)
+                if (state.computedDictOrientation == DictOrientation.bottom)
                   Positioned(
                     bottom: 0,
                     left: 0,
@@ -624,7 +632,7 @@ class _ReaderViewState extends State<_ReaderView> {
                               child: DictionaryView(
                                 state.selectedEntry,
                                 cubit.clearSelection,
-                                orientation: state.dictOrientation,
+                                orientation: state.computedDictOrientation,
                               ),
                             ),
                           ),
@@ -744,7 +752,7 @@ class _TokenizedParagraph extends StatelessWidget {
 
   final List<String> tokens;
   final int paragraphIndex;
-  final Function(BuildContext, String, int, int) onTokenTap;
+  final Function(BuildContext, String, int, int, TapUpDetails) onTokenTap;
   final bool isTitle;
 
   @override
@@ -807,11 +815,12 @@ class _TokenizedParagraph extends StatelessWidget {
                 recognizer: isPunctuation
                     ? null
                     : (TapGestureRecognizer()
-                        ..onTap = () => onTokenTap(
+                        ..onTapUp = (details) => onTokenTap(
                           context,
                           token,
                           paragraphIndex,
                           tokenIndex,
+                          details,
                         )),
               );
             }).toList(),

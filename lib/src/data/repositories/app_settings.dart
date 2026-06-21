@@ -11,8 +11,10 @@ class AppSettings {
 
   DictOrientation getDictOrientation() {
     final val = _storage.getData(_dictOrientationKey);
-    // Default to bottom if not set
-    return val == 'top' ? DictOrientation.top : DictOrientation.bottom;
+    return DictOrientation.values.firstWhere(
+      (e) => e.name == val,
+      orElse: () => DictOrientation.dynamic,
+    );
   }
 
   Future<void> setDictOrientation(DictOrientation orientation) async {
