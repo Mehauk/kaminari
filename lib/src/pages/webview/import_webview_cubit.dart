@@ -490,7 +490,7 @@ class WebviewCubit extends Cubit<WebviewState> {
 
     final js = generateBookExtrationJSPrompt(
       reMap,
-      cheaptersLoadingIIFE(
+      chaptersLoadingIIFE(
         selectors.individualChapterDetails,
         nextPageSelector ?? 'null',
       ),
