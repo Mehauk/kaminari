@@ -40,6 +40,7 @@
 - [x] import builder loader update (with type selection)
 - [x] move the first three chapter downloading to the background cubit
 - [x] fix broken chapter (auto reload when finished downloading) (fix ui as well) (seems to be working)
+- [ ] go to first page, then do rest from there
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
 - [ ] double tap on import webview to singletap normal + hold link?
@@ -48,7 +49,6 @@
 - [ ] icon/splash update
 - [ ] find an actual place to put the archived books
 
-- [ ] BUG: why my chapter id in 3000's when its only 75ish chapters in?
 - [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
@@ -65,12 +65,30 @@
     - [x] calculate show order (considering kanji level)
       - [x] Ignore words for which reading/meaning cannot be found
     - [x] implement daily streak and words learnt
+    - [ ] prep only shows for non english?
 
 - [ ] complete book features
   - [x] eng dict
+  - [ ] entymology
   - [x] epub/ebook importing
+    - [x] all my web imported books are not showing on disc page anymore (neither is the new epub)
+    - [x] chapters have no content; just showing in download que
   - [ ] additional language features?
   - [ ] paragraphg transliteration/translation?
+
+- [ ] navigation
+  - [ ] reader: chapters dropdown
+  - [ ] discorevery: search bar
+  - [ ] webview: navigation
+
+- [ ] performance
+  - [ ] reader scrolling
+  - [ ] reader opening
+
+- [ ] importing sources
+  - [ ] creates new source card on discovery page, takes you to inner discovery page for that source.
+  - [ ] ai handles figuring out how to navigate the source; tagging and searching.
+  - [ ] search bar handles searching inside that source showing the books in app (not webview)
 
 - [ ] manga features
   

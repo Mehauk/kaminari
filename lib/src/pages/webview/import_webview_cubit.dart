@@ -369,6 +369,8 @@ class WebviewCubit extends Cubit<WebviewState> {
 
       final bookData = await _extractBookMetadata(selectors);
 
+      print("${bookData.coverUrl}STUPIDO");
+
       emit(
         state.copyWith(
           importStatus: ImportStatus.preview,
@@ -448,23 +450,15 @@ class WebviewCubit extends Cubit<WebviewState> {
     final reMap = {};
 
     final jsonCMap = selectors.individualChapterDetails.toJson();
-    final reCMap = {};
 
     final nextPageSelector = jsonMap["nextPageUrl"] as String?;
 
     for (var ckey in jsonCMap.keys) {
       String selector = jsonCMap[ckey] ?? 'null';
-      if (["null", "n/a", "none"].contains(selector.toLowerCase())) continue;
-
-      if (ckey == "url") {
-        reCMap[ckey] = "e.querySelector('$selector').href";
-        continue;
+      if (["null", "n/a", "none"].contains(selector.trim().toLowerCase())) {
+        jsonCMap[ckey] = null;
       }
-
-      reCMap[ckey] = "e.querySelector('$selector').textContent.trim()";
     }
-
-    reCMap["number"] = "0";
 
     reMap["url"] = "document.location.href";
     reMap["source"] = "document.location.origin";
@@ -482,16 +476,23 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
 
       String selector = jsonMap[key] ?? "null";
-      if (["null", "n/a", "none"].contains(selector.toLowerCase())) continue;
+      if (["null", "n/a", "none"].contains(selector.trim().toLowerCase())) {
+        continue;
+      }
 
-      reMap[key] =
-          "document.body.querySelector('$selector').textContent.trim()";
+      if (key == "coverUrl") {
+        reMap[key] =
+            "(() => { const el = document.body.querySelector('$selector'); return el ? (el.src || el.getAttribute('data-src') || el.href || el.textContent.trim()) : ''; })()";
+      } else {
+        reMap[key] =
+            "(() => { const el = document.body.querySelector('$selector'); return el ? el.textContent.trim() : ''; })()";
+      }
     }
 
     final js = generateBookExtrationJSPrompt(
       reMap,
       chaptersLoadingIIFE(
-        selectors.individualChapterDetails,
+        ChapterInfoExtractor.fromJson(jsonCMap),
         nextPageSelector ?? 'null',
       ),
     );
