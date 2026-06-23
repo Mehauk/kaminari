@@ -45,85 +45,95 @@ class _DictionaryContent extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      key: ValueKey(entry!.letters.join()), // Forces animation on word change
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: KaminariTheme.surfaceTint.withAlpha(40)),
+    return GestureDetector(
+      onVerticalDragEnd: (details) {
+        final velocity = details.velocity;
+        if (orientation == .bottom && velocity.pixelsPerSecond.dy > 0) {
+          clearSelection();
+        } else if (velocity.pixelsPerSecond.dy < 0) {
+          clearSelection();
+        }
+      },
+      child: Container(
+        key: ValueKey(entry!.letters.join()), // Forces animation on word change
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: KaminariTheme.surfaceTint.withAlpha(40)),
+          ),
         ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (orientation == .bottom) ...[
-            InkWell(
-              onTap: clearSelection,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 12),
-                  child: CustomText("\u25BC", .bodyLarge),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (orientation == .bottom) ...[
+              InkWell(
+                onTap: clearSelection,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 12),
+                    child: CustomText("\u25BC", .bodyLarge),
+                  ),
                 ),
               ),
-            ),
-          ] else
-            SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      children: [
-                        CustomText(
-                          entry!.letters.join(),
-                          TextType.headlineLarge,
-                          color: KaminariTheme.textTitle,
-                        ),
-                        const SizedBox(width: 12),
-                        CustomText(
-                          entry!.sounds.join(),
-                          TextType.labelMedium,
-                          color: KaminariTheme.cyan,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    CustomText(
-                      entry!.meanings.join("; "),
-                      TextType.bodyMedium,
-                      maxLines: 3,
-                      color: KaminariTheme.textPrimary,
-                    ),
-                  ],
+            ] else
+              SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        children: [
+                          CustomText(
+                            entry!.letters.join(),
+                            TextType.headlineLarge,
+                            color: KaminariTheme.textTitle,
+                          ),
+                          const SizedBox(width: 12),
+                          CustomText(
+                            entry!.sounds.join(),
+                            TextType.labelMedium,
+                            color: KaminariTheme.cyan,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      CustomText(
+                        entry!.meanings.join("; "),
+                        TextType.bodyMedium,
+                        maxLines: 3,
+                        color: KaminariTheme.textPrimary,
+                      ),
+                    ],
+                  ),
                 ),
+              ],
+            ),
+            if (entry!.kanjis.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _KanjiRow(
+                kanjis: entry!.kanjis,
+                wordReadings: entry!.sounds,
+                letters: entry!.letters,
               ),
             ],
-          ),
-          if (entry!.kanjis.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _KanjiRow(
-              kanjis: entry!.kanjis,
-              wordReadings: entry!.sounds,
-              letters: entry!.letters,
-            ),
-          ],
-          if (orientation == .top) ...[
-            InkWell(
-              onTap: clearSelection,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: CustomText("\u25B2", .bodyLarge),
+            if (orientation == .top) ...[
+              InkWell(
+                onTap: clearSelection,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: CustomText("\u25B2", .bodyLarge),
+                  ),
                 ),
               ),
-            ),
-          ] else
-            SizedBox(height: 12),
-        ],
+            ] else
+              SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
