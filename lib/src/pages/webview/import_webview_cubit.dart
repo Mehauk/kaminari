@@ -85,8 +85,12 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
-            resetForNewPage(url);
-            _injectScanner();
+            if (state.importStatus == ImportStatus.notImported) {
+              resetForNewPage(url);
+              _injectScanner();
+            } else {
+              updateNavigation(url: url, isLoading: true);
+            }
           },
           onPageFinished: (url) async {
             final title = await controller.getTitle();
@@ -494,6 +498,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       chaptersLoadingIIFE(
         ChapterInfoExtractor.fromJson(jsonCMap),
         nextPageSelector ?? 'null',
+        0, // Start initial batch at index 0
       ),
     );
 
@@ -511,14 +516,68 @@ class WebviewCubit extends Cubit<WebviewState> {
         throw Exception("JS Extraction Error: ${response['error']}");
       }
 
-      if (response['jlptLevel'] == null || response['jlptLevel'] == "") {
-        response['jlptLevel'] =
-            await (response['synopsis'] as String).jlptEstimate;
+      List<dynamic> accumulatedChapters = List.from(response['chapters'] ?? []);
+      String? currentFailedUrl = response['failedUrl'] as String?;
+
+      // Fast fetch failed (likely on a cross-origin transition page).
+      // We navigate WebView sequentially to cross the domain boundary, extract,
+      // and re-trigger fast fetch sequentially from the new loaded context.
+      while (currentFailedUrl != null && currentFailedUrl.isNotEmpty) {
+        print(
+          "[WebViewCubit] Fast fetch failed. Resuming sequentially via WebView navigation to: $currentFailedUrl",
+        );
+        emit(
+          state.copyWith(
+            progressMessage:
+                "Loading next domain context via WebView (found ${accumulatedChapters.length} chapters)...",
+          ),
+        );
+
+        _pageLoadCompleter = Completer<void>();
+        await controller.loadRequest(Uri.parse(currentFailedUrl));
+        await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
+        _pageLoadCompleter = null;
+
+        // Allow some time for layout elements to settle
+        await Future.delayed(const Duration(milliseconds: 1000));
+        await _injectScanner();
+
+        // Re-run the fast fetch script *from the newly loaded domain's context*
+        final nextJs = generateBookExtrationJSPrompt(
+          reMap,
+          chaptersLoadingIIFE(
+            ChapterInfoExtractor.fromJson(jsonCMap),
+            nextPageSelector ?? 'null',
+            accumulatedChapters.length, // Resume fast index alignment
+          ),
+        );
+
+        _extractionCompleter = Completer<String>();
+        await controller.runJavaScript(nextJs);
+
+        final nextResultString = await _extractionCompleter!.future.timeout(
+          const Duration(minutes: 5),
+        );
+        _extractionCompleter = null;
+
+        final Map<String, dynamic> nextResponse = jsonDecode(nextResultString);
+
+        if (nextResponse.containsKey('error')) {
+          throw Exception(
+            "JS Extraction Error on resume: ${nextResponse['error']}",
+          );
+        }
+
+        final List newChapters = nextResponse['chapters'] ?? [];
+        accumulatedChapters.addAll(newChapters);
+
+        // Update target failed URL (will continue in same-origin fetch unless it runs into a separate boundary)
+        currentFailedUrl = nextResponse['failedUrl'] as String?;
       }
 
+      response['chapters'] = accumulatedChapters;
+
       response['firstChapterCharCount'] = 0;
-      final List chapters = response['chapters'] ?? [];
-      response['chapters'] = chapters;
 
       final rawLanguage = (response['language'] as String?)?.trim();
       if (rawLanguage != null && rawLanguage.isNotEmpty) {
@@ -533,11 +592,18 @@ class WebviewCubit extends Cubit<WebviewState> {
 
       final book = BookDetails.fromJson(response);
 
+      if (response['language'] == "ja" &&
+          (response['jlptLevel'] == null || response['jlptLevel'] == "")) {
+        response['jlptLevel'] =
+            await (response['synopsis'] as String).jlptEstimate;
+      }
+
       return book;
     } on TimeoutException {
-      throw Exception("Extraction timed out after 5 minutes");
+      throw Exception("Extraction timed out.");
     } finally {
       _extractionCompleter = null;
+      _pageLoadCompleter = null;
     }
   }
 
