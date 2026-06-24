@@ -1,3 +1,5 @@
+// lib/src/globals/background_webview_cubit.dart
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -230,7 +232,6 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     );
 
     final contentJs = generateContentExtractionJSPrompt(
-      jsonEncode([chapter.url]),
       jsonEncode(chapterExtractor.contentSections),
     );
 
@@ -264,6 +265,72 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     await _controller.loadRequest(Uri.parse(url));
     await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
     _pageLoadCompleter = null;
+
+    // Check DOM states to verify standard loading or Cloudflare clearances
+    await _waitForPageToSettle();
+  }
+
+  /// Evaluates active document properties to confirm Cloudflare bypass
+  /// and SPA paint cycles before resolving the load flow.
+  Future<void> _waitForPageToSettle() async {
+    final startTime = DateTime.now();
+
+    while (DateTime.now().difference(startTime) < const Duration(seconds: 15)) {
+      try {
+        final dynamic isChallengeRaw = await _controller
+            .runJavaScriptReturningResult('''
+          (function() {
+            const text = document.body ? document.body.textContent : "";
+            const title = document.title || "";
+            
+            // Checks standard signatures of Cloudflare, DDoS protection, or Turnstile frames
+            const isCloudflare = 
+              title.includes("Just a moment") || 
+              title.includes("DDoS") ||
+              title.includes("Cloudflare") ||
+              document.querySelector("#challenge-running") !== null ||
+              document.querySelector("#challenge-stage") !== null ||
+              document.querySelector("#cf-wrapper") !== null ||
+              text.includes("Checking your browser") ||
+              text.includes("Checking if the site connection is secure");
+              
+            // Checks if the client-side JavaScript has not completed rendering the core layout shell
+            const isStillLoading = !document.body || text.trim().length < 100;
+            
+            return isCloudflare || isStillLoading;
+          })()
+        ''');
+
+        final String rawResult = isChallengeRaw
+            .toString()
+            .replaceAll('"', '')
+            .trim()
+            .toLowerCase();
+        final bool isWaiting = rawResult == "true" || rawResult == "1";
+
+        if (!isWaiting) {
+          print("[BackgroundWebview] Target page settled successfully.");
+          // Provides a tiny frame buffer for visual elements to complete painting
+          await Future.delayed(const Duration(milliseconds: 800));
+          return;
+        }
+
+        print(
+          "[BackgroundWebview] Cloudflare challenge or loading shell detected. Waiting for redirect...",
+        );
+      } catch (e) {
+        // Safe-catch exceptions thrown during navigation phase changes
+        print(
+          "[BackgroundWebview] DOM state temporarily inaccessible (navigating): \$e",
+        );
+      }
+
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    print(
+      "[BackgroundWebview] Settle loop reached maximum threshold; proceeding.",
+    );
   }
 
   Future<bool> _isDownloadAllowed() async {

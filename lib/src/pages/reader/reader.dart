@@ -304,11 +304,12 @@ class _ReaderViewState extends State<_ReaderView> {
             final readerCubit = context.read<ReaderCubit>();
             final readerState = readerCubit.state;
 
-            if (bgState.completedChapterIds.contains(readerCubit.chapter.id) &&
-                readerState.items.isEmpty) {
-              readerCubit.reloadContent();
+            // Check if the current chapter has been completed
+            if (bgState.completedChapterIds.contains(readerCubit.chapter.id)) {
+              readerCubit.onChapterDownloaded(readerCubit.chapter.id!);
             }
 
+            // Check if a next waiting chapter has been completed
             if (readerState.activeWaitingChapter != null &&
                 bgState.completedChapterIds.contains(
                   readerState.activeWaitingChapter!.id,

@@ -22,7 +22,9 @@ JSON:
 
 String buildChapterExtractionAIPrompt(String miniTree) {
   return """
-Analyze this minified DOM tree and identify the most likely CSS selectors in proper format for the chapter's content.
+Analyze this minified DOM tree and identify the most likely CSS selectors in proper format for the chapter's content. 
+Ensure that no data is lost form choosing too narrow.
+Ensure that nothing is added because you were not specigfic enough.
 
 Tree: $miniTree
 
@@ -119,62 +121,141 @@ String chaptersLoadingIIFE(
 
 const minTreeExtFn = '''
 (function getTokenOptimizedTree() {
-    // 1. Identify hidden elements from the live DOM before cloning
-    const hiddenElements = new Set();
-    document.body.querySelectorAll('*').forEach(el => {
-        if (window.getComputedStyle(el).display === 'none') {
-            hiddenElements.add(el);
-        }
-    });
+    // 1. Clone the body structure
+    const clonedBody = document.body.cloneNode(true);
 
-    // 2. Clone the body structure
-    const element = document.body.cloneNode(true);
-    
-    // Noise keyword matching regex
-    const noiseClassRegex = /(comment|ad|share|social|promo|sponsor|related|sidebar|recommend|sns|bookmark|announce|announcement|impression|reaction|feedback)s?(_|-|([A-Z]))?/i;
-
-    // 3. Map cloned elements back to their original state to check visibility and filters
-    const allCloned = element.querySelectorAll('*');
-    const allOriginal = document.body.querySelectorAll('*');
-
-    allCloned.forEach((el, index) => {
-        const originalEl = allOriginal[index];
-        const tagName = el.tagName.toLowerCase();
-        const noiseTags = ['script', 'style', 'footer', 'nav', 'header'];
+    // 2. Parallel DFS Tree Traversal to map clones directly to their original live nodes
+    function mapParallelTrees(orig, clone) {
+        if (!orig || !clone) return;
+        clone._original = orig;
         
-        // Remove structural noise tags
-        if (noiseTags.includes(tagName)) {
-            el.remove();
-            return;
+        const origChildren = Array.from(orig.children);
+        const cloneChildren = Array.from(clone.children);
+        const minLength = Math.min(origChildren.length, cloneChildren.length);
+        
+        for (let i = 0; i < minLength; i++) {
+            mapParallelTrees(origChildren[i], cloneChildren[i]);
+        }
+    }
+    mapParallelTrees(document.body, clonedBody);
+
+    // Precise, word-boundary noise check to avoid false matches like "read" -> "ad"
+    function isNoiseClassOrId(str) {
+        if (!str) return false;
+        const words = str.toLowerCase().split(/[-_]/);
+        
+        const noiseWords = new Set([
+            'comment', 'comments', 'ad', 'ads', 'share', 'social', 'promo', 'sponsor', 'sponsored', 
+            'related', 'sidebar', 'recommend', 'recommendation', 'sns', 'bookmark', 'announce', 
+            'announcement', 'announcements', 'impression', 'reaction', 'feedback', 'cookie', 
+            'cookies', 'consent', 'modal', 'popup', 'popups', 'banner', 'banners'
+        ]);
+        
+        for (const word of words) {
+            if (noiseWords.has(word)) return true;
+            if (word.startsWith('advert')) return true;
+        }
+        return false;
+    }
+
+    const noiseTags = ['script', 'style', 'noscript', 'template', 'svg', 'iframe', 'canvas', 'footer', 'nav', 'header'];
+    const contentTags = ['img', 'image', 'picture', 'video', 'audio'];
+
+    // Standard Utility Class Checker (Tailwind, Bootstrap, etc.)
+    function isUtilityClass(cls) {
+        const exactUtilities = new Set([
+            'flex', 'grid', 'block', 'inline', 'hidden', 'invisible', 'absolute', 'relative', 'fixed', 'sticky',
+            'border', 'rounded', 'shadow', 'pointer', 'cursor-pointer', 'select-none', 'overflow-hidden', 'sr-only'
+        ]);
+        if (exactUtilities.has(cls)) return true;
+        if (/:/.test(cls)) return true; // variant prefixes (e.g. md:, hover:)
+        if (/d/.test(cls)) return true; // spacing/sizing classes with numbers (e.g. p-4, w-1/2, z-10)
+
+        // Matches common Tailwind structural patterns with semantic utility suffixes
+        const utilityPatterns = /^(p|m|pt|pb|pl|pr|mt|mb|ml|mr|w|h|min-w|max-w|min-h|max-h|gap|space|top|bottom|left|right|text|bg|border|rounded|font|leading|tracking|z|justify|items|align|self)-(auto|full|screen|white|black|transparent|center|left|right|justify|bold|semibold|normal)\$/;
+        if (utilityPatterns.test(cls)) return true;
+
+        return false;
+    }
+
+    // 3. Recursive bottom-up cleaner
+    function cleanTree(el) {
+        const children = Array.from(el.children);
+        for (const child of children) {
+            cleanTree(child);
         }
 
-        // Remove elements hidden with display: none
-        if (originalEl && hiddenElements.has(originalEl)) {
-            el.remove();
-            return;
-        }
+        if (el !== clonedBody) {
+            const original = el._original;
+            const tagName = el.tagName.toLowerCase();
 
-        // Remove elements matching class regex patterns
-        const matchesNoiseClass = Array.from(el.classList).some(cls => noiseClassRegex.test(cls));
-        if (matchesNoiseClass) {
-            el.remove();
-        }
-    });
+            // A. Remove structural noise tags
+            if (noiseTags.includes(tagName)) {
+                el.remove();
+                return;
+            }
 
-    element.querySelectorAll('[id^="L"]').forEach(el => {
-      if (/^L\\d+\$/.test(el.id)) {
-        el.removeAttribute('id');
-      }
-    });
+            // B. Remove hidden elements
+            if (original) {
+                const style = window.getComputedStyle(original);
+                if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
+                    el.remove();
+                    return;
+                }
+            }
+
+            // C. Remove noise classes or IDs (utilizing precise boundary checker)
+            const hasNoiseClassOrId = Array.from(el.classList).some(isNoiseClassOrId) || isNoiseClassOrId(el.id || '');
+            if (hasNoiseClassOrId) {
+                el.remove();
+                return;
+            }
+
+            // D. Prune empty structural elements with no text, content, or ID
+            const textSrc = original || el;
+            const hasTextContent = textSrc.textContent.trim().length > 0;
+            if (el.children.length === 0 && !contentTags.includes(tagName) && !hasTextContent && !el.id) {
+                el.remove();
+                return;
+            }
+
+            // E. Clean dynamic IDs
+            if (el.id) {
+                if (/^Ld+\$/.test(el.id) || /^[a-f0-9]{32,}\$/i.test(el.id)) {
+                    el.removeAttribute('id');
+                }
+            }
+
+            // F. Clean classes (only keep non-utility semantic classes)
+            const meaningfulClasses = Array.from(el.classList).filter(cls => {
+                if (isNoiseClassOrId(cls)) return false;
+                if (isUtilityClass(cls)) return false;
+                return true;
+            });
+
+            if (meaningfulClasses.length > 0) {
+                el.className = meaningfulClasses.join(' ');
+            } else {
+                el.removeAttribute('class');
+            }
+        }
+    }
+
+    cleanTree(clonedBody);
+
+    // 4. Serialize
     function serialize(el) {
         let label = el.tagName.toLowerCase();
         if (el.id) label += `#\${el.id}`;
-        if (el.classList.length > 0) {
-            label += `.\${el.classList}`;
+        
+        const classes = Array.from(el.classList).filter(c => c.trim().length > 0);
+        if (classes.length > 0) {
+            label += `.\${classes.join('.')}`;
         }
         return { label, children: Array.from(el.children).map(serialize) };
     }
 
+    // 5. Build nested minified string
     function stringify(node) {
         const counts = new Map();
         const orderedKeys = [];
@@ -207,7 +288,7 @@ const minTreeExtFn = '''
         }).join(',');
     }
 
-    const root = serialize(element);
+    const root = serialize(clonedBody);
     const result = `\${root.label}[\${stringify(root)}]`;
     
     return result;
@@ -229,43 +310,47 @@ String generateBookExtrationJSPrompt(Map reMap, String iIFE) =>
     })()
   """;
 
-String generateContentExtractionJSPrompt(String urls, String selector) =>
+String generateContentExtractionJSPrompt(String selector) =>
     """
       (async () => {
         try {
-          const urls = $urls;
           const selector = $selector;
           const results = [];
-          for (const url of urls) {
-            const res = await fetch(url);
-            const html = await res.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            const containers = Array.from(doc.querySelectorAll(selector));
-            let lines = [];
-            
-            for (const el of containers) {
-              const children = Array.from(el.children);
-              if (children.length > 0) {
-                const childrenLines = children
-                  .map(function(c) {
-                    let text = c.textContent.trim();
-                    if ((text?.length ?? 0) > 0) return text;
-                    try {
-                      return c.querySelector('img')?.src ?? "";
-                    } catch {
-                      return "";
-                    }
-                  })
-                  .filter(t => t.length > 0);
-                lines = lines.concat(childrenLines);
-              }
-              
-              if (lines.length === 0 && el.textContent.trim().length > 0) {
-                lines.push(el.textContent.trim());
+          
+          const normUrl = (u) => {
+            let s = u.toLowerCase().trim();
+            if (s.endsWith("/")) s = s.slice(0, -1);
+            return s;
+          };
+
+          let doc = document;
+          
+          const containers = Array.from(doc.querySelectorAll(selector));
+          let lines = [];
+          
+          for (const el of containers) {
+            const children = Array.from(el.children);
+            if (children.length > 0) {
+              const childrenLines = children
+                .map(function(c) {
+                  let text = c.textContent.trim();
+                  if ((text?.length ?? 0) > 0) return text;
+                  try {
+                    return c.querySelector('img')?.src ?? "";
+                  } catch {
+                    return "";
+                  }
+                })
+                .filter(t => t.length > 0);
+              lines = lines.concat(childrenLines);
+            } else {
+              const text = el.textContent.trim();
+              if (text.length > 0) {
+                lines.push(text);
               }
             }
-            results.push(lines);
           }
+          results.push(lines);
           ExtractionChannel.postMessage(JSON.stringify({ "contents": results }));
         } catch (e) {
           ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));

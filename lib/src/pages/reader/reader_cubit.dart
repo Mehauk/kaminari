@@ -304,7 +304,7 @@ class ReaderCubit extends Cubit<ReaderState> {
   }
 
   Future<void> onChapterDownloaded(int chapterId) async {
-    if (chapterId == chapter.id && state.items.isEmpty) {
+    if (chapterId == chapter.id) {
       await reloadContent();
     } else if (state.activeWaitingChapter?.id == chapterId) {
       final dbCh = await dbService.getChapterWithContent(chapterId);
