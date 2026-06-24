@@ -32,9 +32,8 @@
 - [x] chapter title clickability
 - [x] dict view bottom/top depending on click position (so as to not cover clicked word)
 - [x] dict view swipe to close (additionally)
+- [x] injecter starts earlier
 - [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
-- [ ] injecter starts earlier
-- [ ] jlpt level indicator on webview (if lang is `ja`)
 - [ ] use most common/first meaning of word
 - [ ] Import builder loader update (with type selection)
 - [ ] implement home screen functionality
@@ -43,7 +42,7 @@
 - [ ] open import chapter webview on error (only for current)
 - [ ] icon/splash update
 - [ ] move the first three chapter downloading to the background cubit
-- [ ] double tap on import pwebview to singletap normal + hold link?
+- [ ] double tap on import webview to singletap normal + hold link?
 - [ ] no segmenter?
 
 - [ ] BUG: why my chapter id in 3000's when its only 75ish chapters in?
@@ -51,6 +50,10 @@
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
 - [x] BUG: first three chapters not autmatic?  
+
+- [ ] complete book features
+  - [ ] eng dict
+  - [ ] epub/ebook/pdf? importing
   
 - [ ] use jagger?
 - [ ] replace ai with heuristical analysis across the board?
