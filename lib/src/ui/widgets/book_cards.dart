@@ -119,7 +119,7 @@ class LastReadBookCard extends StatelessWidget {
                                 SizedBox(width: 8),
 
                                 CustomText(
-                                  "${(book.progress(book.currentChapter) * 100).toInt()}%",
+                                  "${(book.progress(book.currentChapter) * 100).toStringAsFixed(0)}%",
                                   .labelSmall,
                                   color: KaminariTheme.textTitle,
                                 ),

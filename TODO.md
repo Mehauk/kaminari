@@ -33,17 +33,16 @@
 - [x] dict view bottom/top depending on click position (so as to not cover clicked word)
 - [x] dict view swipe to close (additionally)
 - [x] injecter starts earlier
-- [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
-- [ ] use most common/first meaning of word
-- [ ] Import builder loader update (with type selection)
-- [ ] implement home screen functionality
+- [x] reading progress fix (+1 if accessedDate not null)
+- [ ] match longest match first (dict)
 - [ ] prereading kanji anki type shii
-- [ ] reading progress fix (+1 if accessedDate not null)
+- [ ] implement home screen functionality
+- [ ] Import builder loader update (with type selection)
+- [ ] double tap on import webview to singletap normal + hold link?
+- [ ] move the first three chapter downloading to the background cubit
+- [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
 - [ ] open import chapter webview on error (only for current)
 - [ ] icon/splash update
-- [ ] move the first three chapter downloading to the background cubit
-- [ ] double tap on import webview to singletap normal + hold link?
-- [ ] no segmenter?
 
 - [ ] BUG: why my chapter id in 3000's when its only 75ish chapters in?
 - [x] BUG: bottom nav covered by native nav bar
@@ -54,8 +53,10 @@
 - [ ] complete book features
   - [ ] eng dict
   - [ ] epub/ebook/pdf? importing
+  - [ ] additional language features?
+  - [ ] paragraphg transliteration/translation?
   
-- [ ] use jagger?
+- [ ] use jagger or jptransliterate?
 - [ ] replace ai with heuristical analysis across the board?
 
 - [ ] discover page additions
