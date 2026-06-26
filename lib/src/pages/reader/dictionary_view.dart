@@ -250,43 +250,97 @@ class _KanjiCard extends StatelessWidget {
     };
 
     // Check On-readings (usually Katakana)
-    String matchedOn = onReadings.firstWhere(
-      (r) => reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
-      orElse: () => '',
-    );
+    String matchedOn =
+        onReadings
+            .where(
+              (r) =>
+                  reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
+            )
+            .fold<String?>(
+              null,
+              (longest, current) =>
+                  (longest == null || current.length > longest.length)
+                  ? current
+                  : longest,
+            ) ??
+        '';
 
     // Check Kun-readings (usually Hiragana)
-    String matchedKun = kunReadings.firstWhere(
-      (r) => reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
-      orElse: () => '',
-    );
+    String matchedKun =
+        kunReadings
+            .where(
+              (r) =>
+                  reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
+            )
+            .fold<String?>(
+              null,
+              (longest, current) =>
+                  (longest == null || current.length > longest.length)
+                  ? current
+                  : longest,
+            ) ??
+        '';
 
-    if (matchedOn == '' && matchedKun == '') {
-      matchedOn = onReadings.firstWhere(
-        (r) => reading.contains(
-          JpTransliterate.katakanaToHiragana(
-            r,
-          ).replaceAll('-', '').replaceAll(".", ""),
-        ),
-        orElse: () => '',
-      );
+    // Check On-readings (usually Katakana)
+    String matchedInverseOn =
+        onReadings
+            .where(
+              (r) => reading.contains(
+                JpTransliterate.katakanaToHiragana(
+                  r,
+                ).replaceAll('-', '').replaceAll(".", ""),
+              ),
+            )
+            .fold<String?>(
+              null,
+              (longest, current) =>
+                  (longest == null || current.length > longest.length)
+                  ? current
+                  : longest,
+            ) ??
+        '';
+    // Check Kun-readings (usually Hiragana)
+    String matchedInverseKun =
+        kunReadings
+            .where(
+              (r) => reading.contains(
+                JpTransliterate.hiraganaToKatakana(
+                  r,
+                ).replaceAll('-', '').replaceAll(".", ""),
+              ),
+            )
+            .fold<String?>(
+              null,
+              (longest, current) =>
+                  (longest == null || current.length > longest.length)
+                  ? current
+                  : longest,
+            ) ??
+        '';
 
-      matchedKun = kunReadings.firstWhere(
-        (r) => reading.contains(
-          JpTransliterate.hiraganaToKatakana(
-            r,
-          ).replaceAll('-', '').replaceAll(".", ""),
-        ),
-        orElse: () => '',
-      );
-    }
+    // take longest match on -> kun -> onInverse -> kunInverse
+    final matches = [
+      matchedOn,
+      matchedKun,
+      matchedInverseOn,
+      matchedInverseKun,
+    ];
+    String longestMatch =
+        matches.fold<String?>(
+          null,
+          (longest, current) =>
+              (longest == null || current.length > longest.length)
+              ? current
+              : longest,
+        ) ??
+        matchedOn;
 
     // print(matchedOn);
     // print(matchedKun);
 
-    final String displayReading = matchedOn.isNotEmpty
-        ? matchedOn
-        : (matchedKun.isNotEmpty ? matchedKun : entry.onReading.first);
+    final String displayReading = longestMatch.isNotEmpty
+        ? longestMatch
+        : entry.onReading.first;
 
     return InkWell(
       onTap: () {
@@ -301,10 +355,10 @@ class _KanjiCard extends StatelessWidget {
           color: Colors.white.withAlpha(10),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: (matchedOn.isNotEmpty || matchedKun.isNotEmpty)
+            color: (longestMatch.isNotEmpty)
                 ? KaminariTheme.cyan.withAlpha(100)
                 : KaminariTheme.surfaceTint.withAlpha(50),
-            width: (matchedOn.isNotEmpty || matchedKun.isNotEmpty) ? 1.5 : 1,
+            width: (longestMatch.isNotEmpty) ? 1.5 : 1,
           ),
         ),
         child: Column(
@@ -322,7 +376,7 @@ class _KanjiCard extends StatelessWidget {
               displayReading,
               TextType.labelSmall,
               fontSize: 11,
-              color: (matchedOn.isNotEmpty || matchedKun.isNotEmpty)
+              color: (longestMatch.isNotEmpty)
                   ? KaminariTheme.cyan
                   : KaminariTheme.textSecondary,
             ),
@@ -467,43 +521,88 @@ class KanjiEntry with _$KanjiEntry {
   }
 }
 
-// Map of base kana to their diacritic variants
+// 1. Your original Map (corrected 'ぢ')
 const Map<String, List<String>> kanaDiacritics = {
-  // --- HIRAGANA ---
-  // K-row -> G-row
-  'か': ['が'], 'き': ['ぎ'], 'く': ['ぐ'], 'け': ['げ'], 'こ': ['ご'],
-  // S-row -> Z-row
-  'さ': ['ざ'], 'し': ['じ'], 'す': ['ず'], 'せ': ['ぜ'], 'そ': ['ぞ'],
-  // T-row -> D-row
-  'た': ['だ'], 'ち': ['ヂ'], 'つ': ['づ'], 'て': ['で'], 'と': ['ど'],
-  // H-row -> B-row & P-row
+  'か': ['が'],
+  'き': ['ぎ'],
+  'く': ['ぐ'],
+  'け': ['げ'],
+  'こ': ['ご'],
+  'さ': ['ざ'],
+  'し': ['じ'],
+  'す': ['ず'],
+  'せ': ['ぜ'],
+  'そ': ['ぞ'],
+  'た': ['だ'],
+  'ち': ['ぢ'],
+  'つ': ['づ'],
+  'て': ['で'],
+  'と': ['ど'],
   'は': ['ば', 'ぱ'],
   'ひ': ['び', 'ぴ'],
   'ふ': ['ぶ', 'ぷ'],
   'へ': ['べ', 'ぺ'],
   'ほ': ['ぼ', 'ぽ'],
-
-  // --- KATAKANA ---
-  // K-row -> G-row
-  'カ': ['ガ'], 'キ': ['ギ'], 'ク': ['グ'], 'ケ': ['ゲ'], 'コ': ['ゴ'],
-  // S-row -> Z-row
-  'サ': ['ザ'], 'シ': ['ジ'], 'ス': ['ズ'], 'セ': ['ゼ'], 'ソ': ['ゾ'],
-  // T-row -> D-row
-  'タ': ['ダ'], 'チ': ['ヂ'], 'ツ': ['ヅ'], 'テ': ['デ'], 'ト': ['ド'],
-  // H-row -> B-row & P-row
+  'カ': ['ガ'],
+  'キ': ['ギ'],
+  'ク': ['グ'],
+  'ケ': ['ゲ'],
+  'コ': ['ゴ'],
+  'サ': ['ザ'],
+  'シ': ['ジ'],
+  'ス': ['ズ'],
+  'セ': ['ゼ'],
+  'ソ': ['ゾ'],
+  'タ': ['ダ'],
+  'チ': ['ヂ'],
+  'ツ': ['ヅ'],
+  'テ': ['デ'],
+  'ト': ['ド'],
   'ハ': ['バ', 'パ'],
   'ヒ': ['ビ', 'ピ'],
   'フ': ['ブ', 'プ'],
   'ヘ': ['ベ', 'ペ'],
-  'ホ': ['ボ', 'ポ'],
-  // V-row
+  'ホ': ['ポ'],
   'ウ': ['ヴ'],
 };
 
-// Example function to get variants
+// 2. Pre-process into a flat lookup map
+// This map will contain: 'は' -> [ば, ぱ], 'ば' -> [は, ぱ], 'ぱ' -> [は, ば]
+final Map<String, List<String>> fullVariantLookup = _buildFullLookup();
+
+Map<String, List<String>> _buildFullLookup() {
+  final Map<String, List<String>> lookup = {};
+
+  kanaDiacritics.forEach((base, diacritics) {
+    List<String> family = [base, ...diacritics];
+
+    for (var char in family) {
+      // The variants for this char are all other members of the family
+      lookup[char] = family.where((item) => item != char).toList();
+    }
+  });
+
+  return lookup;
+}
+
 Iterable<String>? getVariants(String kana) {
   if (kana.isEmpty) return null;
-  final vars = kanaDiacritics[kana[0]];
-  if (kana.length == 1) return vars;
-  return vars?.map((e) => e + kana.substring(1));
+
+  // 1. Determine where the character we want to change is
+  int targetIndex = kana.startsWith('-') ? 1 : 0;
+
+  // Safety check: if string is just "-"
+  if (targetIndex >= kana.length) return null;
+
+  // 2. Split the string into Prefix, Target, and Suffix
+  final String prefix = kana.substring(0, targetIndex);
+  final String targetChar = kana[targetIndex];
+  final String suffix = kana.substring(targetIndex + 1);
+
+  // 3. Look up the variants for that specific character
+  final variants = fullVariantLookup[targetChar];
+  if (variants == null) return null;
+
+  // 4. Reassemble the full strings
+  return variants.map((v) => prefix + v + suffix);
 }

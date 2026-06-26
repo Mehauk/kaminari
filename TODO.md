@@ -34,7 +34,7 @@
 - [x] dict view swipe to close (additionally)
 - [x] injecter starts earlier
 - [x] reading progress fix (+1 if accessedDate not null)
-- [ ] match longest match first (dict)
+- [x] match longest match first (dict)
 - [ ] prereading kanji anki type shii
 - [ ] implement home screen functionality
 - [ ] Import builder loader update (with type selection)
