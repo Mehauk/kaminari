@@ -212,8 +212,6 @@ class _KanjiCard extends StatelessWidget {
     print(wordReadings);
     print(entry.kanji);
     print(reading);
-    print(entry.onReading);
-    print(entry.kunReadings);
 
     Set<String> onReadings = {
       ...entry.onReading,
@@ -226,6 +224,7 @@ class _KanjiCard extends StatelessWidget {
     };
 
     onReadings = {
+      //change this to expand???
       ...onReadings,
       ...onReadings
           .where((s) => s.length > 1)
@@ -248,6 +247,9 @@ class _KanjiCard extends StatelessWidget {
           .where((s) => s.length > 1)
           .map((e) => "${e.substring(0, e.length - 1)}っ"),
     };
+
+    print("on: $onReadings");
+    print("kun: $kunReadings");
 
     // Check On-readings (usually Katakana)
     String matchedOn =
