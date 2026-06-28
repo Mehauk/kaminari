@@ -40,6 +40,7 @@
 - [x] import builder loader update (with type selection)
 - [x] move the first three chapter downloading to the background cubit
 - [x] fix broken chapter (auto reload when finished downloading) (fix ui as well) (seems to be working)
+- [ ] novelight
 - [ ] avoid getting rate limited when paginating for chapters
 - [ ] history's cards should open reader three dots detials
 - [ ] scroll opening a new chapt3r should cause downloads
