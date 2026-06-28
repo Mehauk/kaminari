@@ -223,13 +223,11 @@ class _KanjiCard extends StatelessWidget {
       ...onReadings.expand((e) => getVariants(e) ?? [e]),
     };
 
-    onReadings = {
-      //change this to expand???
-      ...onReadings,
-      ...onReadings
-          .where((s) => s.length > 1)
-          .map((e) => "${e.substring(0, e.length - 1)}っ"),
-    };
+    onReadings = onReadings
+        .expand(
+          (e) => [e, if (e.length > 1) "${e.substring(0, e.length - 1)}っ"],
+        )
+        .toSet();
 
     Set<String> kunReadings = {
       ...entry.kunReadings,
@@ -241,17 +239,19 @@ class _KanjiCard extends StatelessWidget {
       ...kunReadings.expand((e) => getVariants(e) ?? [e]),
     };
 
-    kunReadings = {
-      ...kunReadings,
-      ...kunReadings
-          .where((s) => s.length > 1)
-          .map((e) => "${e.substring(0, e.length - 1)}っ"),
-    };
+    kunReadings = kunReadings
+        .expand(
+          (e) => [
+            e,
+            if (e.length > 1 && !e.contains("."))
+              "${e.substring(0, e.length - 1)}っ",
+          ],
+        )
+        .toSet();
 
     print("on: $onReadings");
     print("kun: $kunReadings");
 
-    // Check On-readings (usually Katakana)
     String matchedOn =
         onReadings
             .where(
@@ -261,13 +261,14 @@ class _KanjiCard extends StatelessWidget {
             .fold<String?>(
               null,
               (longest, current) =>
-                  (longest == null || current.length > longest.length)
+                  (longest == null ||
+                      current.replaceAll("-", "").length >
+                          longest.replaceAll("-", "").length)
                   ? current
                   : longest,
             ) ??
         '';
 
-    // Check Kun-readings (usually Hiragana)
     String matchedKun =
         kunReadings
             .where(
@@ -277,13 +278,14 @@ class _KanjiCard extends StatelessWidget {
             .fold<String?>(
               null,
               (longest, current) =>
-                  (longest == null || current.length > longest.length)
+                  (longest == null ||
+                      current.replaceAll("-", "").length >
+                          longest.replaceAll("-", "").length)
                   ? current
                   : longest,
             ) ??
         '';
 
-    // Check On-readings (usually Katakana)
     String matchedInverseOn =
         onReadings
             .where(
@@ -301,7 +303,7 @@ class _KanjiCard extends StatelessWidget {
                   : longest,
             ) ??
         '';
-    // Check Kun-readings (usually Hiragana)
+
     String matchedInverseKun =
         kunReadings
             .where(
