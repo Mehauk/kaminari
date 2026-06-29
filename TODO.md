@@ -36,6 +36,7 @@
 - [x] reading progress fix (+1 if accessedDate not null)
 - [x] match longest match first (dict)
 - [x] chiisai tsu (not working?)
+- [x] dict view kanji card start alignment
 - [ ] prereading kanji anki type shii
 - [ ] implement home screen functionality
 - [ ] Import builder loader update (with type selection)

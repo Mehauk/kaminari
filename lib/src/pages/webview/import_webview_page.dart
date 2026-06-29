@@ -159,6 +159,7 @@ class _WebAddressBar extends StatelessWidget {
                   cubit.state.selectedEntry,
                   cubit.clearSelection,
                   orientation: .top,
+                  alignment: .right,
                 ),
               ],
             ),

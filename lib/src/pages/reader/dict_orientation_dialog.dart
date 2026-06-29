@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
+import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';

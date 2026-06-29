@@ -10,8 +10,6 @@ part 'reader_cubit.freezed.dart';
 
 enum ReaderItemType { title, paragraph, pageBreak }
 
-enum DictOrientation { top, bottom, dynamic }
-
 class ReaderItem {
   final ReaderItemType type;
   final List<String> tokens;
@@ -42,6 +40,7 @@ abstract class ReaderState with _$ReaderState {
     String? activeChapterTitle,
     @Default(DictOrientation.bottom) DictOrientation dictOrientation,
     @Default(DictOrientation.bottom) DictOrientation computedDictOrientation,
+    @Default(KanjiAlignment.left) KanjiAlignment kanjiAlignment,
   }) = _ReaderState;
 }
 
@@ -63,7 +62,12 @@ class ReaderCubit extends Cubit<ReaderState> {
     required this.bookId,
     required this.dbService,
     required this.settings,
-  }) : super(ReaderState(dictOrientation: settings.getDictOrientation())) {
+  }) : super(
+         ReaderState(
+           dictOrientation: settings.getDictOrientation(),
+           kanjiAlignment: settings.getKanjiAlignment(),
+         ),
+       ) {
     dbService.updateBookAccess(bookId, chapter.number);
     _tokenizeContent();
   }
@@ -298,7 +302,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
     DictOrientation newComputed = state.dictOrientation;
     if (state.dictOrientation == DictOrientation.dynamic && tapY != null) {
-      newComputed = (tapY > 345) ? DictOrientation.top : DictOrientation.bottom;
+      newComputed = (tapY > 360) ? DictOrientation.top : DictOrientation.bottom;
     } else if (state.dictOrientation == DictOrientation.dynamic) {
       newComputed = DictOrientation.bottom;
     }
@@ -342,5 +346,10 @@ class ReaderCubit extends Cubit<ReaderState> {
         computedDictOrientation: computed,
       ),
     );
+  }
+
+  void setKanjiAlignment(KanjiAlignment alignment) {
+    settings.setKanjiAlignment(alignment);
+    emit(state.copyWith(kanjiAlignment: alignment));
   }
 }

@@ -10,6 +10,7 @@ import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/globals/background_webview_cubit.dart';
 import 'package:kaminari/src/pages/reader/dict_orientation_dialog.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
+import 'package:kaminari/src/pages/reader/kanji_alignment_dialog.dart';
 import 'package:kaminari/src/pages/reader/reader_cubit.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/text.dart';
@@ -164,6 +165,20 @@ class _ReaderViewState extends State<_ReaderView> {
                 builder: (_) => BlocProvider.value(
                   value: readerCubit,
                   child: const DictOrientationDialog(),
+                ),
+              );
+            },
+          ),
+          (
+            Icons.align_horizontal_left_rounded,
+            "Kanji card position",
+            () {
+              Navigator.of(ctx).pop();
+              showDialog<void>(
+                context: context,
+                builder: (_) => BlocProvider.value(
+                  value: readerCubit,
+                  child: const KanjiAlignmentDialog(),
                 ),
               );
             },
@@ -594,6 +609,7 @@ class _ReaderViewState extends State<_ReaderView> {
                                   state.selectedEntry,
                                   cubit.clearSelection,
                                   orientation: state.computedDictOrientation,
+                                  alignment: state.kanjiAlignment,
                                 ),
                               ),
                           ],
@@ -633,6 +649,7 @@ class _ReaderViewState extends State<_ReaderView> {
                                 state.selectedEntry,
                                 cubit.clearSelection,
                                 orientation: state.computedDictOrientation,
+                                alignment: state.kanjiAlignment,
                               ),
                             ),
                           ),
