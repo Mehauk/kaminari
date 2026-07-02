@@ -40,9 +40,10 @@
 - [x] import builder loader update (with type selection)
 - [x] move the first three chapter downloading to the background cubit
 - [x] fix broken chapter (auto reload when finished downloading) (fix ui as well) (seems to be working)
+- [x] history's cards should open reader three dots detials
+- [ ] replace favoting with status, set to reading once opened. (unread, reading, read, haiatus, trashed)
 - [ ] novelight
 - [ ] avoid getting rate limited when paginating for chapters
-- [x] history's cards should open reader three dots detials
 - [ ] scroll opening a new chapt3r should cause downloads
 - [ ] retry or re-download shold give the old selectors as a comparison
 - [ ] persist linebreaks/spacing?

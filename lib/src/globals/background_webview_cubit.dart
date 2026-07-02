@@ -143,6 +143,31 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     }
   }
 
+  /// Automatically queries the database for subsequent chapters without content
+  /// and enqueues them for background download.
+  Future<void> prefetchNextChapters({
+    required int bookId,
+    required int currentChapterNumber,
+    int limit = 3,
+  }) async {
+    try {
+      final nextChapters = await dbService.getNextChaptersWithoutContent(
+        bookId,
+        currentChapterNumber,
+        limit,
+      );
+      if (nextChapters.isNotEmpty) {
+        await enqueueChapters(
+          bookId: bookId,
+          chapters: nextChapters,
+          isPriority: false,
+        );
+      }
+    } catch (e) {
+      print("[BackgroundWebviewCubit] Prefetch failed: $e");
+    }
+  }
+
   Future<void> _processQueue() async {
     if (_queue.isEmpty || !await _isDownloadAllowed()) {
       _isLoopRunning = false;

@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
-import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/globals/background_webview_cubit.dart';
 import 'package:kaminari/src/pages/home/prep/prep_cards.dart';
 import 'package:kaminari/src/pages/reader/dict_orientation_dialog.dart';
@@ -103,22 +102,10 @@ class _ReaderViewState extends State<_ReaderView> {
         );
       }
 
-      context
-          .read<DatabaseService>()
-          .getNextChaptersWithoutContent(
-            readerCubit.bookId,
-            readerCubit.chapter.number,
-            3,
-          )
-          .then((nextChapters) {
-            if (mounted && nextChapters.isNotEmpty) {
-              backgroundCubit.enqueueChapters(
-                bookId: readerCubit.bookId,
-                chapters: nextChapters,
-                isPriority: false,
-              );
-            }
-          });
+      backgroundCubit.prefetchNextChapters(
+        bookId: readerCubit.bookId,
+        currentChapterNumber: readerCubit.chapter.number,
+      );
     });
   }
 
@@ -294,6 +281,22 @@ class _ReaderViewState extends State<_ReaderView> {
               bookId: cubit.bookId,
               chapters: [state.activeWaitingChapter!],
               isPriority: true,
+            );
+          },
+        ),
+        BlocListener<ReaderCubit, ReaderState>(
+          listenWhen: (prev, curr) =>
+              prev.activeChapterTitle != null &&
+              curr.activeChapterTitle != null &&
+              prev.activeChapterTitle != curr.activeChapterTitle,
+          listener: (context, state) {
+            final activeChapter = cubit.loadedChapters.firstWhere(
+              (c) => c.title == state.activeChapterTitle,
+              orElse: () => cubit.chapter,
+            );
+            context.read<BackgroundWebviewCubit>().prefetchNextChapters(
+              bookId: cubit.bookId,
+              currentChapterNumber: activeChapter.number,
             );
           },
         ),
