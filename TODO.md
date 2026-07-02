@@ -37,9 +37,7 @@
 - [x] match longest match first (dict)
 - [x] chiisai tsu (not working?)
 - [x] dict view kanji card start alignment
-- [ ] prereading kanji anki type shii
-- [ ] implement home screen functionality
-- [ ] Import builder loader update (with type selection)
+- [ ] import builder loader update (with type selection)
 - [ ] double tap on import webview to singletap normal + hold link?
 - [ ] move the first three chapter downloading to the background cubit
 - [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
@@ -51,6 +49,16 @@
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
 - [x] BUG: first three chapters not autmatic?  
+
+- [ ] implement home screen functionality
+  - [x] prereading kanji anki type shii
+    - [ ] cache training data (for quicker reload)
+    - [ ] preload training data for next chapter when reaching end of current chapter (non blocking)
+    - [ ] calculate show order (considering kanji level)
+    - [ ] open prep screen from top of chapter?
+    - [ ] implement word of the day with correct kanji level
+    - [ ] remember prep + 0/100 impl
+    - [ ] fix card back still showing when next pressed (reconstruct instead of reset)
 
 - [ ] complete book features
   - [ ] eng dict

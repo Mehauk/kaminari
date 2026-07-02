@@ -16,7 +16,7 @@ class EntryAnalysisModel {
 }
 
 class ChapterAnalysisService {
-  static Future<List<EntryAnalysisModel>> getCommonWords(
+  static Future<List<EntryAnalysisModel>> analyzeChapter(
     ChapterInfo chapter,
   ) async {
     if (chapter.content == null || chapter.content!.isEmpty) return [];
@@ -27,24 +27,20 @@ class ChapterAnalysisService {
     final Map<String, int> frequencies = {};
     for (var token in tokens) {
       final t = token.trim();
-
-      // NEW FILTER LOGIC:
-      // Only keep the word if it contains at least one Kanji or is a Katakana word.
       if (!_isReviewWorthy(t)) continue;
-
       frequencies[t] = (frequencies[t] ?? 0) + 1;
     }
 
-    // Sort by frequency and take top 15
-    final sortedEntries = frequencies.entries.toList()
+    final sorted = frequencies.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final topTokens = sortedEntries.take(15).toList();
+    // Take top 15 most frequent unique words
+    final topTokens = sorted.take(100).toList();
 
-    List<EntryAnalysisModel> cards = [];
+    List<EntryAnalysisModel> results = [];
     for (var item in topTokens) {
       final (wordMap, kanjis) = await KanjiService.lookupToken(item.key);
-      cards.add(
+      results.add(
         EntryAnalysisModel(
           word: item.key,
           count: item.value,
@@ -52,8 +48,7 @@ class ChapterAnalysisService {
         ),
       );
     }
-
-    return cards;
+    return results;
   }
 
   static bool _isReviewWorthy(String text) {
