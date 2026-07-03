@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/chapter_analysis_service.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
 
 part 'chapter_prep_cubit.freezed.dart';
 
@@ -16,12 +17,19 @@ abstract class ChapterPrepState with _$ChapterPrepState {
 }
 
 class ChapterPrepCubit extends Cubit<ChapterPrepState> {
-  ChapterPrepCubit(ChapterInfo chapter) : super(const ChapterPrepState()) {
+  final int bookId;
+  final DatabaseService dbService;
+  ChapterPrepCubit(this.bookId, ChapterInfo chapter, this.dbService)
+    : super(const ChapterPrepState()) {
     _init(chapter);
   }
 
   Future<void> _init(ChapterInfo chapter) async {
-    final items = await ChapterAnalysisService.analyzeChapter(chapter);
+    final items = await ChapterAnalysisService.analyzeChapter(
+      bookId,
+      chapter,
+      db: dbService,
+    );
     emit(state.copyWith(items: items, isLoading: false));
   }
 

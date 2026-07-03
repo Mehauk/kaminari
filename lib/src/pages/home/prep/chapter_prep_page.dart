@@ -17,7 +17,7 @@ class ChapterPrepPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => ChapterPrepCubit(chapter),
+      create: (_) => ChapterPrepCubit(book.id!, chapter, context.read()),
       child: Scaffold(
         backgroundColor: KaminariTheme.background,
         body: BlocBuilder<ChapterPrepCubit, ChapterPrepState>(
