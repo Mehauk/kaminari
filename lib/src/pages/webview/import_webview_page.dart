@@ -151,6 +151,7 @@ class _ImportingProgressOverlay extends StatelessWidget {
       ),
       ImportStatus.success => ImportSuccessView(
         bookTitle: state.previewBook?.title,
+        chapters: state.previewBook?.chapters,
         onDone: () => Navigator.of(context).pop(true),
       ),
       ImportStatus.failure => ImportFailureView(

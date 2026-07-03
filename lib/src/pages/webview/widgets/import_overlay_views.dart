@@ -154,6 +154,10 @@ class ImportPreviewView extends StatelessWidget {
             ),
           ),
         ),
+
+        // Structured chapter sequence preview (first, gap, last)
+        _buildChapterSequenceSection(),
+
         const SizedBox(height: 20),
         const CustomText(
           "Select Book Type",
@@ -209,15 +213,110 @@ class ImportPreviewView extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildChapterSequenceSection() {
+    if (book.chapters.isEmpty) return const SizedBox.shrink();
+
+    final firstCh = book.chapters.first;
+    final lastCh = book.chapters.last;
+    final inBetweenCount = book.chapters.length - 2;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        const CustomText(
+          "Chapter Structure Preview",
+          TextType.labelSmall,
+          color: KaminariTheme.textTitle,
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: KaminariTheme.surfaceVariant.withAlpha(30),
+            borderRadius: BorderRadius.circular(KaminariTheme.altBorderRadius),
+            border: Border.all(color: KaminariTheme.surfaceTint.withAlpha(20)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Display First Chapter
+              _buildChapterRow(firstCh),
+
+              // Segment representing skipped entries
+              if (inBetweenCount > 0) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 4,
+                    horizontal: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 2,
+                        height: 16,
+                        color: KaminariTheme.surfaceTint.withAlpha(60),
+                      ),
+                      const SizedBox(width: 12),
+                      CustomText(
+                        "• • • $inBetweenCount  • • •",
+                        TextType.labelSmall,
+                        color: KaminariTheme.textSecondary.withAlpha(120),
+                        fontSize: 11,
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (book.chapters.length == 2) ...[
+                const SizedBox(height: 4),
+              ],
+
+              // Display Final Chapter (only if more than 1 chapter exists)
+              if (book.chapters.length > 1) _buildChapterRow(lastCh),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChapterRow(ChapterInfo ch) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 28,
+          child: CustomText(
+            '${ch.number + 1}'.padLeft(2, '0'),
+            TextType.labelSmall,
+            color: KaminariTheme.textTitle,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: CustomText(
+            ch.title,
+            TextType.bodyMedium,
+            fontSize: 13,
+            maxLines: 1,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class ImportSuccessView extends StatelessWidget {
   final String? bookTitle;
+  final List<ChapterInfo>? chapters;
   final VoidCallback onDone;
 
   const ImportSuccessView({
     super.key,
     required this.bookTitle,
+    this.chapters,
     required this.onDone,
   });
 
@@ -239,6 +338,71 @@ class ImportSuccessView extends StatelessWidget {
           TextType.bodyMedium,
           alignment: TextAlign.center,
         ),
+        if (chapters != null && chapters!.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: CustomText(
+              "Imported Chapters",
+              TextType.labelSmall,
+              color: KaminariTheme.textTitle,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height:
+                180, // Constrained height equivalent to ~4 chapters comfortably
+            decoration: BoxDecoration(
+              color: KaminariTheme.surfaceVariant.withAlpha(50),
+              borderRadius: BorderRadius.circular(
+                KaminariTheme.altBorderRadius,
+              ),
+              border: Border.all(
+                color: KaminariTheme.surfaceTint.withAlpha(30),
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(
+                KaminariTheme.altBorderRadius,
+              ),
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 12,
+                ),
+                itemCount: chapters!.length,
+                itemBuilder: (context, index) {
+                  final ch = chapters![index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 28,
+                          child: CustomText(
+                            '${ch.number + 1}'.padLeft(2, '0'),
+                            TextType.labelSmall,
+                            color: KaminariTheme.textTitle,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: CustomText(
+                            ch.title,
+                            TextType.bodyMedium,
+                            fontSize: 13,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 32),
         SizedBox(
           width: double.infinity,

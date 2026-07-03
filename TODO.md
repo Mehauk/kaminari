@@ -41,7 +41,7 @@
 - [x] move the first three chapter downloading to the background cubit
 - [x] fix broken chapter (auto reload when finished downloading) (fix ui as well) (seems to be working)
 - [x] history's cards should open reader three dots detials
-- [ ] replace favoting with status, set to reading once opened. (unread, reading, read, haiatus, trashed)
+- [ ] replace favoriting with status, set to reading once opened. (unread, reading, read, reading_haiatus, trashed)
 - [ ] novelight
 - [ ] avoid getting rate limited when paginating for chapters
 - [ ] scroll opening a new chapt3r should cause downloads
@@ -53,6 +53,10 @@
 - [ ] import builder loader ui update
 - [ ] icon/splash update
 - [ ] find an actual place to put the archived books
+
+- [ ] ui fixes
+  - [ ] select book type in importer overlay
+  - [ ] imprt epub button from discorvery screen
 
 - [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
