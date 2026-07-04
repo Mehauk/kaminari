@@ -62,6 +62,7 @@ class ImportPreviewView extends StatelessWidget {
   final VoidCallback onConfirm;
   final VoidCallback onRetry;
   final VoidCallback onCancel;
+  final VoidCallback? onMissingChapters;
 
   const ImportPreviewView({
     super.key,
@@ -70,6 +71,7 @@ class ImportPreviewView extends StatelessWidget {
     required this.onConfirm,
     required this.onRetry,
     required this.onCancel,
+    this.onMissingChapters,
   });
 
   @override
@@ -155,7 +157,7 @@ class ImportPreviewView extends StatelessWidget {
           ),
         ),
 
-        // Structured chapter sequence preview (first, gap, last)
+        // Structured chapter sequence preview (first, gap, last) with resume options
         _buildChapterSequenceSection(),
 
         const SizedBox(height: 20),
@@ -225,10 +227,29 @@ class ImportPreviewView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        const CustomText(
-          "Chapter Structure Preview",
-          TextType.labelSmall,
-          color: KaminariTheme.textTitle,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const CustomText(
+              "Chapter Structure Preview",
+              TextType.labelSmall,
+              color: KaminariTheme.textTitle,
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: onMissingChapters,
+              child: const CustomText(
+                "Missing Chapters?",
+                TextType.labelSmall,
+                color: KaminariTheme.cyan,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
@@ -261,7 +282,7 @@ class ImportPreviewView extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       CustomText(
-                        "• • • $inBetweenCount  • • •",
+                        "• • •  and $inBetweenCount more chapters  • • •",
                         TextType.labelSmall,
                         color: KaminariTheme.textSecondary.withAlpha(120),
                         fontSize: 11,

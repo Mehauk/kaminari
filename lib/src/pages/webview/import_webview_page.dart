@@ -135,6 +135,7 @@ class _ImportingProgressOverlay extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
+    final webviewCubit = context.read<WebviewCubit>();
     return switch (state.importStatus) {
       ImportStatus.extracting || ImportStatus.saving => ImportLoadingView(
         progress: state.importProgress,
@@ -148,6 +149,7 @@ class _ImportingProgressOverlay extends StatelessWidget {
         onConfirm: onConfirm,
         onRetry: onRetry,
         onCancel: onCancel,
+        onMissingChapters: webviewCubit.resumeImport,
       ),
       ImportStatus.success => ImportSuccessView(
         bookTitle: state.previewBook?.title,
