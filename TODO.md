@@ -54,8 +54,8 @@
   - [x] prereading kanji anki type shii
     - [x] cache training data (for quicker reload)
     - [x] preload training data for next chapter when reaching end of current chapter (non blocking)
-    - [ ] fix card back still showing when next pressed (reconstruct instead of reset)
-    - [ ] open prep screen from top of chapter?
+    - [x] fix card back still showing when next pressed (reconstruct instead of reset)
+    - [x] open prep screen from top of chapter?
     - [ ] remember prep + 0/100 impl
     - [ ] calculate show order (considering kanji level)
     - [ ] implement word of the day with correct kanji level
