@@ -52,6 +52,7 @@
 - [ ] import builder loader ui update
 - [ ] icon/splash update
 - [ ] find an actual place to put the archived books
+- [ ] deleting a book should be instant visually
 
 - [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
