@@ -73,6 +73,19 @@ class ReaderCubit extends Cubit<ReaderState> {
     _tokenizeContent();
   }
 
+  Future<void> reloadPrepProgress(int chapterId) async {
+    final updatedCh = await dbService.getChapterWithContent(chapterId);
+    if (updatedCh != null) {
+      final idx = _loadedChapters.indexWhere((c) => c.id == chapterId);
+      if (idx != -1) {
+        _loadedChapters[idx] = _loadedChapters[idx].copyWith(
+          prepReviewedCount: updatedCh.prepReviewedCount,
+        );
+      }
+      emit(state.copyWith());
+    }
+  }
+
   void saveScrollPosition(int chapterId, double pixels) {
     dbService.updateChapterScrollPosition(chapterId, pixels);
   }

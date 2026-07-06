@@ -108,6 +108,7 @@ abstract class ChapterInfo with _$ChapterInfo {
     String? updatedDate,
     List<String>? content,
     double? scrollPosition,
+    @Default(0) int prepReviewedCount,
   }) = _ChapterInfo;
 
   factory ChapterInfo.fromJson(Map<String, dynamic> json) =>

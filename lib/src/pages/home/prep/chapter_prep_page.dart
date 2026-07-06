@@ -40,12 +40,33 @@ class ChapterPrepPage extends StatelessWidget {
                     child: Column(
                       children: [
                         Expanded(
-                          child: FlashcardWidget(
-                            key: ValueKey(state.currentIndex),
-                            item: state.items[state.currentIndex],
-                            isFlipped: state.isFlipped,
-                            onTap: () =>
-                                context.read<ChapterPrepCubit>().toggleFlip(),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onHorizontalDragEnd: (details) {
+                              if (details.primaryVelocity != null) {
+                                if (details.primaryVelocity! < 0) {
+                                  // Dragged right-to-left -> Next Word
+                                  if (state.currentIndex <
+                                      state.items.length - 1) {
+                                    context.read<ChapterPrepCubit>().nextCard();
+                                  }
+                                } else if (details.primaryVelocity! > 0) {
+                                  // Dragged left-to-right -> Previous Word
+                                  if (state.currentIndex > 0) {
+                                    context
+                                        .read<ChapterPrepCubit>()
+                                        .previousCard();
+                                  }
+                                }
+                              }
+                            },
+                            child: FlashcardWidget(
+                              key: ValueKey(state.currentIndex),
+                              item: state.items[state.currentIndex],
+                              isFlipped: state.isFlipped,
+                              onTap: () =>
+                                  context.read<ChapterPrepCubit>().toggleFlip(),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -54,27 +75,41 @@ class ChapterPrepPage extends StatelessWidget {
                           TextType.labelMedium,
                         ),
                         const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed:
-                                state.currentIndex == state.items.length - 1
-                                ? () => Navigator.pop(context)
-                                : () => context
-                                      .read<ChapterPrepCubit>()
-                                      .nextCard(),
-                            child: Text(
-                              state.currentIndex == state.items.length - 1
-                                  ? "FINISH"
-                                  : "NEXT WORD",
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: state.currentIndex > 0
+                                    ? () => context
+                                          .read<ChapterPrepCubit>()
+                                          .previousCard()
+                                    : null, // Disabled when on first card
+                                child: const Text("PREVIOUS"),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: FilledButton(
+                                onPressed:
+                                    state.currentIndex == state.items.length - 1
+                                    ? () => Navigator.pop(context)
+                                    : () => context
+                                          .read<ChapterPrepCubit>()
+                                          .nextCard(),
+                                child: Text(
+                                  state.currentIndex == state.items.length - 1
+                                      ? "FINISH"
+                                      : "NEXT WORD",
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
 
-                // 2. HEADER LAYER (Lightning Style)
+                // 2. HEADER LAYER
                 ClipRRect(
                   child: BgFilter(
                     bgColor: KaminariTheme.background.withAlpha(200),
