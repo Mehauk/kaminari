@@ -43,6 +43,7 @@
 - [ ] novelight
 - [ ] avoid getting rate limited when paginating for chapters
 - [x] history's cards should open reader three dots detials
+- [ ] fix reloading bug when opening a chapter that is already downloaded
 - [ ] scroll opening a new chapt3r should cause downloads
 - [ ] retry or re-download shold give the old selectors as a comparison
 - [ ] persist linebreaks/spacing?
