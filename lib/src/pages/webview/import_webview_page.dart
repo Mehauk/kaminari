@@ -21,6 +21,7 @@ class ImportWebviewPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => WebviewCubit(
         extractorBuilder: ExtractorBuilder(LlmService(), context.read()),
+        backgroundWebviewCubit: context.read(),
         initialUrl: initialUrl,
       ),
       child: const _ImportWebviewPage(),

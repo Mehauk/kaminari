@@ -459,6 +459,25 @@ class DatabaseService {
           'content': section,
         });
       }
+
+      // Update firstChapterCharCount if this is Chapter 1 (index 0)
+      final List<Map<String, dynamic>> chInfo = await txn.query(
+        'ChapterInfo',
+        columns: ['book_id', 'chapterNumber'],
+        where: 'id = ?',
+        whereArgs: [chapterId],
+      );
+      if (chInfo.isNotEmpty && chInfo.first['chapterNumber'] == 0) {
+        final bookId = chInfo.first['book_id'] as int;
+        final totalLength = content.join().length;
+        await txn.update(
+          'BookDetails',
+          {'firstChapterCharCount': totalLength},
+          where: 'id = ?',
+          whereArgs: [bookId],
+        );
+      }
+
       return content.length;
     });
     _notifyChange();
