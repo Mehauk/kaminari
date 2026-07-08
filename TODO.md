@@ -45,6 +45,7 @@
 - [x] scroll opening a new chapt3r should cause downloads
 - [ ] hide importer, when import is clicked again fomr the same page, just reopen it in same state
 - [ ] novelight
+- [ ] fix reloading bug when opening a chapter that is already downloaded
 - [ ] retry or re-download shold give the old selectors as a comparison
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
