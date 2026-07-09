@@ -39,7 +39,7 @@
 - [x] dict view kanji card start alignment
 - [ ] import builder loader update (with type selection)
 - [ ] double tap on import webview to singletap normal + hold link?
-- [ ] move the first three chapter downloading to the background cubit
+- [x] move the first three chapter downloading to the background cubit
 - [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
 - [ ] open import chapter webview on error (only for current)
 - [ ] icon/splash update
