@@ -68,6 +68,7 @@ class _ImportWebviewPage extends StatelessWidget {
                   onConfirm: webviewCubit.confirmImport,
                   onRetry: () => webviewCubit.handleImport(forceReload: true),
                   onCancel: webviewCubit.cancelImport,
+                  onHide: webviewCubit.hideOverlay,
                 ),
             ],
           ),
@@ -91,6 +92,7 @@ class _ImportingProgressOverlay extends StatelessWidget {
   final VoidCallback onConfirm;
   final VoidCallback onRetry;
   final VoidCallback onCancel;
+  final VoidCallback onHide;
 
   const _ImportingProgressOverlay({
     required this.state,
@@ -98,6 +100,7 @@ class _ImportingProgressOverlay extends StatelessWidget {
     required this.onConfirm,
     required this.onRetry,
     required this.onCancel,
+    required this.onHide,
   });
 
   @override
@@ -149,7 +152,9 @@ class _ImportingProgressOverlay extends StatelessWidget {
         onConfirm: onConfirm,
         onRetry: onRetry,
         onCancel: onCancel,
+        onHide: onHide,
         onMissingChapters: webviewCubit.resumeImport,
+        showMissingChaptersBtn: webviewCubit.showMissingChapters,
       ),
       ImportStatus.success => ImportSuccessView(
         bookTitle: state.previewBook?.title,

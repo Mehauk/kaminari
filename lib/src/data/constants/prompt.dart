@@ -47,6 +47,7 @@ String chaptersLoadingIIFE(
     let i = $startIndex - 1;
     let nextUrl = document.location.href;
     let lastSuccessfulUrl = nextUrl;
+    let pagesParsed = 0;
     
     while (nextUrl) {
       console.log("[JS-Extractor] Processing URL: " + nextUrl);
@@ -58,7 +59,7 @@ String chaptersLoadingIIFE(
       } else {
         try {
           // Non-blocking pacing delay to mitigate rate limiting on remote fetches
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise(resolve => setTimeout(resolve, 300));
 
           const response = await fetch(nextUrl, {
             method: 'GET',
@@ -77,7 +78,8 @@ String chaptersLoadingIIFE(
           return {
             chapters: chapters,
             failedUrl: nextUrl,
-            lastSuccessfulUrl: lastSuccessfulUrl
+            lastSuccessfulUrl: lastSuccessfulUrl,
+            pagesParsed: pagesParsed
           };
         }
       }
@@ -97,7 +99,9 @@ String chaptersLoadingIIFE(
       
       chapters = chapters.concat(pageChapters);
       lastSuccessfulUrl = nextUrl;
+      pagesParsed++;
       
+      // Dispatch immediate chapter accumulation progress to the Dart UI context
       if (typeof ProgressChannel !== 'undefined') {
         ProgressChannel.postMessage(JSON.stringify({ "count": chapters.length }));
       }
@@ -124,7 +128,8 @@ String chaptersLoadingIIFE(
     return {
       chapters: chapters,
       failedUrl: null,
-      lastSuccessfulUrl: lastSuccessfulUrl
+      lastSuccessfulUrl: lastSuccessfulUrl,
+      pagesParsed: pagesParsed
     };
   })()
 """;
@@ -315,6 +320,7 @@ String generateBookExtrationJSPrompt(Map reMap, String iIFE) =>
         data.chapters = result.chapters;
         data.failedUrl = result.failedUrl;
         data.lastSuccessfulUrl = result.lastSuccessfulUrl;
+        data.pagesParsed = result.pagesParsed;
         ExtractionChannel.postMessage(JSON.stringify(data));
       } catch (e) {
         ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));

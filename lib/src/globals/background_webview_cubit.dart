@@ -336,7 +336,7 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
         if (!isWaiting) {
           print("[BackgroundWebview] Target page settled successfully.");
           // Provides a tiny frame buffer for visual elements to complete painting
-          await Future.delayed(const Duration(milliseconds: 800));
+          await Future.delayed(const Duration(milliseconds: 300));
           return;
         }
 

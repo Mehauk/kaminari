@@ -53,6 +53,10 @@ class _ReaderViewState extends State<_ReaderView> {
   final Map<int, GlobalKey> _chapterKeys = {};
   final Map<int, double> _chapterStartOffsets = {};
 
+  // Local state variables to track download and prefetch boundaries
+  int? _lastPrefetchedChapterNumber;
+  final Set<int> _processedCompletedChapterIds = {};
+
   GlobalKey _getKeyForChapter(int chapterId) {
     return _chapterKeys.putIfAbsent(chapterId, () => GlobalKey());
   }
@@ -63,6 +67,12 @@ class _ReaderViewState extends State<_ReaderView> {
     final readerCubit = context.read<ReaderCubit>();
     final initialOffset = readerCubit.chapter.scrollPosition ?? 0.0;
     _scrollController = ScrollController(initialScrollOffset: initialOffset);
+
+    // Initialize local trackers
+    _lastPrefetchedChapterNumber = readerCubit.chapter.number;
+    _processedCompletedChapterIds.addAll(
+      context.read<BackgroundWebviewCubit>().state.completedChapterIds,
+    );
 
     // The initial chapter is always at the top (start offset 0.0)
     if (readerCubit.chapter.id != null) {
@@ -294,10 +304,16 @@ class _ReaderViewState extends State<_ReaderView> {
               (c) => c.title == state.activeChapterTitle,
               orElse: () => cubit.chapter,
             );
-            context.read<BackgroundWebviewCubit>().prefetchNextChapters(
-              bookId: cubit.bookId,
-              currentChapterNumber: activeChapter.number,
-            );
+
+            // Only trigger a prefetch if we have scrolled strictly forward
+            if (_lastPrefetchedChapterNumber == null ||
+                activeChapter.number > _lastPrefetchedChapterNumber!) {
+              _lastPrefetchedChapterNumber = activeChapter.number;
+              context.read<BackgroundWebviewCubit>().prefetchNextChapters(
+                bookId: cubit.bookId,
+                currentChapterNumber: activeChapter.number,
+              );
+            }
           },
         ),
         BlocListener<BackgroundWebviewCubit, BackgroundWebviewState>(
@@ -307,19 +323,21 @@ class _ReaderViewState extends State<_ReaderView> {
             final readerCubit = context.read<ReaderCubit>();
             final readerState = readerCubit.state;
 
-            // Check if the current chapter has been completed
-            if (bgState.completedChapterIds.contains(readerCubit.chapter.id)) {
-              readerCubit.onChapterDownloaded(readerCubit.chapter.id!);
-            }
+            // Only run callback logic for newly completed chapter IDs
+            final newlyCompleted = bgState.completedChapterIds
+                .where((id) => !_processedCompletedChapterIds.contains(id))
+                .toList();
 
-            // Check if a next waiting chapter has been completed
-            if (readerState.activeWaitingChapter != null &&
-                bgState.completedChapterIds.contains(
-                  readerState.activeWaitingChapter!.id,
-                )) {
-              readerCubit.onChapterDownloaded(
-                readerState.activeWaitingChapter!.id!,
-              );
+            for (final id in newlyCompleted) {
+              _processedCompletedChapterIds.add(id);
+
+              if (id == readerCubit.chapter.id) {
+                readerCubit.onChapterDownloaded(id);
+              }
+
+              if (readerState.activeWaitingChapter?.id == id) {
+                readerCubit.onChapterDownloaded(id);
+              }
             }
           },
         ),
@@ -332,7 +350,8 @@ class _ReaderViewState extends State<_ReaderView> {
               children: [
                 Builder(
                   builder: (context) {
-                    if (state.isLoading) {
+                    // Prevent short refresh flashing by only displaying full-screen loading if the layout lacks content
+                    if (state.isLoading && state.items.isEmpty) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
@@ -518,6 +537,7 @@ class _ReaderViewState extends State<_ReaderView> {
                   ),
                 ),
 
+                // Keep displaying the current page content if state.items has elements
                 BlocBuilder<BackgroundWebviewCubit, BackgroundWebviewState>(
                   builder: (context, bgState) {
                     final isDownloadingThis =

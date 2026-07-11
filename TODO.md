@@ -39,13 +39,12 @@
 - [x] dict view kanji card start alignment
 - [x] import builder loader update (with type selection)
 - [x] move the first three chapter downloading to the background cubit
-- [x] fix broken chapter (auto reload when finished downloading) (fix ui as well) (seems to be working)
 - [x] history's -> status, set reading if opened. (unread, reading, read, reading_haiatus, trashed)
 - [x] avoid getting rate limited when paginating for chapters
 - [x] scroll opening a new chapt3r should cause downloads
-- [ ] hide importer, when import is clicked again fomr the same page, just reopen it in same state
+- [x] hide importer, when import is clicked again fomr the same page, just reopen it in same state
+- [ ] separate retying of chapters and retrying of metadata
 - [ ] novelight
-- [ ] fix reloading bug when opening a chapter that is already downloaded
 - [ ] retry or re-download shold give the old selectors as a comparison
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
@@ -61,6 +60,8 @@
   - [ ] imprt epub button from discorvery screen
   - [ ] import builder loader ui update
 
+- [x] BUG: broken chapter (auto reload when finished downloading)
+- [x] BUG: reloading bug when opening a chapter that is already downloaded
 - [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
