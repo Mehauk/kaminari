@@ -7,6 +7,7 @@ import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/pages/webview/import_webview_cubit.dart';
+import 'package:kaminari/src/pages/webview/widgets/import_overlay_views.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
@@ -135,269 +136,30 @@ class _ImportingProgressOverlay extends StatelessWidget {
 
   Widget _buildContent(BuildContext context) {
     return switch (state.importStatus) {
-      ImportStatus.extracting ||
-      ImportStatus.saving => _buildLoadingState(context),
-      ImportStatus.preview => _buildPreviewState(context),
-      ImportStatus.success => _buildSuccessState(context),
-      ImportStatus.failure => _buildFailureState(context),
+      ImportStatus.extracting || ImportStatus.saving => ImportLoadingView(
+        progress: state.importProgress,
+        message: state.progressMessage,
+        isSaving: state.importStatus == ImportStatus.saving,
+        onCancel: onCancel,
+      ),
+      ImportStatus.preview => ImportPreviewView(
+        book: state.previewBook!,
+        onTypeChanged: onTypeChanged,
+        onConfirm: onConfirm,
+        onRetry: onRetry,
+        onCancel: onCancel,
+      ),
+      ImportStatus.success => ImportSuccessView(
+        bookTitle: state.previewBook?.title,
+        onDone: () => Navigator.of(context).pop(true),
+      ),
+      ImportStatus.failure => ImportFailureView(
+        message: state.progressMessage,
+        onRetry: onRetry,
+        onCancel: onCancel,
+      ),
       _ => const SizedBox.shrink(),
     };
-  }
-
-  Widget _buildLoadingState(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CustomText(
-          state.importStatus == ImportStatus.saving
-              ? "Saving Entry..."
-              : "AI Web Parsing",
-          TextType.headlineMedium,
-          alignment: TextAlign.center,
-        ),
-        const SizedBox(height: 32),
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox.square(
-              dimension: 110,
-              child: CircularProgressIndicator(
-                value: state.importProgress,
-                strokeWidth: 5,
-              ),
-            ),
-            CustomText(
-              "${(state.importProgress * 100).toStringAsFixed(0)}%",
-              TextType.labelMedium,
-            ),
-          ],
-        ),
-        const SizedBox(height: 32),
-        CustomText(
-          state.progressMessage,
-          TextType.bodyMedium,
-          alignment: TextAlign.center,
-        ),
-        if (state.importStatus == ImportStatus.extracting) ...[
-          const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: onCancel,
-            child: const Text("CANCEL EXTRACTION"),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildPreviewState(BuildContext context) {
-    final book = state.previewBook;
-    if (book == null) return const SizedBox.shrink();
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const CustomText("Verify Extracted Data", TextType.headlineMedium),
-        const SizedBox(height: 20),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: LightningBorderEffectType.thin.border(),
-                borderRadius: BorderRadius.circular(
-                  KaminariTheme.altBorderRadius,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  KaminariTheme.altBorderRadius,
-                ),
-                child: Image.network(
-                  book.coverUrl ?? '',
-                  width: 80,
-                  height: 110,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Image.asset(
-                    'assets/images/placeholder_book.png',
-                    width: 80,
-                    height: 110,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomText(book.title, TextType.titleMedium, maxLines: 2),
-                  const SizedBox(height: 4),
-                  CustomText(
-                    "Author: ${book.author}",
-                    TextType.bodyMedium,
-                    maxLines: 1,
-                  ),
-                  const SizedBox(height: 8),
-                  CustomText(
-                    "Chapters: ${book.chapters.length}",
-                    TextType.labelSmall,
-                    color: KaminariTheme.textSecondary,
-                  ),
-                  if (book.jlptLevel != null) ...[
-                    const SizedBox(height: 4),
-                    CustomText(
-                      "Difficulty: JLPT ${book.jlptLevel}",
-                      TextType.labelSmall,
-                      color: KaminariTheme.cyan,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        const CustomText(
-          "Synopsis",
-          TextType.labelSmall,
-          color: KaminariTheme.textTitle,
-        ),
-        const SizedBox(height: 6),
-        Container(
-          constraints: const BoxConstraints(maxHeight: 120),
-          child: SingleChildScrollView(
-            child: Text(
-              book.synopsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 13,
-                color: KaminariTheme.textSecondary,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        const CustomText(
-          "Select Book Type",
-          TextType.labelSmall,
-          color: KaminariTheme.textTitle,
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: SegmentedButton<BookType>(
-            segments: BookType.values
-                .where((t) => t != BookType.all)
-                .map(
-                  (t) => ButtonSegment<BookType>(value: t, label: Text(t.text)),
-                )
-                .toList(),
-            selected: {book.bookType},
-            onSelectionChanged: (selected) {
-              if (selected.isNotEmpty) {
-                onTypeChanged(selected.first);
-              }
-            },
-            showSelectedIcon: false,
-          ),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: onRetry,
-                child: const Text("RETRY AI"),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                onPressed: onConfirm,
-                child: const Text("CONFIRM"),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: TextButton(
-            onPressed: onCancel,
-            child: const Text("DISCARD & CLOSE"),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSuccessState(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(
-          Icons.check_circle_outline_rounded,
-          color: KaminariTheme.success,
-          size: 64,
-        ),
-        const SizedBox(height: 16),
-        const CustomText("Import Complete", TextType.headlineMedium),
-        const SizedBox(height: 12),
-        CustomText(
-          "\"${state.previewBook?.title ?? 'The book'}\" has been cataloged successfully. Background cache operations are preparing chapter structures.",
-          TextType.bodyMedium,
-          alignment: TextAlign.center,
-        ),
-        const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text("CLOSE WEBVIEW"),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFailureState(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(
-          Icons.error_outline_rounded,
-          color: KaminariTheme.error,
-          size: 64,
-        ),
-        const SizedBox(height: 16),
-        const CustomText("Operation Failed", TextType.headlineMedium),
-        const SizedBox(height: 12),
-        CustomText(
-          state.progressMessage,
-          TextType.bodyMedium,
-          alignment: TextAlign.center,
-        ),
-        const SizedBox(height: 32),
-        Row(
-          children: [
-            Expanded(
-              child: TextButton(
-                onPressed: onCancel,
-                child: const Text("ABANDON"),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                onPressed: onRetry,
-                child: const Text("RETRY"),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
   }
 }
 
