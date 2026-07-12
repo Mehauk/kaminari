@@ -55,6 +55,7 @@
 - [ ] find an actual place to put the archived books
 - [ ] deleting a book should be instant visually
 - [ ] relative scrollbar otherwise its always at the bottom
+- [ ] download images directly
 
 - [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
