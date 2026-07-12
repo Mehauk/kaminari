@@ -228,26 +228,31 @@ String generateContentExtractionJSPrompt(String urls, String selector) =>
             const res = await fetch(url);
             const html = await res.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
-            const children = Array.from(doc.querySelectorAll(selector)).flatMap(e => Array.from(e.children));
-            if (children) {
-              const lines = children
-                .map(function(c) {
-                  let text = c.textContent.trim();
-                  if ((text?.length ?? 0) > 0) return text;
-                  try {
-                    return c.querySelector('img')?.src ?? "";
-                  } catch {
-                    return "";
-                  }
-                })
-                .filter(t => t.length > 0);
+            const containers = Array.from(doc.querySelectorAll(selector));
+            let lines = [];
+            
+            for (const el of containers) {
+              const children = Array.from(el.children);
+              if (children.length > 0) {
+                const childrenLines = children
+                  .map(function(c) {
+                    let text = c.textContent.trim();
+                    if ((text?.length ?? 0) > 0) return text;
+                    try {
+                      return c.querySelector('img')?.src ?? "";
+                    } catch {
+                      return "";
+                    }
+                  })
+                  .filter(t => t.length > 0);
+                lines = lines.concat(childrenLines);
+              }
+              
               if (lines.length === 0 && el.textContent.trim().length > 0) {
                 lines.push(el.textContent.trim());
               }
-              results.push(lines);
-            } else {
-              results.push([]);
             }
+            results.push(lines);
           }
           ExtractionChannel.postMessage(JSON.stringify({ "contents": results }));
         } catch (e) {
