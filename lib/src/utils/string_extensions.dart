@@ -60,6 +60,77 @@ extension IsPunctuation on String {
 }
 
 extension JLPTEstimator on String {
+  double calculateJapaneseDifficulty() {
+    if (isEmpty) return 0.0;
+
+    int totalKana = 0;
+    int totalKanji = 0;
+    double accumulatedKanjiComplexity = 0.0;
+
+    int currentKanjiRun = 0;
+    int kanjiRunCount = 0;
+
+    // Always iterate CJK using .runes to safely handle 32-bit Unicode
+    for (final int rune in runes) {
+      final bool isKana = (rune >= 0x3040 && rune <= 0x30FF);
+      final bool isKanji =
+          (rune >= 0x4E00 && rune <= 0x9FFF) || // Standard CJK
+          (rune >= 0x3400 && rune <= 0x4DBF) || // Extension A
+          rune == 0x3005; // '々' iteration mark
+
+      if (isKanji) {
+        totalKanji++;
+        accumulatedKanjiComplexity += _getKanjiComplexity(rune);
+
+        if (currentKanjiRun == 0) kanjiRunCount++;
+        currentKanjiRun++;
+      } else if (isKana) {
+        totalKana++;
+        currentKanjiRun = 0;
+      } else {
+        // Punctuation, spaces, or Latin chars break a run,
+        // but don't inflate the Japanese character count.
+        currentKanjiRun = 0;
+      }
+    }
+
+    final int totalJapaneseChars = totalKanji + totalKana;
+    if (totalJapaneseChars == 0) return 0.0;
+
+    // 1. Density Score (0.0 - 5.0)
+    final double densityScore = (totalKanji / totalJapaneseChars) * 5.0;
+
+    // 2. Complexity Score (0.0 - 3.0)
+    final double avgComplexity = totalKanji > 0
+        ? (accumulatedKanjiComplexity / totalKanji)
+        : 0.0;
+    final double complexityScore = avgComplexity * 3.0;
+
+    // 3. Clustering Penalty (0.0 - 2.0)
+    double clusteringScore = 0.0;
+    if (totalKanji > 0 && kanjiRunCount > 0) {
+      final double avgRunLength = totalKanji / kanjiRunCount;
+      // Map an avg run of 1.0 -> 0pts, and an avg run of 5.0+ -> 2pts
+      clusteringScore = ((avgRunLength - 1.0) / 4.0).clamp(0.0, 1.0) * 2.0;
+    }
+
+    final double rawScore = densityScore + complexityScore + clusteringScore;
+
+    // Round to 1 decimal place and clamp to strict [0.0, 10.0]
+    return (rawScore.clamp(0.0, 10.0) * 10).round() / 10;
+  }
+
+  double _getKanjiComplexity(int rune) {
+    if (rune == 0x3005) return 0.05; // '々' is visually simple
+    if (rune < 0x4E00) return 0.85; // Extension A characters are rare/archaic
+
+    const int blockStart = 0x4E00; // '一'
+    const int blockEnd = 0x9FFF;
+
+    double normalized = (rune - blockStart) / (blockEnd - blockStart);
+    return normalized.clamp(0.0, 1.0);
+  }
+
   Future<String> get jlptEstimate async {
     final String text = this;
     final sentences = text
