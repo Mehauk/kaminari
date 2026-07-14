@@ -79,7 +79,7 @@
     - [x] calculate show order (considering kanji level)
       - [x] Ignore words for which reading/meaning cannot be found
     - [x] implement daily streak and words learnt
-    - [ ] prep only shows for non english?
+    - [ ] prep only shows for non english (including in reader)
 
 - [ ] complete book features
   - [x] eng dict
