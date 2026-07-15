@@ -55,6 +55,7 @@
 - [ ] deleting a book should be instant visually
 - [ ] relative scrollbar otherwise its always at the bottom
 - [ ] download images directly
+- [ ] Pre download images in chapters
 
 - [ ] ui fixes
   - [ ] select book type in importer overlay
