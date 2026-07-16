@@ -288,75 +288,37 @@ class _KanjiCard extends StatelessWidget {
     print("on: $onReadings");
     print("kun: $kunReadings");
 
-    String matchedOn =
-        onReadings
-            .where(
-              (r) =>
-                  reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
-            )
-            .fold<String?>(
-              null,
-              (longest, current) =>
-                  (longest == null ||
-                      current.replaceAll("-", "").length >
-                          longest.replaceAll("-", "").length)
-                  ? current
-                  : longest,
-            ) ??
-        '';
+    String? matchedOn = onReadings
+        .where(
+          (r) => reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
+        )
+        .longest;
 
-    String matchedKun =
-        kunReadings
-            .where(
-              (r) =>
-                  reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
-            )
-            .fold<String?>(
-              null,
-              (longest, current) =>
-                  (longest == null ||
-                      current.replaceAll("-", "").length >
-                          longest.replaceAll("-", "").length)
-                  ? current
-                  : longest,
-            ) ??
-        '';
+    String? matchedKun = kunReadings
+        .where(
+          (r) => reading.contains(r.replaceAll('-', '').replaceAll(".", "")),
+        )
+        .longest;
 
-    String matchedInverseOn =
-        onReadings
-            .where(
-              (r) => reading.contains(
-                JpTransliterate.katakanaToHiragana(
-                  r,
-                ).replaceAll('-', '').replaceAll(".", ""),
-              ),
-            )
-            .fold<String?>(
-              null,
-              (longest, current) =>
-                  (longest == null || current.length > longest.length)
-                  ? current
-                  : longest,
-            ) ??
-        '';
+    String? matchedInverseOn = onReadings
+        .where(
+          (r) => reading.contains(
+            JpTransliterate.katakanaToHiragana(
+              r,
+            ).replaceAll('-', '').replaceAll(".", ""),
+          ),
+        )
+        .longest;
 
-    String matchedInverseKun =
-        kunReadings
-            .where(
-              (r) => reading.contains(
-                JpTransliterate.hiraganaToKatakana(
-                  r,
-                ).replaceAll('-', '').replaceAll(".", ""),
-              ),
-            )
-            .fold<String?>(
-              null,
-              (longest, current) =>
-                  (longest == null || current.length > longest.length)
-                  ? current
-                  : longest,
-            ) ??
-        '';
+    String? matchedInverseKun = kunReadings
+        .where(
+          (r) => reading.contains(
+            JpTransliterate.hiraganaToKatakana(
+              r,
+            ).replaceAll('-', '').replaceAll(".", ""),
+          ),
+        )
+        .longest;
 
     // take longest match on -> kun -> onInverse -> kunInverse
     final matches = [
@@ -365,15 +327,8 @@ class _KanjiCard extends StatelessWidget {
       matchedInverseOn,
       matchedInverseKun,
     ];
-    String longestMatch =
-        matches.fold<String?>(
-          null,
-          (longest, current) =>
-              (longest == null || current.length > longest.length)
-              ? current
-              : longest,
-        ) ??
-        matchedOn;
+
+    String longestMatch = matches.longest ?? '';
 
     // print(matchedOn);
     // print(matchedKun);
@@ -656,4 +611,16 @@ Iterable<String>? getVariants(String kana) {
   if (variants == null) return null;
 
   return variants.map((v) => prefix + v + suffix);
+}
+
+extension on Iterable<String?> {
+  String? get longest => fold(
+    null,
+    (longest, current) =>
+        (longest == null ||
+            (current ?? '').replaceAll("-", "").length >
+                longest.replaceAll("-", "").length)
+        ? current
+        : longest,
+  );
 }
