@@ -151,6 +151,8 @@ class _ImportingProgressOverlay extends StatelessWidget {
         onTypeChanged: onTypeChanged,
         onConfirm: onConfirm,
         onRetry: onRetry,
+        onRetryMetadata: webviewCubit.handleImportMetadata,
+        onRetryChapters: webviewCubit.handleImportChapters,
         onCancel: onCancel,
         onHide: onHide,
         onMissingChapters: webviewCubit.resumeImport,
@@ -163,8 +165,14 @@ class _ImportingProgressOverlay extends StatelessWidget {
       ),
       ImportStatus.failure => ImportFailureView(
         message: state.progressMessage,
-        onRetry: onRetry,
         onCancel: onCancel,
+        onRetry: onRetry,
+        onRetryMetadata: webviewCubit.hasSelectors
+            ? webviewCubit.handleImportMetadata
+            : null,
+        onRetryChapters: webviewCubit.hasSelectors
+            ? webviewCubit.handleImportChapters
+            : null,
       ),
       _ => const SizedBox.shrink(),
     };
