@@ -44,6 +44,7 @@
 - [x] scroll opening a new chapt3r should cause downloads
 - [x] hide importer, when import is clicked again fomr the same page, just reopen it in same state
 - [-] separate retying of chapters and retrying of metadata
+- [x] download images directly
 - [ ] novelight
 - [ ] retry or re-download shold give the old selectors as a comparison
 - [ ] persist linebreaks/spacing?
@@ -54,7 +55,6 @@
 - [ ] find an actual place to put the archived books
 - [ ] deleting a book should be instant visually
 - [ ] relative scrollbar otherwise its always at the bottom
-- [ ] download images directly
 - [ ] Pre download images in chapters
 
 - [ ] ui fixes
