@@ -1,6 +1,21 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+
+/// A custom CacheManager dedicated to book covers with a highly persistent lifecycle.
+class BookCoverCacheManager {
+  static const String key = 'book_covers_cache';
+
+  static final CacheManager instance = CacheManager(
+    Config(
+      key,
+      stalePeriod: const Duration(days: 365 * 100),
+      maxNrOfCacheObjects: 0x7fffffffffffffff,
+    ),
+  );
+}
 
 class BookCover extends StatelessWidget {
   final String? coverUrl;
@@ -28,13 +43,15 @@ class BookCover extends StatelessWidget {
         coverUrl!.startsWith("http://") || coverUrl!.startsWith("https://");
 
     if (isNetworkImage) {
-      return Image.network(
-        coverUrl!,
+      return CachedNetworkImage(
+        imageUrl: coverUrl!,
+        cacheManager: BookCoverCacheManager.instance,
         width: width,
         height: height,
         fit: fit,
         alignment: alignment,
-        errorBuilder: (_, _, _) => _buildPlaceholder(),
+        placeholder: (_, _) => _buildPlaceholder(),
+        errorWidget: (_, _, _) => _buildPlaceholder(),
       );
     } else {
       // Cleans virtual prefix schemas if stored in DB
