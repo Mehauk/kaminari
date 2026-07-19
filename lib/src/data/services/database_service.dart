@@ -585,7 +585,7 @@ class DatabaseService {
         if (coverUrl != null && coverUrl.isNotEmpty) {
           if (coverUrl.startsWith('http://') ||
               coverUrl.startsWith('https://')) {
-            // Evict remote cached cover image
+            // Evict remote cached cover image from persistent cache
             await BookCoverCacheManager.instance.removeFile(coverUrl);
           } else if (!coverUrl.startsWith('assets/')) {
             // Clean up physically stored files (e.g. from local EPUB imports)

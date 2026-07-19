@@ -114,6 +114,7 @@ class ImportPreviewView extends StatelessWidget {
                   width: 80,
                   height: 110,
                   fit: BoxFit.cover,
+                  cacheImage: false,
                 ),
               ),
             ),
