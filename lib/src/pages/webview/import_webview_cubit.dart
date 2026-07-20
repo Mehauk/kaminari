@@ -65,6 +65,7 @@ abstract class WebviewState with _$WebviewState {
     @Default(0.0) double importProgress,
     @Default('') String progressMessage,
     BookDetails? previewBook,
+    @Default({}) Set<String> unpinnedFields,
   }) = _WebviewState;
 }
 
@@ -80,10 +81,7 @@ class WebviewCubit extends Cubit<WebviewState> {
   String? _lastSuccessfulPaginationUrl;
   int _pagesParsed = 0;
 
-  /// Exposes a reactive boolean identifying if more than one page of chapters was successfully parsed.
   bool get showMissingChapters => _pagesParsed > 1;
-
-  /// Identifies if the parser currently holds active selectors in memory.
   bool get hasSelectors => _lastSelectors != null;
 
   WebviewCubit({
@@ -139,6 +137,16 @@ class WebviewCubit extends Cubit<WebviewState> {
         },
       )
       ..loadRequest(Uri.parse(initialUrl ?? 'https://syosetu.com/'));
+  }
+
+  void togglePinField(String field) {
+    final updated = Set<String>.from(state.unpinnedFields);
+    if (updated.contains(field)) {
+      updated.remove(field);
+    } else {
+      updated.add(field);
+    }
+    emit(state.copyWith(unpinnedFields: updated));
   }
 
   void clearSelection() {
@@ -312,6 +320,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         previewBook: null,
         importProgress: 0.0,
         progressMessage: '',
+        unpinnedFields: {},
       ),
     );
   }
@@ -347,6 +356,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         previewBook: null,
         importProgress: 0.0,
         progressMessage: '',
+        unpinnedFields: {},
       ),
     );
   }
@@ -355,8 +365,37 @@ class WebviewCubit extends Cubit<WebviewState> {
     emit(state.copyWith(importStatus: ImportStatus.notImported));
   }
 
+  List<String> _buildAvoidSelectorsList({bool retryingChapters = false}) {
+    if (_lastSelectors == null) return [];
+
+    final avoid = <String>[];
+    final last = _lastSelectors!;
+
+    if (state.unpinnedFields.contains('title')) {
+      avoid.add(last.title);
+    }
+    if (state.unpinnedFields.contains('author')) {
+      avoid.add(last.author);
+    }
+    if (state.unpinnedFields.contains('synopsis')) {
+      avoid.add(last.synopsis);
+    }
+    if (state.unpinnedFields.contains('coverUrl') && last.coverUrl != null) {
+      avoid.add(last.coverUrl!);
+    }
+    if (state.unpinnedFields.contains('jlptLevel') && last.jlptLevel != null) {
+      avoid.add(last.jlptLevel!);
+    }
+    if (state.unpinnedFields.contains('chapters') || retryingChapters) {
+      avoid.add(last.individualChapterDetails.base);
+      avoid.add(last.individualChapterDetails.url);
+      avoid.add(last.individualChapterDetails.title);
+    }
+
+    return avoid.where((s) => s.isNotEmpty && s != "N/A").toSet().toList();
+  }
+
   Future<void> handleImport({bool forceReload = false}) async {
-    // Check if we can reopen a hidden preview on the same page (unless forcing a reload)
     if (!forceReload && state.previewBook != null) {
       final normCurrent = state.url.toLowerCase().trim().replaceAll(
         RegExp(r'/+$'),
@@ -371,6 +410,8 @@ class WebviewCubit extends Cubit<WebviewState> {
         return;
       }
     }
+
+    final previousBook = state.previewBook;
 
     emit(
       state.copyWith(
@@ -411,7 +452,8 @@ class WebviewCubit extends Cubit<WebviewState> {
         ),
       );
 
-      final prompt = buildDiscoveryAIPrompt(miniTree);
+      final avoid = _buildAvoidSelectorsList();
+      final prompt = buildDiscoveryAIPrompt(miniTree, avoidSelectors: avoid);
 
       final fullResponse = await extractorBuilder.buildBookExtractorSelectors(
         origin,
@@ -427,18 +469,66 @@ class WebviewCubit extends Cubit<WebviewState> {
         ),
       );
 
-      final selectors = LlmService.extractJsonFromResponse(
+      var selectors = LlmService.extractJsonFromResponse(
         fullResponse,
         BookDetailsExtractor.fromJson,
       );
 
-      _lastSelectors = selectors; // Save selectors for resuming later
+      // Restore baseline selectors for any field we are NOT retrying
+      if (_lastSelectors != null) {
+        selectors = selectors.copyWith(
+          title: !state.unpinnedFields.contains('title')
+              ? _lastSelectors!.title
+              : selectors.title,
+          author: !state.unpinnedFields.contains('author')
+              ? _lastSelectors!.author
+              : selectors.author,
+          synopsis: !state.unpinnedFields.contains('synopsis')
+              ? _lastSelectors!.synopsis
+              : selectors.synopsis,
+          coverUrl: !state.unpinnedFields.contains('coverUrl')
+              ? _lastSelectors!.coverUrl
+              : selectors.coverUrl,
+          jlptLevel: !state.unpinnedFields.contains('jlptLevel')
+              ? _lastSelectors!.jlptLevel
+              : selectors.jlptLevel,
+          individualChapterDetails: !state.unpinnedFields.contains('chapters')
+              ? _lastSelectors!.individualChapterDetails
+              : selectors.individualChapterDetails,
+          nextPageUrl: !state.unpinnedFields.contains('chapters')
+              ? _lastSelectors!.nextPageUrl
+              : selectors.nextPageUrl, // Preserves working pagination selector
+        );
+      }
 
-      final bookData = await _extractBookMetadata(selectors);
+      _lastSelectors = selectors;
 
-      print("${bookData.coverUrl}STUPIDO");
+      var bookData = await _extractBookMetadata(selectors);
 
-      // Navigate back to the starting URL if the crawler moved us
+      // Keep the original metadata value if we chose NOT to retry
+      if (previousBook != null) {
+        bookData = bookData.copyWith(
+          title: !state.unpinnedFields.contains('title')
+              ? previousBook.title
+              : bookData.title,
+          author: !state.unpinnedFields.contains('author')
+              ? previousBook.author
+              : bookData.author,
+          synopsis: !state.unpinnedFields.contains('synopsis')
+              ? previousBook.synopsis
+              : bookData.synopsis,
+          coverUrl: !state.unpinnedFields.contains('coverUrl')
+              ? previousBook.coverUrl
+              : bookData.coverUrl,
+          jlptLevel: !state.unpinnedFields.contains('jlptLevel')
+              ? previousBook.jlptLevel
+              : bookData.jlptLevel,
+          chapters: !state.unpinnedFields.contains('chapters')
+              ? previousBook.chapters
+              : bookData.chapters,
+        );
+      }
+
       final currentUrl = await controller.currentUrl();
       if (startingUrl.isNotEmpty && currentUrl != startingUrl) {
         _pageLoadCompleter = Completer<void>();
@@ -454,6 +544,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           importProgress: 1.0,
           progressMessage: "Extraction parsed successfully.",
           previewBook: bookData,
+          unpinnedFields: {}, // Lock all fields back up upon preview render
         ),
       );
     } catch (e, stack) {
@@ -470,9 +561,10 @@ class WebviewCubit extends Cubit<WebviewState> {
     }
   }
 
-  /// Refetches only metadata selectors, reusing existing chapter selectors.
   Future<void> handleImportMetadata() async {
     if (state.previewBook == null) return;
+
+    final previousBook = state.previewBook!;
 
     emit(
       state.copyWith(
@@ -511,18 +603,43 @@ class WebviewCubit extends Cubit<WebviewState> {
         ),
       );
 
-      final prompt = buildDiscoveryAIPrompt(miniTree);
+      final avoid = _buildAvoidSelectorsList();
+      final prompt = buildDiscoveryAIPrompt(miniTree, avoidSelectors: avoid);
 
       final fullResponse = await extractorBuilder.buildBookExtractorSelectors(
         origin,
         prompt,
-        forceReload: true, // Forces fresh AI selector generation
+        forceReload: true,
       );
 
-      final selectors = LlmService.extractJsonFromResponse(
+      var selectors = LlmService.extractJsonFromResponse(
         fullResponse,
         BookDetailsExtractor.fromJson,
       );
+
+      if (_lastSelectors != null) {
+        selectors = selectors.copyWith(
+          title: !state.unpinnedFields.contains('title')
+              ? _lastSelectors!.title
+              : selectors.title,
+          author: !state.unpinnedFields.contains('author')
+              ? _lastSelectors!.author
+              : selectors.author,
+          synopsis: !state.unpinnedFields.contains('synopsis')
+              ? _lastSelectors!.synopsis
+              : selectors.synopsis,
+          coverUrl: !state.unpinnedFields.contains('coverUrl')
+              ? _lastSelectors!.coverUrl
+              : selectors.coverUrl,
+          jlptLevel: !state.unpinnedFields.contains('jlptLevel')
+              ? _lastSelectors!.jlptLevel
+              : selectors.jlptLevel,
+          individualChapterDetails: _lastSelectors!
+              .individualChapterDetails, // Preserves chapters selector
+          nextPageUrl: _lastSelectors!
+              .nextPageUrl, // Preserves working pagination selector
+        );
+      }
 
       _lastSelectors = selectors;
 
@@ -533,7 +650,6 @@ class WebviewCubit extends Cubit<WebviewState> {
         ),
       );
 
-      // Execute queries only for metadata fields on the current WebView frame
       final String metadataJs =
           """
         (async () => {
@@ -592,25 +708,35 @@ class WebviewCubit extends Cubit<WebviewState> {
       String? coverUrl = response['coverUrl'];
       String? jlptLevel = response['jlptLevel'];
 
-      if (title.isEmpty) title = state.previewBook!.title;
-      if (author.isEmpty) author = state.previewBook!.author;
-      if (synopsis.isEmpty) synopsis = state.previewBook!.synopsis;
+      if (title.isEmpty) title = previousBook.title;
+      if (author.isEmpty) author = previousBook.author;
+      if (synopsis.isEmpty) synopsis = previousBook.synopsis;
 
-      if (state.previewBook!.language == "ja" &&
+      if (previousBook.language == "ja" &&
           (jlptLevel == null || jlptLevel.isEmpty)) {
         jlptLevel = await synopsis.jlptEstimate;
       }
 
-      final updatedBook = state.previewBook!.copyWith(
-        title: title,
-        author: author,
-        synopsis: synopsis,
-        coverUrl: (coverUrl != null && coverUrl.isNotEmpty)
-            ? coverUrl
-            : state.previewBook!.coverUrl,
-        jlptLevel: (jlptLevel != null && jlptLevel.isNotEmpty)
-            ? jlptLevel
-            : state.previewBook!.jlptLevel,
+      final updatedBook = previousBook.copyWith(
+        title: !state.unpinnedFields.contains('title')
+            ? previousBook.title
+            : title,
+        author: !state.unpinnedFields.contains('author')
+            ? previousBook.author
+            : author,
+        synopsis: !state.unpinnedFields.contains('synopsis')
+            ? previousBook.synopsis
+            : synopsis,
+        coverUrl: !state.unpinnedFields.contains('coverUrl')
+            ? previousBook.coverUrl
+            : ((coverUrl != null && coverUrl.isNotEmpty)
+                  ? coverUrl
+                  : previousBook.coverUrl),
+        jlptLevel: !state.unpinnedFields.contains('jlptLevel')
+            ? previousBook.jlptLevel
+            : ((jlptLevel != null && jlptLevel.isNotEmpty)
+                  ? jlptLevel
+                  : previousBook.jlptLevel),
       );
 
       emit(
@@ -619,6 +745,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           importProgress: 1.0,
           progressMessage: "Metadata refreshed.",
           previewBook: updatedBook,
+          unpinnedFields: {}, // Lock back up
         ),
       );
     } catch (e, stack) {
@@ -632,11 +759,9 @@ class WebviewCubit extends Cubit<WebviewState> {
     }
   }
 
-  /// Re-runs the entire extraction process (including metadata and pagination) from scratch but preserves previously verified metadata.
   Future<void> handleImportChapters() async {
     if (state.previewBook == null) return;
 
-    // Cache the verified metadata fields locally
     final originalMetadata = state.previewBook!;
 
     emit(
@@ -644,7 +769,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         importStatus: ImportStatus.extracting,
         importProgress: 0.1,
         progressMessage: "Minifying web structure...",
-        previewBook: null, // Loading indicator fallback
+        previewBook: null,
       ),
     );
 
@@ -678,12 +803,14 @@ class WebviewCubit extends Cubit<WebviewState> {
         ),
       );
 
-      final prompt = buildDiscoveryAIPrompt(miniTree);
+      // Force-avoid previous failed chapter selectors
+      final avoid = _buildAvoidSelectorsList(retryingChapters: true);
+      final prompt = buildDiscoveryAIPrompt(miniTree, avoidSelectors: avoid);
 
       final fullResponse = await extractorBuilder.buildBookExtractorSelectors(
         origin,
         prompt,
-        forceReload: true, // Forces fresh AI selector generation
+        forceReload: true,
       );
 
       emit(
@@ -694,16 +821,26 @@ class WebviewCubit extends Cubit<WebviewState> {
         ),
       );
 
-      final selectors = LlmService.extractJsonFromResponse(
+      var selectors = LlmService.extractJsonFromResponse(
         fullResponse,
         BookDetailsExtractor.fromJson,
       );
 
-      _lastSelectors = selectors; // Save selectors for resuming later
+      // Lock current metadata selectors exactly as they are; onlyChapters selector will rebuild
+      if (_lastSelectors != null) {
+        selectors = selectors.copyWith(
+          title: _lastSelectors!.title,
+          author: _lastSelectors!.author,
+          synopsis: _lastSelectors!.synopsis,
+          coverUrl: _lastSelectors!.coverUrl,
+          jlptLevel: _lastSelectors!.jlptLevel,
+        );
+      }
+
+      _lastSelectors = selectors;
 
       final freshBook = await _extractBookMetadata(selectors);
 
-      // Navigate back to starting URL if crawler moved
       final currentUrl = await controller.currentUrl();
       if (startingUrl.isNotEmpty && currentUrl != startingUrl) {
         _pageLoadCompleter = Completer<void>();
@@ -713,13 +850,14 @@ class WebviewCubit extends Cubit<WebviewState> {
         await _injectScanner();
       }
 
-      // Merge: Overwrite freshBook's scraped metadata with the previously confirmed metadata
+      // Preserves metadata exactly while cleanly replacing chapters
       final mergedBook = freshBook.copyWith(
         title: originalMetadata.title,
         author: originalMetadata.author,
         synopsis: originalMetadata.synopsis,
         coverUrl: originalMetadata.coverUrl,
         jlptLevel: originalMetadata.jlptLevel,
+        chapters: freshBook.chapters,
       );
 
       emit(
@@ -728,6 +866,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           importProgress: 1.0,
           progressMessage: "Chapters refreshed.",
           previewBook: mergedBook,
+          unpinnedFields: {}, // Lock back up
         ),
       );
     } catch (e, stack) {
@@ -741,11 +880,9 @@ class WebviewCubit extends Cubit<WebviewState> {
     }
   }
 
-  /// Continues pulling missing chapters starting from where the previous execution was interrupted, while preserving previously verified metadata.
   Future<void> resumeImport() async {
     if (state.previewBook == null || _lastSelectors == null) return;
 
-    // Cache the verified metadata and chapters locally
     final originalMetadata = state.previewBook!;
 
     emit(
@@ -753,13 +890,12 @@ class WebviewCubit extends Cubit<WebviewState> {
         importStatus: ImportStatus.extracting,
         importProgress: 0.5,
         progressMessage: "Resuming chapter extraction...",
-        previewBook: null, // Loading indicator fallback
+        previewBook: null,
       ),
     );
 
     try {
       final startingUrl = (await controller.currentUrl()) ?? state.url;
-      // Prioritize the last failed URL, then the last successfully accessed URL, or fallback to original book URL
       final startUrl =
           _lastFailedUrl ??
           _lastSuccessfulPaginationUrl ??
@@ -771,7 +907,6 @@ class WebviewCubit extends Cubit<WebviewState> {
         startUrl: startUrl,
       );
 
-      // Navigate back to the starting URL if the crawler moved us
       final currentUrl = await controller.currentUrl();
       if (startingUrl.isNotEmpty && currentUrl != startingUrl) {
         _pageLoadCompleter = Completer<void>();
@@ -781,13 +916,25 @@ class WebviewCubit extends Cubit<WebviewState> {
         await _injectScanner();
       }
 
-      // Merge: Overwrite freshBook's scraped metadata with the previously confirmed metadata
       final mergedBook = freshBook.copyWith(
-        title: originalMetadata.title,
-        author: originalMetadata.author,
-        synopsis: originalMetadata.synopsis,
-        coverUrl: originalMetadata.coverUrl,
-        jlptLevel: originalMetadata.jlptLevel,
+        title: !state.unpinnedFields.contains('title')
+            ? originalMetadata.title
+            : freshBook.title,
+        author: !state.unpinnedFields.contains('author')
+            ? originalMetadata.author
+            : freshBook.author,
+        synopsis: !state.unpinnedFields.contains('synopsis')
+            ? originalMetadata.synopsis
+            : freshBook.synopsis,
+        coverUrl: !state.unpinnedFields.contains('coverUrl')
+            ? originalMetadata.coverUrl
+            : freshBook.coverUrl,
+        jlptLevel: !state.unpinnedFields.contains('jlptLevel')
+            ? originalMetadata.jlptLevel
+            : freshBook.jlptLevel,
+        chapters: !state.unpinnedFields.contains('chapters')
+            ? originalMetadata.chapters
+            : freshBook.chapters,
         bookType: originalMetadata.bookType,
       );
 
@@ -797,6 +944,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           importProgress: 1.0,
           progressMessage: "Resumed extraction parsed successfully.",
           previewBook: mergedBook,
+          unpinnedFields: {}, // Lock back up
         ),
       );
     } catch (e) {
@@ -906,12 +1054,10 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
     }
 
-    // Reset pagination counter only on fresh runs
     if (existingChapters == null || existingChapters.isEmpty) {
       _pagesParsed = 0;
     }
 
-    // If starting from a specific continuation URL, load it into the WebView first
     if (startUrl != null && startUrl.isNotEmpty) {
       print("[WebViewCubit] Loading index progression page: $startUrl");
       _pageLoadCompleter = Completer<void>();
@@ -929,7 +1075,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       chaptersLoadingIIFE(
         ChapterInfoExtractor.fromJson(jsonCMap),
         nextPageSelector ?? 'null',
-        initialIndex, // Pass our start index alignment
+        initialIndex,
       ),
     );
 
@@ -958,11 +1104,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       String? currentLastSuccessfulUrl =
           response['lastSuccessfulUrl'] as String?;
 
-      // Fast fetch failed (likely on a cross-origin transition page).
-      // We navigate WebView sequentially to cross the domain boundary, extract,
-      // and re-trigger fast fetch sequentially from the new loaded context.
       while (currentFailedUrl != null && currentFailedUrl.isNotEmpty) {
-        // Sequential pacing to avoid webserver rate-limiting/DDoS alerts on hard navigations
         await Future.delayed(const Duration(milliseconds: 1200));
 
         print(
@@ -980,17 +1122,15 @@ class WebviewCubit extends Cubit<WebviewState> {
         await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
         _pageLoadCompleter = null;
 
-        // Allow some time for layout elements to settle
         await Future.delayed(const Duration(milliseconds: 1000));
         await _injectScanner();
 
-        // Re-run the fast fetch script *from the newly loaded domain's context*
         final nextJs = generateBookExtrationJSPrompt(
           reMap,
           chaptersLoadingIIFE(
             ChapterInfoExtractor.fromJson(jsonCMap),
             nextPageSelector ?? 'null',
-            accumulatedChapters.length, // Resume fast index alignment
+            accumulatedChapters.length,
           ),
         );
 
@@ -1014,7 +1154,6 @@ class WebviewCubit extends Cubit<WebviewState> {
         accumulatedChapters.addAll(newChapters);
         _pagesParsed += (nextResponse['pagesParsed'] as num? ?? 0).toInt();
 
-        // Update target failed URL (will continue in same-origin fetch unless it runs into a separate boundary)
         currentFailedUrl = nextResponse['failedUrl'] as String?;
         if (nextResponse['lastSuccessfulUrl'] != null) {
           currentLastSuccessfulUrl =

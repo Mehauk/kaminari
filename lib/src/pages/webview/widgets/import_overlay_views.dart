@@ -56,7 +56,7 @@ class ImportLoadingView extends StatelessWidget {
   }
 }
 
-class ImportPreviewView extends StatelessWidget {
+class ImportPreviewView extends StatefulWidget {
   final BookDetails book;
   final ValueChanged<BookType> onTypeChanged;
   final VoidCallback onConfirm;
@@ -67,6 +67,8 @@ class ImportPreviewView extends StatelessWidget {
   final VoidCallback? onHide;
   final VoidCallback? onMissingChapters;
   final bool showMissingChaptersBtn;
+  final Set<String>? unpinnedFields;
+  final ValueChanged<String>? onTogglePin;
 
   const ImportPreviewView({
     super.key,
@@ -80,232 +82,422 @@ class ImportPreviewView extends StatelessWidget {
     this.onHide,
     this.onMissingChapters,
     this.showMissingChaptersBtn = false,
+    this.unpinnedFields,
+    this.onTogglePin,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final bool showSeparatedRetries =
-        onRetryMetadata != null && onRetryChapters != null;
+  State<ImportPreviewView> createState() => _ImportPreviewViewState();
+}
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+class _ImportPreviewViewState extends State<ImportPreviewView> {
+  String? _errorMessage;
+
+  bool _isFieldPinned(String fieldKey) {
+    if (widget.unpinnedFields == null) return true; // Pin by default
+    return !widget.unpinnedFields!.contains(fieldKey);
+  }
+
+  void _validateAndRun(
+    List<String> fieldKeys,
+    VoidCallback action,
+    String errorExplanation,
+  ) {
+    final anyUnpinned = fieldKeys.any((key) => !_isFieldPinned(key));
+
+    if (!anyUnpinned) {
+      setState(() {
+        _errorMessage = errorExplanation;
+      });
+      Future.delayed(const Duration(seconds: 4), () {
+        if (mounted) {
+          setState(() {
+            _errorMessage = null;
+          });
+        }
+      });
+    } else {
+      setState(() {
+        _errorMessage = null;
+      });
+      action();
+    }
+  }
+
+  Widget _buildLockableField({
+    required String fieldKey,
+    required Widget child,
+  }) {
+    if (widget.onTogglePin == null) return child;
+    final isPinned = _isFieldPinned(fieldKey);
+    return Row(
       children: [
-        const CustomText("Verify Extracted Data", TextType.headlineMedium),
-        const SizedBox(height: 20),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: KaminariTheme.surfaceTint.withAlpha(30),
-                ),
-                borderRadius: BorderRadius.circular(
-                  KaminariTheme.altBorderRadius,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  KaminariTheme.altBorderRadius,
-                ),
-                child: BookCover(
-                  coverUrl: book.coverUrl,
-                  width: 80,
-                  height: 110,
-                  fit: BoxFit.cover,
-                  cacheImage: false,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomText(book.title, TextType.titleMedium, maxLines: 2),
-                  const SizedBox(height: 4),
-                  CustomText(
-                    "Author: ${book.author}",
-                    TextType.bodyMedium,
-                    maxLines: 1,
-                  ),
-                  const SizedBox(height: 8),
-                  CustomText(
-                    "Chapters: ${book.chapters.length}",
-                    TextType.labelSmall,
-                    color: KaminariTheme.textSecondary,
-                  ),
-                  if (book.jlptLevel != null) ...[
-                    const SizedBox(height: 4),
-                    CustomText(
-                      "Difficulty: JLPT ${book.jlptLevel}",
-                      TextType.labelSmall,
-                      color: KaminariTheme.cyan,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+        Expanded(child: child),
+        const SizedBox(width: 8),
+        IconButton(
+          constraints: const BoxConstraints(),
+          padding: EdgeInsets.zero,
+          icon: Icon(
+            isPinned ? Icons.lock : Icons.lock_open_outlined,
+            size: 16,
+            color: isPinned
+                ? KaminariTheme.cyan
+                : KaminariTheme.textSecondary.withAlpha(120),
+          ),
+          onPressed: () => widget.onTogglePin!(fieldKey),
         ),
-        const SizedBox(height: 20),
-        const CustomText(
-          "Synopsis",
-          TextType.labelSmall,
-          color: KaminariTheme.textTitle,
-        ),
-        const SizedBox(height: 6),
-        Container(
-          constraints: const BoxConstraints(maxHeight: 120),
-          child: SingleChildScrollView(
-            child: Text(
-              book.synopsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 13,
-                color: KaminariTheme.textSecondary,
-              ),
-            ),
-          ),
-        ),
-
-        // Structured chapter sequence preview (first, gap, last) with resume options
-        _buildChapterSequenceSection(),
-
-        const SizedBox(height: 20),
-        const CustomText(
-          "Select Book Type",
-          TextType.labelSmall,
-          color: KaminariTheme.textTitle,
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: SegmentedButton<BookType>(
-            segments: BookType.values
-                .where((t) => t != BookType.all)
-                .map(
-                  (t) =>
-                      ButtonSegment<BookType>(value: t, label: Text(t.short)),
-                )
-                .toList(),
-            selected: {book.bookType},
-            onSelectionChanged: (selected) {
-              if (selected.isNotEmpty) {
-                onTypeChanged(selected.first);
-              }
-            },
-            showSelectedIcon: false,
-          ),
-        ),
-        const SizedBox(height: 24),
-        if (showSeparatedRetries) ...[
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onRetryMetadata,
-                  child: const Text("RETRY METADATA AI"),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onRetryChapters,
-                  child: const Text("RETRY CHAPTERS AI"),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onConfirm,
-              child: const Text("CONFIRM"),
-            ),
-          ),
-        ] else ...[
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onRetry,
-                  child: Text(
-                    book.source == "Local EPUB" ? "RE-SELECT FILE" : "RETRY AI",
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: onConfirm,
-                  child: const Text("CONFIRM"),
-                ),
-              ),
-            ],
-          ),
-        ],
-        const SizedBox(height: 8),
-        if (onHide != null)
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onHide,
-                  child: const Text("HIDE"),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextButton(
-                  onPressed: onCancel,
-                  child: const Text("DISCARD & CLOSE"),
-                ),
-              ),
-            ],
-          )
-        else
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: onCancel,
-              child: const Text("DISCARD & CLOSE"),
-            ),
-          ),
       ],
     );
   }
 
-  Widget _buildChapterSequenceSection() {
-    if (book.chapters.isEmpty) return const SizedBox.shrink();
+  @override
+  Widget build(BuildContext context) {
+    final bool showSeparatedRetries = widget.onRetryMetadata != null;
 
-    final firstCh = book.chapters.first;
-    final inBetweenCount = book.chapters.length - 1;
+    final isCoverPinned = _isFieldPinned('coverUrl');
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(KaminariTheme.borderRadius),
+        border: Border.all(
+          color: _errorMessage != null
+              ? KaminariTheme.error
+              : Colors.transparent,
+          width: _errorMessage != null ? 2.0 : 0.0,
+        ),
+      ),
+      padding: _errorMessage != null
+          ? const EdgeInsets.all(8.0)
+          : EdgeInsets.zero,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CustomText("Verify Extracted Data", TextType.headlineMedium),
+
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: KaminariTheme.error.withAlpha(25),
+                borderRadius: BorderRadius.circular(
+                  KaminariTheme.altBorderRadius,
+                ),
+                border: Border.all(color: KaminariTheme.error.withAlpha(80)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: KaminariTheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: CustomText(
+                      _errorMessage!,
+                      TextType.labelSmall,
+                      color: KaminariTheme.error,
+                      fontSize: 12,
+                      maxLines: 3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: KaminariTheme.surfaceTint.withAlpha(30),
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    KaminariTheme.altBorderRadius,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    KaminariTheme.altBorderRadius,
+                  ),
+                  child: Stack(
+                    children: [
+                      BookCover(
+                        coverUrl: widget.book.coverUrl,
+                        width: 80,
+                        height: 110,
+                        fit: BoxFit.cover,
+                        cacheImage: false,
+                      ),
+                      if (widget.onTogglePin != null)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => widget.onTogglePin!('coverUrl'),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withAlpha(180),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isCoverPinned
+                                    ? Icons.lock
+                                    : Icons.lock_open_outlined,
+                                size: 14,
+                                color: isCoverPinned
+                                    ? KaminariTheme.cyan
+                                    : Colors.white70,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLockableField(
+                      fieldKey: 'title',
+                      child: CustomText(
+                        widget.book.title,
+                        TextType.titleMedium,
+                        maxLines: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    _buildLockableField(
+                      fieldKey: 'author',
+                      child: CustomText(
+                        "Author: ${widget.book.author}",
+                        TextType.bodyMedium,
+                        maxLines: 1,
+                      ),
+                    ),
+
+                    if (widget.book.jlptLevel != null) ...[
+                      const SizedBox(height: 4),
+                      _buildLockableField(
+                        fieldKey: 'jlptLevel',
+                        child: CustomText(
+                          "Difficulty: JLPT ${widget.book.jlptLevel}",
+                          TextType.labelSmall,
+                          color: KaminariTheme.cyan,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildLockableField(
+            fieldKey: 'synopsis',
+            child: const CustomText(
+              "Synopsis",
+              TextType.labelSmall,
+              color: KaminariTheme.textTitle,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 120),
+            child: SingleChildScrollView(
+              child: Text(
+                widget.book.synopsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 13,
+                  color: KaminariTheme.textSecondary,
+                ),
+              ),
+            ),
+          ),
+
+          _buildChapterSequenceSection(),
+
+          const SizedBox(height: 20),
+          const CustomText(
+            "Select Book Type",
+            TextType.labelSmall,
+            color: KaminariTheme.textTitle,
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<BookType>(
+              segments: BookType.values
+                  .where((t) => t != BookType.all)
+                  .map(
+                    (t) =>
+                        ButtonSegment<BookType>(value: t, label: Text(t.short)),
+                  )
+                  .toList(),
+              selected: {widget.book.bookType},
+              onSelectionChanged: (selected) {
+                if (selected.isNotEmpty) {
+                  widget.onTypeChanged(selected.first);
+                }
+              },
+              showSelectedIcon: false,
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (showSeparatedRetries) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: widget.onRetryMetadata != null
+                        ? () => _validateAndRun(
+                            [
+                              'title',
+                              'author',
+                              'synopsis',
+                              'coverUrl',
+                              'jlptLevel',
+                            ],
+                            widget.onRetryMetadata!,
+                            "Please unlock (unpin) at least one metadata field to retry.",
+                          )
+                        : null,
+                    child: const Text("RETRY METADATA AI"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: widget.onConfirm,
+                    child: const Text("CONFIRM"),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      if (widget.book.source == "Local EPUB") {
+                        widget.onRetry();
+                      } else {
+                        _validateAndRun(
+                          [
+                            'title',
+                            'author',
+                            'synopsis',
+                            'coverUrl',
+                            'jlptLevel',
+                          ],
+                          widget.onRetry,
+                          "Please unlock (unpin) at least one field to retry AI extraction.",
+                        );
+                      }
+                    },
+                    child: Text(
+                      widget.book.source == "Local EPUB"
+                          ? "RE-SELECT FILE"
+                          : "RETRY AI",
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: widget.onConfirm,
+                    child: const Text("CONFIRM"),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 8),
+          if (widget.onHide != null)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: widget.onHide,
+                    child: const Text("HIDE"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextButton(
+                    onPressed: widget.onCancel,
+                    child: const Text("DISCARD & CLOSE"),
+                  ),
+                ),
+              ],
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: widget.onCancel,
+                child: const Text("DISCARD & CLOSE"),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChapterSequenceSection() {
+    if (widget.book.chapters.isEmpty) return const SizedBox.shrink();
+
+    final firstCh = widget.book.chapters.first;
+    final inBetweenCount = widget.book.chapters.length - 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
+        CustomText(
+          "Chapters: ${widget.book.chapters.length}",
+          TextType.labelSmall,
+          color: KaminariTheme.textTitle,
+        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const CustomText(
-              "Chapters",
-              TextType.labelSmall,
-              color: KaminariTheme.textTitle,
-            ),
-            if (showMissingChaptersBtn && onMissingChapters != null)
+            if (widget.onRetryChapters != null)
               TextButton(
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                onPressed: onMissingChapters,
+                onPressed: widget.onRetryChapters,
+                child: const CustomText(
+                  "Incorrect order?",
+                  TextType.labelSmall,
+                  color: KaminariTheme.cyan,
+                  fontSize: 11,
+                ),
+              ),
+            if (widget.showMissingChaptersBtn &&
+                widget.onMissingChapters != null) ...[
+              const SizedBox(width: 8),
+              TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: widget.onMissingChapters,
                 child: const CustomText(
                   "Missing Chapters?",
                   TextType.labelSmall,
@@ -313,6 +505,7 @@ class ImportPreviewView extends StatelessWidget {
                   fontSize: 11,
                 ),
               ),
+            ],
           ],
         ),
         const SizedBox(height: 8),
@@ -327,10 +520,16 @@ class ImportPreviewView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Display First Chapter
-              _buildChapterRow(firstCh),
-
-              // Segment representing skipped entries
+              CustomText(
+                "FIRST CHAPTER (not last)",
+                TextType.labelSmall,
+                color: KaminariTheme.textSecondary.withAlpha(120),
+              ),
+              CustomText(
+                firstCh.title.trim(),
+                TextType.bodyMedium,
+                fontSize: 13,
+              ),
               if (inBetweenCount > 0) ...[
                 CustomText(
                   "• • •  $inBetweenCount more  • • •",
@@ -344,10 +543,6 @@ class ImportPreviewView extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Widget _buildChapterRow(ChapterInfo ch) {
-    return CustomText(ch.title, TextType.bodyMedium, fontSize: 13, maxLines: 1);
   }
 }
 
@@ -393,8 +588,7 @@ class ImportSuccessView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Container(
-            height:
-                180, // Constrained height equivalent to ~4 chapters comfortably
+            height: 180,
             decoration: BoxDecoration(
               color: KaminariTheme.surfaceVariant.withAlpha(50),
               borderRadius: BorderRadius.circular(
