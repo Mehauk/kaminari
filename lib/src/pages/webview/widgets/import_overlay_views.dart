@@ -481,16 +481,18 @@ class _ImportPreviewViewState extends State<ImportPreviewView> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 onPressed: widget.onRetryChapters,
-                child: const CustomText(
-                  "Incorrect order?",
+                child: CustomText(
+                  (widget.showMissingChaptersBtn &&
+                          widget.onMissingChapters != null)
+                      ? "FIX INCORRECT ORDERING"
+                      : "FIX INCORRECT ORDERING OR MISSING CHAPTERS",
                   TextType.labelSmall,
                   color: KaminariTheme.cyan,
                   fontSize: 11,
                 ),
               ),
             if (widget.showMissingChaptersBtn &&
-                widget.onMissingChapters != null) ...[
-              const SizedBox(width: 8),
+                widget.onMissingChapters != null)
               TextButton(
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -499,13 +501,12 @@ class _ImportPreviewViewState extends State<ImportPreviewView> {
                 ),
                 onPressed: widget.onMissingChapters,
                 child: const CustomText(
-                  "Missing Chapters?",
+                  "FIX MISSING CHAPTERS",
                   TextType.labelSmall,
                   color: KaminariTheme.cyan,
                   fontSize: 11,
                 ),
               ),
-            ],
           ],
         ),
         const SizedBox(height: 8),

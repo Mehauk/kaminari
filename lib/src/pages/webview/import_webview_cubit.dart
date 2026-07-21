@@ -139,6 +139,66 @@ class WebviewCubit extends Cubit<WebviewState> {
       ..loadRequest(Uri.parse(initialUrl ?? 'https://syosetu.com/'));
   }
 
+  /// Evaluates active document properties to confirm Cloudflare bypass
+  /// and SPA paint cycles before resolving the load flow.
+  Future<void> _waitForPageToSettle() async {
+    final startTime = DateTime.now();
+
+    while (DateTime.now().difference(startTime) < const Duration(seconds: 15)) {
+      try {
+        final dynamic isChallengeRaw = await controller
+            .runJavaScriptReturningResult('''
+          (function() {
+            const text = document.body ? document.body.textContent : "";
+            const title = document.title || "";
+            
+            // Checks standard signatures of Cloudflare, DDoS protection, or Turnstile frames
+            const isCloudflare = 
+              title.includes("Just a moment") || 
+              title.includes("DDoS") ||
+              title.includes("Cloudflare") ||
+              document.querySelector("#challenge-running") !== null ||
+              document.querySelector("#challenge-stage") !== null ||
+              document.querySelector("#cf-wrapper") !== null ||
+              text.includes("Checking your browser") ||
+              text.includes("Checking if the site connection is secure");
+              
+            // Checks if the client-side JavaScript has not completed rendering the core layout shell
+            const isStillLoading = !document.body || text.trim().length < 100;
+            
+            return isCloudflare || isStillLoading;
+          })()
+        ''');
+
+        final String rawResult = isChallengeRaw
+            .toString()
+            .replaceAll('"', '')
+            .trim()
+            .toLowerCase();
+        final bool isWaiting = rawResult == "true" || rawResult == "1";
+
+        if (!isWaiting) {
+          print("[WebViewCubit] Target page settled successfully.");
+          // Provides a tiny frame buffer for visual elements to complete painting
+          await Future.delayed(const Duration(milliseconds: 300));
+          return;
+        }
+
+        print(
+          "[WebViewCubit] Cloudflare challenge or loading shell detected. Waiting for redirect...",
+        );
+      } catch (e) {
+        print(
+          "[WebViewCubit] DOM state temporarily inaccessible (navigating): $e",
+        );
+      }
+
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    print("[WebViewCubit] Settle loop reached maximum threshold; proceeding.");
+  }
+
   void togglePinField(String field) {
     final updated = Set<String>.from(state.unpinnedFields);
     if (updated.contains(field)) {
@@ -424,6 +484,7 @@ class WebviewCubit extends Cubit<WebviewState> {
 
     String? origin;
     try {
+      await _waitForPageToSettle();
       final startingUrl = (await controller.currentUrl()) ?? state.url;
       final originResult = await controller.runJavaScriptReturningResult(
         "(function() {return document.location.origin;})()",
@@ -535,6 +596,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         await controller.loadRequest(Uri.parse(startingUrl));
         await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
         _pageLoadCompleter = null;
+        await _waitForPageToSettle();
         await _injectScanner();
       }
 
@@ -576,6 +638,7 @@ class WebviewCubit extends Cubit<WebviewState> {
 
     String? origin;
     try {
+      await _waitForPageToSettle();
       final originResult = await controller.runJavaScriptReturningResult(
         "(function() {return document.location.origin;})()",
       );
@@ -775,6 +838,7 @@ class WebviewCubit extends Cubit<WebviewState> {
 
     String? origin;
     try {
+      await _waitForPageToSettle();
       final startingUrl = (await controller.currentUrl()) ?? state.url;
       final originResult = await controller.runJavaScriptReturningResult(
         "(function() {return document.location.origin;})()",
@@ -847,6 +911,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         await controller.loadRequest(Uri.parse(startingUrl));
         await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
         _pageLoadCompleter = null;
+        await _waitForPageToSettle();
         await _injectScanner();
       }
 
@@ -895,6 +960,7 @@ class WebviewCubit extends Cubit<WebviewState> {
     );
 
     try {
+      await _waitForPageToSettle();
       final startingUrl = (await controller.currentUrl()) ?? state.url;
       final startUrl =
           _lastFailedUrl ??
@@ -913,6 +979,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         await controller.loadRequest(Uri.parse(startingUrl));
         await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
         _pageLoadCompleter = null;
+        await _waitForPageToSettle();
         await _injectScanner();
       }
 
@@ -1064,7 +1131,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       await controller.loadRequest(Uri.parse(startUrl));
       await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
       _pageLoadCompleter = null;
-      await Future.delayed(const Duration(milliseconds: 1000));
+      await _waitForPageToSettle();
       await _injectScanner();
     }
 
@@ -1122,7 +1189,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
         _pageLoadCompleter = null;
 
-        await Future.delayed(const Duration(milliseconds: 1000));
+        await _waitForPageToSettle();
         await _injectScanner();
 
         final nextJs = generateBookExtrationJSPrompt(
