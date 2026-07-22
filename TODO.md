@@ -62,7 +62,7 @@
   - [ ] import epub button from discorvery screen
   - [ ] import builder loader ui update
 
-- [ ] BUG: clicking missing chapters breaks hide functionality
+- [x] BUG: clicking missing chapters breaks hide functionality
 - [x] BUG: broken chapter (auto reload when finished downloading)
 - [x] BUG: reloading bug when opening a chapter that is already downloaded
 - [x] BUG: bottom nav covered by native nav bar

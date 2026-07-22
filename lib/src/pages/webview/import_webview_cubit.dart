@@ -79,9 +79,8 @@ class WebviewCubit extends Cubit<WebviewState> {
   BookDetailsExtractor? _lastSelectors;
   String? _lastFailedUrl;
   String? _lastSuccessfulPaginationUrl;
-  int _pagesParsed = 0;
 
-  bool get showMissingChapters => _pagesParsed > 1;
+  bool get showMissingChapters => _lastFailedUrl != null;
   bool get hasSelectors => _lastSelectors != null;
 
   WebviewCubit({
@@ -370,7 +369,6 @@ class WebviewCubit extends Cubit<WebviewState> {
     _lastSelectors = null;
     _lastFailedUrl = null;
     _lastSuccessfulPaginationUrl = null;
-    _pagesParsed = 0;
     emit(
       state.copyWith(
         url: url,
@@ -409,7 +407,6 @@ class WebviewCubit extends Cubit<WebviewState> {
     _lastSelectors = null;
     _lastFailedUrl = null;
     _lastSuccessfulPaginationUrl = null;
-    _pagesParsed = 0;
     emit(
       state.copyWith(
         importStatus: ImportStatus.notImported,
@@ -917,6 +914,7 @@ class WebviewCubit extends Cubit<WebviewState> {
 
       // Preserves metadata exactly while cleanly replacing chapters
       final mergedBook = freshBook.copyWith(
+        url: originalMetadata.url, // Preserve original root URL here as well
         title: originalMetadata.title,
         author: originalMetadata.author,
         synopsis: originalMetadata.synopsis,
@@ -984,6 +982,8 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
 
       final mergedBook = freshBook.copyWith(
+        url: originalMetadata
+            .url, // Preserve original root URL to keep the hide toggle aligned
         title: !state.unpinnedFields.contains('title')
             ? originalMetadata.title
             : freshBook.title,
@@ -999,9 +999,8 @@ class WebviewCubit extends Cubit<WebviewState> {
         jlptLevel: !state.unpinnedFields.contains('jlptLevel')
             ? originalMetadata.jlptLevel
             : freshBook.jlptLevel,
-        chapters: !state.unpinnedFields.contains('chapters')
-            ? originalMetadata.chapters
-            : freshBook.chapters,
+        chapters: freshBook
+            .chapters, // Always accept the newly loaded and merged chapters
         bookType: originalMetadata.bookType,
       );
 
@@ -1011,7 +1010,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           importProgress: 1.0,
           progressMessage: "Resumed extraction parsed successfully.",
           previewBook: mergedBook,
-          unpinnedFields: {}, // Lock back up
+          unpinnedFields: {}, // Lock all fields back up upon preview render
         ),
       );
     } catch (e) {
@@ -1121,10 +1120,6 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
     }
 
-    if (existingChapters == null || existingChapters.isEmpty) {
-      _pagesParsed = 0;
-    }
-
     if (startUrl != null && startUrl.isNotEmpty) {
       print("[WebViewCubit] Loading index progression page: $startUrl");
       _pageLoadCompleter = Completer<void>();
@@ -1164,8 +1159,6 @@ class WebviewCubit extends Cubit<WebviewState> {
         existingChapters?.map((e) => e.toJson()) ?? [],
       );
       accumulatedChapters.addAll(response['chapters'] ?? []);
-
-      _pagesParsed += (response['pagesParsed'] as num? ?? 0).toInt();
 
       String? currentFailedUrl = response['failedUrl'] as String?;
       String? currentLastSuccessfulUrl =
@@ -1219,7 +1212,6 @@ class WebviewCubit extends Cubit<WebviewState> {
 
         final List newChapters = nextResponse['chapters'] ?? [];
         accumulatedChapters.addAll(newChapters);
-        _pagesParsed += (nextResponse['pagesParsed'] as num? ?? 0).toInt();
 
         currentFailedUrl = nextResponse['failedUrl'] as String?;
         if (nextResponse['lastSuccessfulUrl'] != null) {
