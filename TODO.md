@@ -46,6 +46,7 @@
 - [x] separate retying of chapters and retrying of metadata
 - [x] retry or re-download should give the old selectors as a comparison
 - [x] download cov images directly
+- [ ] hide -> unhide
 - [ ] novelight
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
