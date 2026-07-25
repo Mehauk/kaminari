@@ -70,6 +70,7 @@
 - [x] BUG: inf linearprog on import webview
 - [x] BUG: import webview url not showing
 - [x] BUG: first three chapters not autmatic?  
+- [x] BUG: unopened progress should be 0  
 
 - [x] implement home screen functionality
   - [x] prereading kanji anki type shii
