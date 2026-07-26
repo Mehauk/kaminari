@@ -1032,15 +1032,14 @@ class WebviewCubit extends Cubit<WebviewState> {
     try {
       final bookData = state.previewBook!;
       final db = DatabaseService();
-      await db.saveBook(bookData);
 
-      final savedBooks = await db.getBooks();
-      final matchingBook = savedBooks.firstWhere(
-        (b) => b.title == bookData.title && b.source == bookData.source,
-        orElse: () => bookData,
-      );
+      // Complete the save operation quickly with the batched transactions
+      final bookId = await db.saveBook(bookData);
 
-      if (matchingBook.id != null) {
+      // Load ONLY this specific book directly by ID instead of pulling all books
+      final matchingBook = await db.getBook(bookId);
+
+      if (matchingBook != null && matchingBook.id != null) {
         final firstThree = matchingBook.chapters.take(3).toList();
         if (firstThree.isNotEmpty) {
           await backgroundWebviewCubit.enqueueChapters(

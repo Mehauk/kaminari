@@ -276,6 +276,33 @@ class KaminariTheme {
         }),
       ),
     ),
+    toggleButtonsTheme: ToggleButtonsThemeData(
+      // Layout & Padding
+      constraints: const BoxConstraints(
+        minHeight: 48.0, // Matches 18px text + 12px vertical padding top/bottom
+      ),
+
+      // Background Colors
+      fillColor: colorScheme.primaryContainer, // Selected background
+      color: textPrimary, // Unselected foreground text/icon
+      selectedColor: Colors.black, // Selected foreground text/icon
+      // Splash & Hover Overlay
+      splashColor: colorScheme.primaryContainer.withAlpha(50),
+      highlightColor: colorScheme.primaryContainer.withAlpha(30),
+
+      // Borders & Shape
+      borderColor: colorScheme.outline.withAlpha(120),
+      selectedBorderColor: colorScheme.outline.withAlpha(120),
+      borderWidth: 1,
+      borderRadius: const BorderRadius.all(Radius.circular(altBorderRadius)),
+
+      // Text Styles
+      textStyle: const TextStyle(
+        fontFamily: 'Space Grotesk',
+        fontSize: 18,
+        fontWeight: FontWeight.w400,
+      ),
+    ),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {

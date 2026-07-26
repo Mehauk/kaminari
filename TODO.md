@@ -59,9 +59,10 @@
 - [ ] Pre download images in chapters
 
 - [ ] ui fixes
-  - [ ] importer overlay
-  - [ ] import epub button from discorvery screen
-  - [ ] import builder loader ui update
+  - [ ] discovery screen
+    - [ ] Navigation and actions
+    - [ ] import epub button from discorvery screen
+  - [x] import builder loader ui update
 
 - [x] BUG: clicking missing chapters breaks hide functionality
 - [x] BUG: broken chapter (auto reload when finished downloading)
