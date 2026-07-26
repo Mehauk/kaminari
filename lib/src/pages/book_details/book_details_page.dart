@@ -5,6 +5,7 @@ import 'package:kaminari/app.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
+import 'package:kaminari/src/data/services/local_storage_service.dart';
 import 'package:kaminari/src/pages/book_details/book_details_cubit.dart';
 import 'package:kaminari/src/pages/reader/reader.dart';
 import 'package:kaminari/src/ui/units/text.dart';
@@ -36,6 +37,12 @@ class _BookDetailsView extends StatefulWidget {
 }
 
 class _BookDetailsViewState extends State<_BookDetailsView> with RouteAware {
+  void refresh() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -64,7 +71,7 @@ class _BookDetailsViewState extends State<_BookDetailsView> with RouteAware {
       backgroundColor: KaminariTheme.background,
       body: CustomScrollView(
         slivers: [
-          const _CoverAppBar(),
+          _CoverAppBar(),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverList(
@@ -116,6 +123,9 @@ class _CoverAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<BookDetailsCubit>();
+    final storage = LocalStorageService();
+    final isArchived = storage.getData('archived_${cubit.book.id}') == true;
+
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
@@ -156,6 +166,34 @@ class _CoverAppBar extends StatelessWidget {
                       await cubit.dbService.deleteBook(bookId);
                       if (pageContext.mounted) {
                         Navigator.of(pageContext).pop(true);
+                      }
+                    },
+                  ),
+                  (
+                    isArchived
+                        ? Icons.unarchive_outlined
+                        : Icons.archive_outlined,
+                    isArchived ? "Unarchive book" : "Archive book",
+                    () async {
+                      Navigator.of(context).pop();
+                      await storage.saveData(
+                        'archived_${cubit.book.id}',
+                        !isArchived,
+                      );
+                      cubit.dbService.notifyBooksChanged();
+
+                      final showArchived =
+                          storage.getData('show_archived') == true;
+                      if (!showArchived && !isArchived) {
+                        if (pageContext.mounted) {
+                          Navigator.of(pageContext).pop(true);
+                        }
+                      } else {
+                        if (pageContext.mounted) {
+                          final state = pageContext
+                              .findAncestorStateOfType<_BookDetailsViewState>();
+                          state?.refresh();
+                        }
                       }
                     },
                   ),
