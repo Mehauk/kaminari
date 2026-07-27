@@ -85,6 +85,7 @@
       - [x] Ignore words for which reading/meaning cannot be found
     - [x] implement daily streak and words learnt
     - [ ] prep only shows for non english (including in reader)
+    - [ ] two extra books as history cards underneath?
 
 - [ ] extensions
   - [ ] adblock (always enabled)
