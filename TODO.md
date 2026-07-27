@@ -38,14 +38,15 @@
 - [x] chiisai tsu (not working?)
 - [x] dict view kanji card start alignment
 - [x] import builder loader update (with type selection)
-- [ ] double tap on import webview to singletap normal + hold link?
 - [x] move the first three chapter downloading to the background cubit
-- [ ] fix broken chapter (auto reload when finished downloading) (fix ui as well)
-- [ ] open import chapter webview on error (only for current)
-- [ ] icon/splash update
-- [ ] import builder loader ui update
+- [x] fix broken chapter (auto reload when finished downloading) (fix ui as well) (seems to be working)
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
+- [ ] double tap on import webview to singletap normal + hold link?
+- [ ] open import chapter webview on error (only for current)
+- [ ] import builder loader ui update
+- [ ] icon/splash update
+- [ ] find an actual place to put the archived books
 
 - [ ] BUG: why my chapter id in 3000's when its only 75ish chapters in?
 - [x] BUG: bottom nav covered by native nav bar
@@ -63,8 +64,7 @@
     - [x] kanji/word level
     - [x] calculate show order (considering kanji level)
       - [x] Ignore words for which reading/meaning cannot be found
-    - [x] implement word of the day with correct kanji level
-    - [ ] implement words/days read (or remove)
+    - [ ] implement daily streak and words learnt
 
 - [ ] complete book features
   - [ ] eng dict

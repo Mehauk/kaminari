@@ -10,8 +10,6 @@ import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/app_bar.dart';
 import 'package:kaminari/src/ui/widgets/book_cards.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
-import 'package:kaminari/src/ui/widgets/icon.dart';
-import 'package:kaminari/src/ui/widgets/word_of_the_day_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -67,33 +65,6 @@ class HomeScreen extends StatelessWidget {
                   },
                 ),
                 SizedBox(height: 32),
-                Row(
-                  children: [
-                    LightningIcon(
-                      Icons.insert_chart_outlined_rounded,
-                      type: .golden,
-                    ),
-                    SizedBox(width: 8),
-                    CustomText("Mastery", .headlineMedium),
-                  ],
-                ),
-                SizedBox(height: 16),
-                _MasteryCard(
-                  title: "Kana",
-                  subTitle: "Hiragana & Katakana",
-                  percent: 0.9,
-                  type: .glowing,
-                ),
-                SizedBox(height: 16),
-                _MasteryCard(
-                  title: "Kanji",
-                  subTitle: "JLPT N2 Level Focus",
-                  percent: 0.4,
-                  type: .thin,
-                ),
-                SizedBox(height: 32),
-                WordOfTheDayCard(),
-                SizedBox(height: 32),
               ],
             ),
           ),
@@ -131,61 +102,6 @@ class _PlaceholderBookCard extends StatelessWidget {
             ),
             if (isLoading)
               BgFilter(child: Center(child: CircularProgressIndicator())),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MasteryCard extends StatelessWidget {
-  const _MasteryCard({
-    required this.title,
-    required this.subTitle,
-    required this.percent,
-    required this.type,
-  }) : assert(0.0 <= percent && 1.0 >= percent);
-
-  final String title;
-  final String subTitle;
-
-  /// 0.0-1.0
-  final double percent;
-  final LightningBorderEffectType type;
-
-  @override
-  Widget build(BuildContext context) {
-    return LightningCard(
-      type: type,
-      child: Padding(
-        padding: .all(24),
-        child: Row(
-          mainAxisAlignment: .spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: .start,
-              children: [
-                CustomText(title, .headlineMedium),
-                SizedBox(height: 4),
-                CustomText(subTitle, .bodyMedium),
-              ],
-            ),
-            Stack(
-              alignment: AlignmentGeometry.center,
-              children: [
-                SizedBox.square(
-                  dimension: 80,
-                  child: CircularProgressIndicator(
-                    value: percent,
-                    strokeWidth: 6,
-                  ),
-                ),
-                CustomText(
-                  "${(percent * 100).toStringAsFixed(0)}%",
-                  .labelSmall,
-                ),
-              ],
-            ),
           ],
         ),
       ),
