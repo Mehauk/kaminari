@@ -84,8 +84,8 @@
     - [x] calculate show order (considering kanji level)
       - [x] Ignore words for which reading/meaning cannot be found
     - [x] implement daily streak and words learnt
-    - [ ] prep only shows for non english (including in reader)
-    - [ ] two extra books as history cards underneath?
+    - [x] prep only shows for non english (including in reader)
+    - [x] two extra books as history cards underneath?
 
 - [ ] extensions
   - [ ] adblock (always enabled)
