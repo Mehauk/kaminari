@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
+import 'package:kaminari/src/data/services/kanji_service.dart';
+import 'package:kaminari/src/data/services/stats_service.dart';
 import 'package:kaminari/src/pages/home/prep/prep_cards.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
@@ -25,12 +27,27 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               children: [
                 SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(child: _InfoTile("DAILY STREAK", ("12", "days"))),
-                    SizedBox(width: 16),
-                    Expanded(child: _InfoTile("WORDS LEARNED", ("842", ""))),
-                  ],
+                FutureBuilder(
+                  future: Future.wait([
+                    Future.value(StatsService.getDailyStreak()),
+                    KanjiService.getNumberVisited(),
+                  ]),
+                  builder: (context, AsyncSnapshot<List<int>> snapshot) {
+                    final streak = snapshot.data?[0] ?? 0;
+                    final words = snapshot.data?[1] ?? 0;
+
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: _InfoTile("DAILY STREAK", ("$streak", "days")),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: _InfoTile("WORDS LEARNED", ("$words", "")),
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 SizedBox(height: 32),
                 StreamBuilder<void>(
