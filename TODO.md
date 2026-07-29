@@ -64,7 +64,7 @@
     - [x] kanji/word level
     - [x] calculate show order (considering kanji level)
       - [x] Ignore words for which reading/meaning cannot be found
-    - [ ] implement daily streak and words learnt
+    - [x] implement daily streak and words learnt
 
 - [ ] complete book features
   - [ ] eng dict
