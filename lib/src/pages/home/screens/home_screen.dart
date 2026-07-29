@@ -18,6 +18,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dbService = context.read<DatabaseService>();
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -51,12 +52,10 @@ class HomeScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 32),
                 StreamBuilder<void>(
-                  stream: context.read<DatabaseService>().onBooksChanged,
+                  stream: dbService.onBooksChanged,
                   builder: (context, _) {
                     return FutureBuilder<BookDetails?>(
-                      future: context
-                          .read<DatabaseService>()
-                          .getLastAccessedBook(),
+                      future: dbService.getLastAccessedBook(),
                       builder: (context, snapshot) {
                         final book = snapshot.data;
                         if (book != null) {
@@ -65,7 +64,6 @@ class HomeScreen extends StatelessWidget {
                           return Column(
                             children: [
                               LastReadBookCard(book),
-                              SizedBox(height: 16),
                               ReviewPrepCard(
                                 nextChapter: nextChapter,
                                 book: book,
@@ -77,6 +75,54 @@ class HomeScreen extends StatelessWidget {
                             isLoading: snapshot.connectionState == .waiting,
                           );
                         }
+                      },
+                    );
+                  },
+                ),
+                SizedBox(height: 32),
+                StreamBuilder<void>(
+                  stream: dbService.onBooksChanged,
+                  builder: (context, _) {
+                    return FutureBuilder<List<BookDetails>>(
+                      future: dbService.getHistoryBooks(),
+                      builder: (context, snapshot) {
+                        final history = snapshot.data ?? [];
+                        final extraHistory = history.skip(1).take(2).toList();
+
+                        if (extraHistory.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: CustomText(
+                                "RECENT READING HISTORY",
+                                TextType.labelSmall,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ...extraHistory.map((book) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: HistoryBookCard(
+                                  book,
+                                  onFavoriteToggle: () async {
+                                    if (book.id != null) {
+                                      await dbService.updateBookFavorite(
+                                        book.id!,
+                                        !book.isFavorite,
+                                      );
+                                      dbService.notifyBooksChanged();
+                                    }
+                                  },
+                                ),
+                              );
+                            }),
+                          ],
+                        );
                       },
                     );
                   },

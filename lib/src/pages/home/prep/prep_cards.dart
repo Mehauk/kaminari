@@ -32,46 +32,53 @@ class ReviewPrepCard extends StatelessWidget {
         final total = snapshot.data ?? 100;
         final reviewed = nextChapter.prepReviewedCount.clamp(0, total);
 
-        return LightningCard(
-          type: .thin,
-          child: InkWell(
-            onTap: () async {
-              final fullChapter = await context
-                  .read<DatabaseService>()
-                  .getChapterWithContent(nextChapter.id!);
-              if (fullChapter != null && context.mounted) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        ChapterPrepPage(book: book, chapter: fullChapter),
-                  ),
-                );
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  LightningIcon(Icons.psychology_alt_outlined, type: .golden),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CustomText(
-                          "READING PREP",
-                          TextType.labelSmall,
-                          color: KaminariTheme.textTitle,
-                        ),
-                        CustomText(
-                          "$reviewed/$total key words reviewed for Chapter ${nextChapter.number + 1}",
-                          TextType.bodyMedium,
-                        ),
-                      ],
+        if (total == 0) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: LightningCard(
+            type: .thin,
+            child: InkWell(
+              onTap: () async {
+                final fullChapter = await context
+                    .read<DatabaseService>()
+                    .getChapterWithContent(nextChapter.id!);
+                if (fullChapter != null && context.mounted) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ChapterPrepPage(book: book, chapter: fullChapter),
                     ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios, size: 14),
-                ],
+                  );
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    LightningIcon(Icons.psychology_alt_outlined, type: .golden),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CustomText(
+                            "READING PREP",
+                            TextType.labelSmall,
+                            color: KaminariTheme.textTitle,
+                          ),
+                          CustomText(
+                            "$reviewed/$total key words reviewed for Chapter ${nextChapter.number + 1}",
+                            TextType.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 14),
+                  ],
+                ),
               ),
             ),
           ),
@@ -110,6 +117,10 @@ class MiniPrepCard extends StatelessWidget {
       builder: (context, snapshot) {
         final total = snapshot.data ?? 100;
         final reviewed = activeChapter.prepReviewedCount.clamp(0, total);
+
+        if (total == 0) {
+          return const SizedBox.shrink();
+        }
 
         return Padding(
           padding: const EdgeInsets.only(top: 8.0),
