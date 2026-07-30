@@ -54,7 +54,7 @@
 - [x] BUG: import webview url not showing
 - [x] BUG: first three chapters not autmatic?  
 
-- [ ] implement home screen functionality
+- [x] implement home screen functionality
   - [x] prereading kanji anki type shii
     - [x] cache training data (for quicker reload)
     - [x] preload training data for next chapter when reaching end of current chapter (non blocking)
