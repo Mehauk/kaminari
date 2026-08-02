@@ -129,6 +129,7 @@
 - [x] settings page
   - [x] download over mobile network (default false)
   - [ ] enable disable eng dict
+  - [ ] dark mode (reader)
 
 - [ ] backend/backups
   - [ ] books (ignoring content?)
