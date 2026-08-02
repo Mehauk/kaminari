@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/data/constants/prompt.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/repositories/app_settings.dart';
 import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
@@ -38,6 +39,7 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
   final DatabaseService dbService;
   final ExtractorBuilder extractorBuilder;
   final NetworkService networkService;
+  final AppSettings appSettings;
   late final WebViewController _controller;
   late final StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
@@ -53,6 +55,7 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     required this.dbService,
     required this.extractorBuilder,
     required this.networkService,
+    required this.appSettings,
   }) : super(const BackgroundWebviewState()) {
     _initController();
     _connectivitySubscription = networkService.onConnectivityChanged.listen((
@@ -60,7 +63,8 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     ) {
       if (_queue.isNotEmpty &&
           !_isLoopRunning &&
-          networkService.isWifiOrEthernet(connectivityResult)) {
+          (networkService.isWifiOrEthernet(connectivityResult) ||
+              appSettings.getDownloadOverMobile())) {
         _processQueue();
       }
     });
@@ -252,16 +256,22 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
   }
 
   Future<bool> _isDownloadAllowed() async {
-    if (await networkService.hasAllowedDownloadConnection) {
+    final connectivityResult = await networkService.checkConnectivity();
+
+    if (connectivityResult == ConnectivityResult.none) {
+      print('Background downloads paused: offline mode.');
+      return false;
+    }
+
+    if (networkService.isWifiOrEthernet(connectivityResult)) {
       return true;
     }
 
-    final connectivityResult = await networkService.checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
-      print('Background downloads paused: offline mode.');
-    } else {
-      print('Background downloads paused: mobile data connection.');
+    if (appSettings.getDownloadOverMobile()) {
+      return true;
     }
+
+    print('Background downloads paused: mobile data connection.');
     return false;
   }
 

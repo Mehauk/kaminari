@@ -35,6 +35,7 @@ class KaminariApp extends StatelessWidget {
             context.read<ExtractorCache>(),
           ),
           networkService: context.read<NetworkService>(),
+          appSettings: context.read<AppSettings>(),
         ),
         lazy: true,
         child: SafeArea(
