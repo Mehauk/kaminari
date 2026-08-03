@@ -80,8 +80,8 @@
 - [ ] discover page additions
   - [ ] finder (wrapper around a singular source search?)
 
-- [ ] settings page
-  - [ ] download over mobile network (default false)
+- [x] settings page
+  - [x] download over mobile network (default false)
 
 - [ ] backend/backups
   - [ ] books (ignoring content?)
