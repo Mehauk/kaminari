@@ -23,7 +23,7 @@ dependencies:
   connectivity_plus: ^7.3.0
   path: ^1.9.1
   shared_preferences: ^2.5.5
-  path_provider: ^2.1.5
+  path_provider: ^2.1.6
   tiny_segmenter_dart: ^1.0.1
   jp_transliterate: ^1.0.5
   epub_pro: ^5.6.0

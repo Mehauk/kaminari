@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/repositories/app_settings.dart';
 import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
@@ -25,6 +26,7 @@ class ImportWebviewPage extends StatelessWidget {
       create: (context) => WebviewCubit(
         extractorBuilder: ExtractorBuilder(LlmService(), context.read()),
         backgroundWebviewCubit: context.read(),
+        appSettings: context.read<AppSettings>(),
         initialUrl: initialUrl,
       ),
       child: const _ImportWebviewPage(),

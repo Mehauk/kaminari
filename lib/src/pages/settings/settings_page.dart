@@ -17,11 +17,14 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late bool _downloadOverMobile;
+  late bool _darkReader;
 
   @override
   void initState() {
     super.initState();
-    _downloadOverMobile = context.read<AppSettings>().getDownloadOverMobile();
+    final settings = context.read<AppSettings>();
+    _downloadOverMobile = settings.getDownloadOverMobile();
+    _darkReader = settings.getDarkReader();
   }
 
   @override
@@ -109,6 +112,50 @@ class _SettingsPageState extends State<SettingsPage> {
                             await context
                                 .read<AppSettings>()
                                 .setDownloadOverMobile(value);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                LightningCard(
+                  type: LightningBorderEffectType.thin,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16.0,
+                      horizontal: 16.0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CustomText(
+                                "Dark Reader",
+                                TextType.bodyLarge,
+                                color: KaminariTheme.textPrimary,
+                              ),
+                              const SizedBox(height: 4),
+                              CustomText(
+                                "Apply dark mode styling on web pages loaded in the import browser",
+                                TextType.labelSmall,
+                                color: KaminariTheme.textSecondary,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _darkReader,
+                          onChanged: (value) async {
+                            setState(() {
+                              _darkReader = value;
+                            });
+                            await context.read<AppSettings>().setDarkReader(
+                              value,
+                            );
                           },
                         ),
                       ],
