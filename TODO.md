@@ -77,7 +77,9 @@
 - [ ] use jagger or jptransliterate?
 - [ ] replace ai with heuristical analysis across the board?
 
-- [ ] discover page additions
+- [ ] discover page changes
+  - [ ] The search bar functions counterintuitively
+  - [ ] The import webview navigation is not good (back button for example)
   - [ ] finder (wrapper around a singular source search?)
 
 - [x] settings page
