@@ -4,6 +4,7 @@ import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/repositories/app_settings.dart';
 import 'package:kaminari/src/data/services/chapter_analysis_service.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
+import 'package:kaminari/src/data/services/english_dictionary_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 
@@ -36,6 +37,10 @@ abstract class ReaderState with _$ReaderState {
     ChapterInfo? activeWaitingChapter,
     String? errorMessage,
     DictionaryEntry? selectedEntry,
+    EnglishDictionaryEntry? selectedEnglishEntry,
+    @Default(false) bool showEnglishDictDownloadPrompt,
+    @Default(false) bool isEnglishDictDownloading,
+    @Default(0.0) double englishDictDownloadProgress,
     int? selectedParagraphIndex,
     int? selectedTokenIndex,
     String? activeChapterTitle,
@@ -111,8 +116,6 @@ class ReaderCubit extends Cubit<ReaderState> {
   void _precacheChapterAnalysis(ChapterInfo chapterInfo) {
     if (chapterInfo.content == null || chapterInfo.content!.isEmpty) return;
 
-    // We don't await this; it runs in the background.
-    // The service handles DB caching internally.
     ChapterAnalysisService.analyzeChapter(bookId, chapterInfo, db: dbService)
         .then((_) {
           print(
@@ -130,7 +133,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     if (updatedChapter != null && updatedChapter.content != null) {
       List<ReaderItem> processed = [];
 
-      // Tokenize title first
       final titleTokens = await KanjiService.tokenizeText(updatedChapter.title);
       processed.add(
         ReaderItem(
@@ -179,7 +181,6 @@ class ReaderCubit extends Cubit<ReaderState> {
 
       List<ReaderItem> processed = [];
 
-      // Tokenize title first
       final titleTokens = await KanjiService.tokenizeText(chapter.title);
       processed.add(
         ReaderItem(
@@ -248,7 +249,6 @@ class ReaderCubit extends Cubit<ReaderState> {
     try {
       List<ReaderItem> updatedItems = List.from(state.items);
 
-      // Add page break
       updatedItems.add(
         ReaderItem(
           type: ReaderItemType.pageBreak,
@@ -259,7 +259,6 @@ class ReaderCubit extends Cubit<ReaderState> {
         ),
       );
 
-      // Tokenize and add title
       final titleTokens = await KanjiService.tokenizeText(dbCh.title);
       updatedItems.add(
         ReaderItem(
@@ -271,7 +270,6 @@ class ReaderCubit extends Cubit<ReaderState> {
         ),
       );
 
-      // Tokenize and add paragraphs
       for (var paragraph in dbCh.content!) {
         final tokens = await KanjiService.tokenizeText(paragraph);
         updatedItems.add(
@@ -338,28 +336,100 @@ class ReaderCubit extends Cubit<ReaderState> {
       newComputed = DictOrientation.bottom;
     }
 
-    final (wordMap, kanjis) = await KanjiService.lookupToken(token);
-
     if (state.selectedParagraphIndex == paragraphIndex &&
         state.selectedTokenIndex == tokenIndex) {
       clearSelection();
       return;
     }
 
+    final book = await dbService.getBook(bookId);
+
+    // Leverage the English Dictionary Service
+    if (book?.language.toLowerCase().startsWith('en') == true) {
+      final isAvail = await EnglishDictionaryService().isDictionaryAvailable();
+      if (!isAvail) {
+        emit(
+          state.copyWith(
+            showEnglishDictDownloadPrompt: true,
+            selectedParagraphIndex: paragraphIndex,
+            selectedTokenIndex: tokenIndex,
+            computedDictOrientation: newComputed,
+            selectedEntry: null,
+            selectedEnglishEntry: null,
+          ),
+        );
+        return;
+      }
+
+      final entry = await EnglishDictionaryService().lookup(token);
+      emit(
+        state.copyWith(
+          selectedEnglishEntry: entry,
+          selectedEntry: null,
+          showEnglishDictDownloadPrompt: false,
+          selectedParagraphIndex: paragraphIndex,
+          selectedTokenIndex: tokenIndex,
+          computedDictOrientation: newComputed,
+        ),
+      );
+    } else {
+      final (wordMap, kanjis) = await KanjiService.lookupToken(token);
+      emit(
+        state.copyWith(
+          selectedEntry: DictionaryEntry(wordMap, kanjis: kanjis),
+          selectedEnglishEntry: null,
+          showEnglishDictDownloadPrompt: false,
+          selectedParagraphIndex: paragraphIndex,
+          selectedTokenIndex: tokenIndex,
+          computedDictOrientation: newComputed,
+        ),
+      );
+    }
+  }
+
+  Future<void> downloadEnglishDictionary() async {
     emit(
       state.copyWith(
-        selectedEntry: DictionaryEntry(wordMap, kanjis: kanjis),
-        selectedParagraphIndex: paragraphIndex,
-        selectedTokenIndex: tokenIndex,
-        computedDictOrientation: newComputed,
+        isEnglishDictDownloading: true,
+        englishDictDownloadProgress: 0.0,
       ),
     );
+    try {
+      await EnglishDictionaryService().downloadDictionary((progress) {
+        emit(state.copyWith(englishDictDownloadProgress: progress));
+      });
+      emit(
+        state.copyWith(
+          isEnglishDictDownloading: false,
+          showEnglishDictDownloadPrompt: false,
+        ),
+      );
+      if (state.selectedParagraphIndex != null &&
+          state.selectedTokenIndex != null) {
+        final paragraph = state.items[state.selectedParagraphIndex!];
+        final token = paragraph.tokens[state.selectedTokenIndex!];
+        await lookupToken(
+          token,
+          state.selectedParagraphIndex!,
+          state.selectedTokenIndex!,
+        );
+      }
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isEnglishDictDownloading: false,
+          errorMessage: "Failed to download dictionary.",
+        ),
+      );
+    }
   }
 
   void clearSelection() {
     emit(
       state.copyWith(
         selectedEntry: null,
+        selectedEnglishEntry: null,
+        showEnglishDictDownloadPrompt: false,
         selectedParagraphIndex: null,
         selectedTokenIndex: null,
       ),
