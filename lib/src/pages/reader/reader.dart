@@ -7,7 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/globals/background_webview_cubit.dart';
-import 'package:kaminari/src/pages/home/prep/prep_cards.dart';
 import 'package:kaminari/src/pages/reader/dict_orientation_dialog.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/pages/reader/kanji_alignment_dialog.dart';
@@ -402,11 +401,6 @@ class _ReaderViewState extends State<_ReaderView> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        MiniPrepCard(
-                                          chapterId: item.chapterId,
-                                          chapterTitle: item.chapterTitle,
-                                          chapterNumber: item.chapterNumber,
-                                        ),
                                         Padding(
                                           padding: const EdgeInsets.only(
                                             top: 16,
