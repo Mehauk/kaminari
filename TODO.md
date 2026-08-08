@@ -68,7 +68,7 @@
 
 - [ ] complete book features
   - [x] eng dict
-  - [ -] epub/ebook/pdf? importing
+  - [x] epub/ebook importing
   - [ ] additional language features?
   - [ ] paragraphg transliteration/translation?
 
