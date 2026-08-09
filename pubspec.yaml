@@ -17,15 +17,19 @@ dependencies:
   webview_flutter: ^4.13.1
   freezed_annotation: ^3.1.0
   google_generative_ai: ^0.4.5
-  flutter_dotenv: ^5.2.1
+  flutter_dotenv: ^6.0.1
   json_annotation: ^4.12.0
   sqflite: ^2.4.2+1
-  connectivity_plus: ^4.0.1
+  connectivity_plus: ^7.3.0
   path: ^1.9.1
   shared_preferences: ^2.5.5
   path_provider: ^2.1.5
   tiny_segmenter_dart: ^1.0.1
   jp_transliterate: ^1.0.5
+  epub_pro: ^5.6.0
+  html: ^0.15.6
+  file_picker: ^11.0.2
+  image: ^4.8.0
 
 dev_dependencies:
   flutter_test:
