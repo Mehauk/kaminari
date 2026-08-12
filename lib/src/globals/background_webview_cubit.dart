@@ -96,7 +96,18 @@ class BackgroundWebviewCubit extends Cubit<BackgroundWebviewState> {
     bool isPriority = false,
     bool forceReloadSelectors = false,
   }) async {
-    for (var chapter in chapters) {
+    // Filter out local files or epub virtual links
+    final webChapters = chapters
+        .where(
+          (c) => !c.url.startsWith('epub://') && !c.url.startsWith('file://'),
+        )
+        .toList();
+
+    if (webChapters.isEmpty) {
+      return;
+    }
+
+    for (var chapter in webChapters) {
       // Avoid duplicates in queue
       _queue.removeWhere((t) => t.chapter.id == chapter.id);
 

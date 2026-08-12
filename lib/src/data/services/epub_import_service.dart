@@ -101,13 +101,10 @@ class EpubImportService {
     List<EpubChapter> target,
   ) {
     for (final chapter in source) {
-      // Avoid adding chapter containers that possess neither text content nor titles
-      final hasTitle =
-          chapter.title != null && chapter.title!.trim().isNotEmpty;
       final hasContent =
           chapter.htmlContent != null && chapter.htmlContent!.trim().isNotEmpty;
 
-      if (hasTitle || hasContent) {
+      if (hasContent) {
         target.add(chapter);
       }
       if (chapter.subChapters.isNotEmpty) {
