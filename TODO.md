@@ -50,7 +50,7 @@
 - [ ] novelight
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
-- [ ] double tap on import webview to singletap normal + hold link?
+- [ ] double tap on import webview to singletap normal + ignore links?
 - [ ] open import chapter webview on error (only for current)
 - [ ] icon/splash update
 - [ ] find an actual place to put the archived books
