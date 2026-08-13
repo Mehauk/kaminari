@@ -9,6 +9,7 @@ import 'package:kaminari/src/data/services/local_storage_service.dart';
 import 'package:kaminari/src/pages/book_details/book_details_cubit.dart';
 import 'package:kaminari/src/pages/reader/reader.dart';
 import 'package:kaminari/src/ui/units/text.dart';
+import 'package:kaminari/src/ui/widgets/book_cover.dart';
 import 'package:kaminari/src/ui/widgets/bottom_sheet.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/ui/widgets/confirmation_dialog.dart';
@@ -46,19 +47,15 @@ class _BookDetailsViewState extends State<_BookDetailsView> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 4. Subscribe this page to the route observer
     routeObserver.subscribe(this, ModalRoute.of(context)!);
   }
 
   @override
   void dispose() {
-    // 5. Always unsubscribe on dispose
     routeObserver.unsubscribe(this);
     super.dispose();
   }
 
-  // 6. This is the "Lifecycle Hook" you are looking for!
-  // It triggers when the top route (the Reader) is popped and this page becomes visible.
   @override
   void didPopNext() {
     context.read<BookDetailsCubit>().refreshProgress();
@@ -112,10 +109,6 @@ class _BookDetailsViewState extends State<_BookDetailsView> with RouteAware {
     );
   }
 }
-
-// ──────────────────────────────────────────────────────
-// Cover image sliver app bar
-// ──────────────────────────────────────────────────────
 
 class _CoverAppBar extends StatelessWidget {
   const _CoverAppBar();
@@ -204,29 +197,20 @@ class _CoverAppBar extends StatelessWidget {
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        collapseMode: .parallax,
+        collapseMode: CollapseMode.parallax,
         background: Stack(
-          fit: .expand,
+          fit: StackFit.expand,
           children: [
-            Image.network(
-              cubit.book.coverUrl ?? '',
-              fit: .cover,
+            BookCover(
+              coverUrl: cubit.book.coverUrl,
+              fit: BoxFit.cover,
               alignment: const Alignment(0, -0.2),
-              errorBuilder: (context, error, stackTrace) => Image.asset(
-                'assets/images/placeholder_book.png',
-                alignment: Alignment(0, -0.2),
-                fit: BoxFit.cover,
-                width: double.maxFinite,
-                height: 192,
-              ),
             ),
-
-            // Bottom gradient fade
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: .bottomCenter,
-                  end: .topCenter,
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
                   stops: [0.0, 0.2, 0.9],
                   colors: [
                     KaminariTheme.background,
@@ -236,12 +220,11 @@ class _CoverAppBar extends StatelessWidget {
                 ),
               ),
             ),
-            // Top gradient fade (for status bar readability)
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: .topCenter,
-                  end: .bottomCenter,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   stops: [0.0, 0.3],
                   colors: [Color(0x9915130B), Colors.transparent],
                 ),
@@ -254,10 +237,6 @@ class _CoverAppBar extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────
-// Title, author, genre chips
-// ──────────────────────────────────────────────────────
-
 class _BookHeader extends StatelessWidget {
   const _BookHeader();
 
@@ -267,10 +246,8 @@ class _BookHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: .start,
       children: [
-        // title
         CustomText(cubit.book.title, .titleMedium, fontSize: 22),
         const SizedBox(height: 8),
-        // Author
         Row(
           children: [
             Icon(
@@ -285,7 +262,6 @@ class _BookHeader extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        // Genre + JLPT chips
         Row(
           children: [
             Chip(
@@ -330,10 +306,6 @@ class _JlptBadge extends StatelessWidget {
     );
   }
 }
-
-// ──────────────────────────────────────────────────────
-// Reading progress + CTA
-// ──────────────────────────────────────────────────────
 
 class _ProgressSection extends StatelessWidget {
   const _ProgressSection();
@@ -415,10 +387,6 @@ class _ProgressSection extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────
-// Stats row: words, time, level
-// ──────────────────────────────────────────────────────
-
 class _StatsRow extends StatelessWidget {
   const _StatsRow();
 
@@ -494,10 +462,6 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────
-// Synopsis with expand/collapse
-// ──────────────────────────────────────────────────────
-
 class _SynopsisSection extends StatelessWidget {
   const _SynopsisSection();
 
@@ -507,7 +471,6 @@ class _SynopsisSection extends StatelessWidget {
     final state = cubit.state;
     return GestureDetector(
       onTap: () => context.read<BookDetailsCubit>().toggleSynopsis(),
-
       child: LightningCard(
         type: .striking,
         child: Padding(
@@ -564,10 +527,6 @@ class _SynopsisSection extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────
-// Chapter list
-// ──────────────────────────────────────────────────────
-
 class _ChapterListHeader extends StatelessWidget {
   const _ChapterListHeader();
 
@@ -615,7 +574,6 @@ class _ChapterTile extends StatelessWidget {
         if (context.mounted) {
           Navigator.of(context).push(
             MaterialPageRoute(
-              // 2. Use '_' to signify we aren't using the route's context
               builder: (_) => ReaderPage(fullChapter!, bookId: bookId),
             ),
           );
@@ -625,7 +583,6 @@ class _ChapterTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
           children: [
-            // Chapter number badge
             SizedBox(
               width: 36,
               child: CustomText(

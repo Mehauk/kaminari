@@ -11,6 +11,7 @@ import 'package:kaminari/src/pages/reader/reader.dart';
 import 'package:kaminari/src/ui/units/backdrop_filter.dart';
 import 'package:kaminari/src/ui/units/lightning_border_effect.dart';
 import 'package:kaminari/src/ui/units/text.dart';
+import 'package:kaminari/src/ui/widgets/book_cover.dart';
 import 'package:kaminari/src/ui/widgets/card.dart';
 import 'package:kaminari/src/utils/date_extensions.dart';
 
@@ -39,19 +40,12 @@ class LastReadBookCard extends StatelessWidget {
             Stack(
               alignment: AlignmentGeometry.bottomStart,
               children: [
-                Image.network(
-                  book.coverUrl ?? '',
-                  alignment: Alignment(0, -0.2),
+                BookCover(
+                  coverUrl: book.coverUrl,
+                  alignment: const Alignment(0, -0.2),
                   fit: BoxFit.cover,
                   width: double.maxFinite,
                   height: 192,
-                  errorBuilder: (context, error, stackTrace) => Image.asset(
-                    'assets/images/placeholder_book.png',
-                    alignment: Alignment(0, -0.2),
-                    fit: BoxFit.cover,
-                    width: double.maxFinite,
-                    height: 192,
-                  ),
                 ),
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -174,10 +168,8 @@ class HistoryBookCard extends StatelessWidget {
     return LightningCard(
       type: .thin,
       child: Row(
-        // Moved Row outside the InkWell
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // This Expanded InkWell covers the Image and Book Info
           Expanded(
             child: InkWell(
               onTap: () => Navigator.of(context).push(
@@ -195,25 +187,18 @@ class HistoryBookCard extends StatelessWidget {
                       position: .foreground,
                       child: ClipRRect(
                         borderRadius: .circular(KaminariTheme.borderRadius),
-                        child: Image.network(
-                          book.coverUrl ?? '',
+                        child: BookCover(
+                          coverUrl: book.coverUrl,
                           width: 64,
                           height: 80,
-                          fit: .cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Image.asset(
-                                'assets/images/placeholder_book.png',
-                                width: 64,
-                                height: 80,
-                                fit: .cover,
-                              ),
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: .start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           CustomText(book.title, .titleMedium),
@@ -251,8 +236,6 @@ class HistoryBookCard extends StatelessWidget {
               ),
             ),
           ),
-
-          // This section is OUTSIDE the main navigation InkWell
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Column(
@@ -260,7 +243,6 @@ class HistoryBookCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 InkWell(
-                  // Using IconButton for better hit targets
                   onTap: onFavoriteToggle,
                   child: Icon(
                     book.isFavorite
@@ -300,19 +282,12 @@ class DiscoverableBookCard extends StatelessWidget {
           children: [
             Stack(
               children: [
-                Image.network(
-                  book.coverUrl ?? '',
-                  alignment: Alignment(0, -0.2),
+                BookCover(
+                  coverUrl: book.coverUrl,
+                  alignment: const Alignment(0, -0.2),
                   fit: BoxFit.cover,
                   width: double.maxFinite,
                   height: 192,
-                  errorBuilder: (context, error, stackTrace) => Image.asset(
-                    'assets/images/placeholder_book.png',
-                    alignment: Alignment(0, -0.2),
-                    fit: BoxFit.cover,
-                    width: double.maxFinite,
-                    height: 192,
-                  ),
                 ),
                 Padding(
                   padding: .all(12),

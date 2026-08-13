@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/ui/units/text.dart';
+import 'package:kaminari/src/ui/widgets/book_cover.dart';
 
 class ImportLoadingView extends StatelessWidget {
   final double progress;
@@ -95,17 +96,11 @@ class ImportPreviewView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(
                   KaminariTheme.altBorderRadius,
                 ),
-                child: Image.network(
-                  book.coverUrl ?? '',
+                child: BookCover(
+                  coverUrl: book.coverUrl,
                   width: 80,
                   height: 110,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Image.asset(
-                    'assets/images/placeholder_book.png',
-                    width: 80,
-                    height: 110,
-                    fit: BoxFit.cover,
-                  ),
                 ),
               ),
             ),

@@ -7,6 +7,7 @@ class BookCover extends StatelessWidget {
   final double? width;
   final double? height;
   final BoxFit fit;
+  final Alignment alignment;
 
   const BookCover({
     super.key,
@@ -14,6 +15,7 @@ class BookCover extends StatelessWidget {
     this.width,
     this.height,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
   });
 
   @override
@@ -31,6 +33,7 @@ class BookCover extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
+        alignment: alignment,
         errorBuilder: (_, _, _) => _buildPlaceholder(),
       );
     } else {
@@ -43,6 +46,7 @@ class BookCover extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
+        alignment: alignment,
         errorBuilder: (_, _, _) => _buildPlaceholder(),
       );
     }
@@ -54,6 +58,7 @@ class BookCover extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
+      alignment: alignment,
     );
   }
 }
