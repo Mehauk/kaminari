@@ -47,10 +47,10 @@
 - [x] retry or re-download should give the old selectors as a comparison
 - [x] download cov images directly
 - [x] hide -> unhide
+- [-] double tap on import webview to singletap normal + ignore links?
 - [ ] novelight
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
-- [ ] double tap on import webview to singletap normal + ignore links?
 - [ ] open import chapter webview on error (only for current)
 - [ ] icon/splash update
 - [ ] find an actual place to put the archived books
@@ -63,7 +63,7 @@
   - [ ] discovery screen
     - [ ] Navigation and actions
     - [ ] import epub button from discorvery screen
-  - [x] import builder loader ui update
+  - [x] import builder loader ui updat
 
 - [ ] manga features
 
