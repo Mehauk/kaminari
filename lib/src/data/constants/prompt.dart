@@ -28,7 +28,7 @@ JSON:
 """;
 }
 
-String cheaptersLoadingIIFE(
+String chaptersLoadingIIFE(
   ChapterInfoExtractor detailsSelector,
   String nextPageSelector,
 ) {
@@ -84,39 +84,13 @@ String cheaptersLoadingIIFE(
       nextUrl = null;
       
       try {
-        const selector = '$nextPageSelector';
-        if (selector && !['null', 'n/a', ''].includes(selector.toLowerCase())) {
-          const nextBtns = Array.from(doc.querySelectorAll(selector));
-          let nextBtn = null;
-          
-          if (nextBtns.length > 0) {
-            // 1. Try to find the button containing "next", ">", or "»" explicitly
-            nextBtn = nextBtns.find(btn => {
-              const text = (btn.textContent || '').toLowerCase().trim();
-              const rel = (btn.getAttribute('rel') || '').toLowerCase();
-              const cls = (btn.className || '').toLowerCase();
-              return text === 'next' || text.includes('next') || text === '>' || text === '»' || rel === 'next' || cls.includes('next');
-            });
-            
-            // 2. Validate it has a valid target different from the current page
-            if (nextBtn && (!nextBtn.href || nextBtn.href === currentUrl || nextBtn.href.startsWith('javascript:'))) {
-              nextBtn = null;
-            }
-            
-            // 3. Fallback to the first unique link different from current page
-            if (!nextBtn) {
-              nextBtn = nextBtns.find(btn => btn.href && btn.href !== currentUrl && !btn.href.startsWith('javascript:'));
-            }
-          }
-          
-          if (nextBtn && nextBtn.href && nextBtn.href !== currentUrl) {
-            nextUrl = nextBtn.href;
-            console.log("[JS-Extractor] Next page found: " + nextUrl);
-          } else {
-            console.log("[JS-Extractor] No next page link detected. Finishing.");
-          }
+        // Look for the next button in 'doc' (the current page context)
+        const nextBtn = doc.querySelector('$nextPageSelector');
+        if (nextBtn && nextBtn.href && nextBtn.href !== currentUrl) {
+          nextUrl = nextBtn.href;
+          console.log("[JS-Extractor] Next page found: " + nextUrl);
         } else {
-          console.log("[JS-Extractor] No nextPageSelector provided. Finishing.");
+          console.log("[JS-Extractor] No next page link detected. Finishing.");
         }
       } catch (e) {
         console.warn("[JS-Extractor] Error parsing next selector '$nextPageSelector':", e);
