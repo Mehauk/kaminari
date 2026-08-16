@@ -40,7 +40,6 @@
 - [x] import builder loader update (with type selection)
 - [x] move the first three chapter downloading to the background cubit
 - [x] fix broken chapter (auto reload when finished downloading) (fix ui as well) (seems to be working)
-- [ ] go to first page, then do rest from there
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
 - [ ] double tap on import webview to singletap normal + hold link?
@@ -70,6 +69,7 @@
 - [ ] complete book features
   - [x] eng dict
   - [ ] entymology
+  - [x] no jlpt for eng
   - [x] epub/ebook importing
     - [x] all my web imported books are not showing on disc page anymore (neither is the new epub)
     - [x] chapters have no content; just showing in download que

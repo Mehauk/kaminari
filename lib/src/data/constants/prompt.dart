@@ -36,19 +36,20 @@ JSON:
 String chaptersLoadingIIFE(
   ChapterInfoExtractor detailsSelector,
   String nextPageSelector,
+  int startIndex,
 ) {
   return """
   (async () => {
-    console.log("[JS-Extractor] Initializing chapter extraction...");
+    console.log("[JS-Extractor] Initializing chapter extraction starting at index $startIndex...");
     let chapters = [];
-    let i = -1;
+    let i = $startIndex - 1;
     let nextUrl = document.location.href;
     
     while (nextUrl) {
       console.log("[JS-Extractor] Processing URL: " + nextUrl);
       let doc;
       
-      if (i === -1) {
+      if (i === $startIndex - 1) {
         console.log("[JS-Extractor] Using initial document DOM.");
         doc = document;
       } else {
@@ -66,7 +67,11 @@ String chaptersLoadingIIFE(
           console.log("[JS-Extractor] Successfully fetched and parsed remote page.");
         } catch (e) {
           console.error("[JS-Extractor] Fetch failed for: " + nextUrl, e);
-          break;
+          // Return what we successfully fetched along with the failed URL so Dart can continue via Webview navigation
+          return {
+            chapters: chapters,
+            failedUrl: nextUrl
+          };
         }
       }
       
@@ -91,7 +96,7 @@ String chaptersLoadingIIFE(
       try {
         // Look for the next button in 'doc' (the current page context)
         const nextBtn = doc.querySelector('$nextPageSelector');
-        if (nextBtn && nextBtn.href && nextBtn.href !== currentUrl) {
+        if (nextBtn && nextBtn.href && nextBtn.href !== currentUrl && nextBtn.href !== 'javascript:;') {
           nextUrl = nextBtn.href;
           console.log("[JS-Extractor] Next page found: " + nextUrl);
         } else {
@@ -104,7 +109,10 @@ String chaptersLoadingIIFE(
     }
     
     console.log("[JS-Extractor] Extraction complete. Total chapters: " + chapters.length);
-    return chapters;
+    return {
+      chapters: chapters,
+      failedUrl: null
+    };
   })()
 """;
 }
@@ -211,7 +219,9 @@ String generateBookExtrationJSPrompt(Map reMap, String iIFE) =>
     (async () => {
       try {
         const data = $reMap;
-        data.chapters = await $iIFE;
+        const result = await $iIFE;
+        data.chapters = result.chapters;
+        data.failedUrl = result.failedUrl;
         ExtractionChannel.postMessage(JSON.stringify(data));
       } catch (e) {
         ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
