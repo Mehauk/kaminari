@@ -47,7 +47,7 @@
 - [x] retry or re-download should give the old selectors as a comparison
 - [x] download cov images directly
 - [x] hide -> unhide
-- [-] double tap on import webview to singletap normal + ignore links?
+- [x] double tap on import webview to singletap normal + ignore links?
 - [ ] novelight
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
