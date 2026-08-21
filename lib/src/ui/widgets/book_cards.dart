@@ -172,9 +172,24 @@ class HistoryBookCard extends StatelessWidget {
         children: [
           Expanded(
             child: InkWell(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => BookDetailsPage(book)),
-              ),
+              onTap: () async {
+                final db = context.read<DatabaseService>();
+                final rebook = await db.getBook(book.id!);
+                if (rebook != null && rebook.chapters.isNotEmpty) {
+                  final targetChapter = rebook.chapters[rebook.currentChapter];
+                  final fullChapter = await db.getChapterWithContent(
+                    targetChapter.id!,
+                  );
+                  if (context.mounted && fullChapter != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ReaderPage(fullChapter, bookId: book.id!),
+                      ),
+                    );
+                  }
+                }
+              },
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -251,9 +266,11 @@ class HistoryBookCard extends StatelessWidget {
                   ),
                 ),
                 InkWell(
-                  onTap: () {
-                    // Handle more options
-                  },
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => BookDetailsPage(book),
+                    ),
+                  ),
                   child: const Icon(Icons.more_vert),
                 ),
               ],
