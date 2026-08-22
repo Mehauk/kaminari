@@ -49,7 +49,7 @@
 - [x] hide -> unhide
 - [x] double tap on import webview to singletap normal + ignore links?
 - [-] deleting a book should be instant visually
-- [ ] disable dict view on the import webview page if the document's language is not ja (or is eng?)
+- [-] disable dict view on the import webview page if the document's language is not ja (or is eng?)
 - [ ] auto-update for new chapters
 - [ ] novelight
 - [ ] persist linebreaks/spacing?
