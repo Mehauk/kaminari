@@ -193,8 +193,12 @@ class _WebAddressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<WebviewCubit>();
-    final url = cubit.state.url;
+    final state = context.watch<WebviewCubit>().state;
+    final url = state.url;
+
+    // Determine whether to display the dictionary panel
+    final bool showDict = !state.language.toLowerCase().startsWith('en');
+
     return ClipRRect(
       child: BgFilter(
         bgColor: KaminariTheme.background.withAlpha(220),
@@ -259,12 +263,13 @@ class _WebAddressBar extends StatelessWidget {
                       ),
                   ],
                 ),
-                DictionaryView(
-                  entry: cubit.state.selectedEntry,
-                  clearSelection: cubit.clearSelection,
-                  orientation: .top,
-                  alignment: .right,
-                ),
+                if (showDict)
+                  DictionaryView(
+                    entry: state.selectedEntry,
+                    clearSelection: context.read<WebviewCubit>().clearSelection,
+                    orientation: .top,
+                    alignment: .right,
+                  ),
               ],
             ),
           ),
