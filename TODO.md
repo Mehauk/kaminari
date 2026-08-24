@@ -66,6 +66,7 @@
   - [x] import builder loader ui updat
 
 - [ ] manga features
+  - [ ] Choose to keep downloaded
 
 - [x] BUG: clicking missing chapters breaks hide functionality
 - [x] BUG: broken chapter (auto reload when finished downloading)
