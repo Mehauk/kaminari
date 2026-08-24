@@ -121,6 +121,12 @@ class WebviewCubit extends Cubit<WebviewState> {
           }
         },
       )
+      ..addJavaScriptChannel(
+        'ProgressChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          onProgressUpdated(message.message);
+        },
+      )
       ..loadRequest(Uri.parse(initialUrl ?? 'https://syosetu.com/'));
   }
 
@@ -158,6 +164,21 @@ class WebviewCubit extends Cubit<WebviewState> {
     );
 
     await _highlightWord(targetedWord);
+  }
+
+  void onProgressUpdated(String message) {
+    try {
+      final data = jsonDecode(message);
+      final int count = data['count'] ?? 0;
+      emit(
+        state.copyWith(
+          progressMessage:
+              "Analyzing pages and compiling chapter directories (found $count chapters)...",
+        ),
+      );
+    } catch (e) {
+      print("[ProgressChannel] Error parsing sequential progress: $e");
+    }
   }
 
   Future<void> _injectScanner() async {
@@ -523,6 +544,9 @@ class WebviewCubit extends Cubit<WebviewState> {
       // We navigate WebView sequentially to cross the domain boundary, extract,
       // and re-trigger fast fetch sequentially from the new loaded context.
       while (currentFailedUrl != null && currentFailedUrl.isNotEmpty) {
+        // Sequential pacing to avoid webserver rate-limiting/DDoS alerts on hard navigations
+        await Future.delayed(const Duration(milliseconds: 1200));
+
         print(
           "[WebViewCubit] Fast fetch failed. Resuming sequentially via WebView navigation to: $currentFailedUrl",
         );

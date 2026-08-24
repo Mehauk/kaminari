@@ -56,6 +56,9 @@ String chaptersLoadingIIFE(
         doc = document;
       } else {
         try {
+          // Non-blocking pacing delay to mitigate rate limiting on remote fetches
+          await new Promise(resolve => setTimeout(resolve, 800));
+
           const response = await fetch(nextUrl, {
             method: 'GET',
             credentials: 'include',
@@ -91,6 +94,11 @@ String chaptersLoadingIIFE(
       });
       
       chapters = chapters.concat(pageChapters);
+      
+      // Dispatch immediate chapter accumulation progress to the Dart UI context
+      if (typeof ProgressChannel !== 'undefined') {
+        ProgressChannel.postMessage(JSON.stringify({ "count": chapters.length }));
+      }
       
       let currentUrl = nextUrl;
       nextUrl = null;
