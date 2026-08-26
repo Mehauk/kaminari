@@ -75,6 +75,10 @@ class WebviewCubit extends Cubit<WebviewState> {
   Completer<String>? _extractionCompleter;
   Completer<void>? _pageLoadCompleter;
 
+  BookDetailsExtractor? _lastSelectors;
+  String? _lastFailedUrl;
+  String? _lastSuccessfulPaginationUrl;
+
   WebviewCubit({
     required this.extractorBuilder,
     required this.backgroundWebviewCubit,
@@ -392,6 +396,8 @@ class WebviewCubit extends Cubit<WebviewState> {
         BookDetailsExtractor.fromJson,
       );
 
+      _lastSelectors = selectors; // Save selectors for resuming later
+
       final bookData = await _extractBookMetadata(selectors);
 
       print("${bookData.coverUrl}STUPIDO");
@@ -413,6 +419,49 @@ class WebviewCubit extends Cubit<WebviewState> {
         state.copyWith(
           importStatus: ImportStatus.failure,
           progressMessage: "Extraction failed: ${e.toString()}",
+        ),
+      );
+    }
+  }
+
+  /// Continues pulling missing chapters starting from where the previous execution was interrupted.
+  Future<void> resumeImport() async {
+    if (state.previewBook == null || _lastSelectors == null) return;
+
+    emit(
+      state.copyWith(
+        importStatus: ImportStatus.extracting,
+        importProgress: 0.5,
+        progressMessage: "Resuming chapter extraction...",
+      ),
+    );
+
+    try {
+      // Prioritize the last failed URL, then the last successfully accessed URL, or fallback to original book URL
+      final startUrl =
+          _lastFailedUrl ??
+          _lastSuccessfulPaginationUrl ??
+          state.previewBook!.url;
+
+      final updatedBook = await _extractBookMetadata(
+        _lastSelectors!,
+        existingChapters: state.previewBook!.chapters,
+        startUrl: startUrl,
+      );
+
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.preview,
+          importProgress: 1.0,
+          progressMessage: "Resumed extraction parsed successfully.",
+          previewBook: updatedBook,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.failure,
+          progressMessage: "Resumed extraction failed: ${e.toString()}",
         ),
       );
     }
@@ -469,13 +518,14 @@ class WebviewCubit extends Cubit<WebviewState> {
   }
 
   Future<BookDetails> _extractBookMetadata(
-    BookDetailsExtractor selectors,
-  ) async {
+    BookDetailsExtractor selectors, {
+    List<ChapterInfo>? existingChapters,
+    String? startUrl,
+  }) async {
     final jsonMap = selectors.toJson();
     final reMap = {};
 
     final jsonCMap = selectors.individualChapterDetails.toJson();
-
     final nextPageSelector = jsonMap["nextPageUrl"] as String?;
 
     for (var ckey in jsonCMap.keys) {
@@ -514,12 +564,25 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
     }
 
+    // If starting from a specific continuation URL, load it into the WebView first
+    if (startUrl != null && startUrl.isNotEmpty) {
+      print("[WebViewCubit] Loading index progression page: $startUrl");
+      _pageLoadCompleter = Completer<void>();
+      await controller.loadRequest(Uri.parse(startUrl));
+      await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
+      _pageLoadCompleter = null;
+      await Future.delayed(const Duration(milliseconds: 1000));
+      await _injectScanner();
+    }
+
+    final initialIndex = existingChapters?.length ?? 0;
+
     final js = generateBookExtrationJSPrompt(
       reMap,
       chaptersLoadingIIFE(
         ChapterInfoExtractor.fromJson(jsonCMap),
         nextPageSelector ?? 'null',
-        0, // Start initial batch at index 0
+        initialIndex, // Pass our start index alignment
       ),
     );
 
@@ -537,8 +600,14 @@ class WebviewCubit extends Cubit<WebviewState> {
         throw Exception("JS Extraction Error: ${response['error']}");
       }
 
-      List<dynamic> accumulatedChapters = List.from(response['chapters'] ?? []);
+      List<dynamic> accumulatedChapters = List.from(
+        existingChapters?.map((e) => e.toJson()) ?? [],
+      );
+      accumulatedChapters.addAll(response['chapters'] ?? []);
+
       String? currentFailedUrl = response['failedUrl'] as String?;
+      String? currentLastSuccessfulUrl =
+          response['lastSuccessfulUrl'] as String?;
 
       // Fast fetch failed (likely on a cross-origin transition page).
       // We navigate WebView sequentially to cross the domain boundary, extract,
@@ -597,10 +666,16 @@ class WebviewCubit extends Cubit<WebviewState> {
 
         // Update target failed URL (will continue in same-origin fetch unless it runs into a separate boundary)
         currentFailedUrl = nextResponse['failedUrl'] as String?;
+        if (nextResponse['lastSuccessfulUrl'] != null) {
+          currentLastSuccessfulUrl =
+              nextResponse['lastSuccessfulUrl'] as String?;
+        }
       }
 
-      response['chapters'] = accumulatedChapters;
+      _lastFailedUrl = currentFailedUrl;
+      _lastSuccessfulPaginationUrl = currentLastSuccessfulUrl;
 
+      response['chapters'] = accumulatedChapters;
       response['firstChapterCharCount'] = 0;
 
       final rawLanguage = (response['language'] as String?)?.trim();

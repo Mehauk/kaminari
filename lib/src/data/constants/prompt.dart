@@ -46,6 +46,7 @@ String chaptersLoadingIIFE(
     let chapters = [];
     let i = $startIndex - 1;
     let nextUrl = document.location.href;
+    let lastSuccessfulUrl = nextUrl;
     
     while (nextUrl) {
       console.log("[JS-Extractor] Processing URL: " + nextUrl);
@@ -75,7 +76,8 @@ String chaptersLoadingIIFE(
           // Return what we successfully fetched along with the failed URL so Dart can continue via Webview navigation
           return {
             chapters: chapters,
-            failedUrl: nextUrl
+            failedUrl: nextUrl,
+            lastSuccessfulUrl: lastSuccessfulUrl
           };
         }
       }
@@ -94,8 +96,8 @@ String chaptersLoadingIIFE(
       });
       
       chapters = chapters.concat(pageChapters);
+      lastSuccessfulUrl = nextUrl;
       
-      // Dispatch immediate chapter accumulation progress to the Dart UI context
       if (typeof ProgressChannel !== 'undefined') {
         ProgressChannel.postMessage(JSON.stringify({ "count": chapters.length }));
       }
@@ -121,7 +123,8 @@ String chaptersLoadingIIFE(
     console.log("[JS-Extractor] Extraction complete. Total chapters: " + chapters.length);
     return {
       chapters: chapters,
-      failedUrl: null
+      failedUrl: null,
+      lastSuccessfulUrl: lastSuccessfulUrl
     };
   })()
 """;
@@ -311,6 +314,7 @@ String generateBookExtrationJSPrompt(Map reMap, String iIFE) =>
         const result = await $iIFE;
         data.chapters = result.chapters;
         data.failedUrl = result.failedUrl;
+        data.lastSuccessfulUrl = result.lastSuccessfulUrl;
         ExtractionChannel.postMessage(JSON.stringify(data));
       } catch (e) {
         ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));

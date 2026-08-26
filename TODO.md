@@ -40,23 +40,23 @@
 - [x] import builder loader update (with type selection)
 - [x] move the first three chapter downloading to the background cubit
 - [x] fix broken chapter (auto reload when finished downloading) (fix ui as well) (seems to be working)
-- [x] history's cards should open reader three dots detials
-- [ ] replace favoriting with status, set to reading once opened. (unread, reading, read, reading_haiatus, trashed)
+- [x] history's -> status, set reading if opened. (unread, reading, read, reading_haiatus, trashed)
+- [x] avoid getting rate limited when paginating for chapters
+- [x] scroll opening a new chapt3r should cause downloads
+- [ ] hide importer, when import is clicked again fomr the same page, just reopen it in same state
 - [ ] novelight
-- [ ] avoid getting rate limited when paginating for chapters
-- [ ] scroll opening a new chapt3r should cause downloads
 - [ ] retry or re-download shold give the old selectors as a comparison
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
 - [ ] double tap on import webview to singletap normal + hold link?
 - [ ] open import chapter webview on error (only for current)
-- [ ] import builder loader ui update
 - [ ] icon/splash update
 - [ ] find an actual place to put the archived books
 
 - [ ] ui fixes
   - [ ] select book type in importer overlay
   - [ ] imprt epub button from discorvery screen
+  - [ ] import builder loader ui update
 
 - [x] BUG: bottom nav covered by native nav bar
 - [x] BUG: inf linearprog on import webview
