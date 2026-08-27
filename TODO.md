@@ -52,6 +52,7 @@
 - [ ] open import chapter webview on error (only for current)
 - [ ] icon/splash update
 - [ ] find an actual place to put the archived books
+- [ ] deleting a book should be instant visually
 
 - [ ] ui fixes
   - [ ] select book type in importer overlay
