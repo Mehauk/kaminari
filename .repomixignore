@@ -1,0 +1,7 @@
+android/
+assets/
+ios/
+temp/
+test/
+.metadata
+*.excalidraw
