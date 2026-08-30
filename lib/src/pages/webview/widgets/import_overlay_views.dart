@@ -62,7 +62,9 @@ class ImportPreviewView extends StatelessWidget {
   final VoidCallback onConfirm;
   final VoidCallback onRetry;
   final VoidCallback onCancel;
+  final VoidCallback? onHide;
   final VoidCallback? onMissingChapters;
+  final bool showMissingChaptersBtn;
 
   const ImportPreviewView({
     super.key,
@@ -71,7 +73,9 @@ class ImportPreviewView extends StatelessWidget {
     required this.onConfirm,
     required this.onRetry,
     required this.onCancel,
+    this.onHide,
     this.onMissingChapters,
+    this.showMissingChaptersBtn = false,
   });
 
   @override
@@ -205,13 +209,32 @@ class ImportPreviewView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: TextButton(
-            onPressed: onCancel,
-            child: const Text("DISCARD & CLOSE"),
+        if (onHide != null)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onHide,
+                  child: const Text("HIDE"),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextButton(
+                  onPressed: onCancel,
+                  child: const Text("DISCARD & CLOSE"),
+                ),
+              ),
+            ],
+          )
+        else
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: onCancel,
+              child: const Text("DISCARD & CLOSE"),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -220,8 +243,7 @@ class ImportPreviewView extends StatelessWidget {
     if (book.chapters.isEmpty) return const SizedBox.shrink();
 
     final firstCh = book.chapters.first;
-    final lastCh = book.chapters.last;
-    final inBetweenCount = book.chapters.length - 2;
+    final inBetweenCount = book.chapters.length - 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,24 +253,28 @@ class ImportPreviewView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const CustomText(
-              "Chapter Structure Preview",
+              "Chapters",
               TextType.labelSmall,
               color: KaminariTheme.textTitle,
             ),
-            TextButton(
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            if (showMissingChaptersBtn && onMissingChapters != null)
+              TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: onMissingChapters,
+                child: const CustomText(
+                  "Missing Chapters?",
+                  TextType.labelSmall,
+                  color: KaminariTheme.cyan,
+                  fontSize: 11,
+                ),
               ),
-              onPressed: onMissingChapters,
-              child: const CustomText(
-                "Missing Chapters?",
-                TextType.labelSmall,
-                color: KaminariTheme.cyan,
-                fontSize: 11,
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -261,41 +287,20 @@ class ImportPreviewView extends StatelessWidget {
             border: Border.all(color: KaminariTheme.surfaceTint.withAlpha(20)),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Display First Chapter
               _buildChapterRow(firstCh),
 
               // Segment representing skipped entries
               if (inBetweenCount > 0) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 4,
-                    horizontal: 8,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 2,
-                        height: 16,
-                        color: KaminariTheme.surfaceTint.withAlpha(60),
-                      ),
-                      const SizedBox(width: 12),
-                      CustomText(
-                        "• • •  and $inBetweenCount more chapters  • • •",
-                        TextType.labelSmall,
-                        color: KaminariTheme.textSecondary.withAlpha(120),
-                        fontSize: 11,
-                      ),
-                    ],
-                  ),
+                CustomText(
+                  "• • •  $inBetweenCount more  • • •",
+                  TextType.labelSmall,
+                  color: KaminariTheme.textSecondary.withAlpha(120),
+                  fontSize: 11,
                 ),
-              ] else if (book.chapters.length == 2) ...[
-                const SizedBox(height: 4),
               ],
-
-              // Display Final Chapter (only if more than 1 chapter exists)
-              if (book.chapters.length > 1) _buildChapterRow(lastCh),
             ],
           ),
         ),
@@ -304,28 +309,7 @@ class ImportPreviewView extends StatelessWidget {
   }
 
   Widget _buildChapterRow(ChapterInfo ch) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 28,
-          child: CustomText(
-            '${ch.number + 1}'.padLeft(2, '0'),
-            TextType.labelSmall,
-            color: KaminariTheme.textTitle,
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: CustomText(
-            ch.title,
-            TextType.bodyMedium,
-            fontSize: 13,
-            maxLines: 1,
-          ),
-        ),
-      ],
-    );
+    return CustomText(ch.title, TextType.bodyMedium, fontSize: 13, maxLines: 1);
   }
 }
 

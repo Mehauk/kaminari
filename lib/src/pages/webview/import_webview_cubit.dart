@@ -78,6 +78,10 @@ class WebviewCubit extends Cubit<WebviewState> {
   BookDetailsExtractor? _lastSelectors;
   String? _lastFailedUrl;
   String? _lastSuccessfulPaginationUrl;
+  int _pagesParsed = 0;
+
+  /// Exposes a reactive boolean identifying if more than one page of chapters was successfully parsed.
+  bool get showMissingChapters => _pagesParsed > 1;
 
   WebviewCubit({
     required this.extractorBuilder,
@@ -336,7 +340,27 @@ class WebviewCubit extends Cubit<WebviewState> {
     );
   }
 
+  void hideOverlay() {
+    emit(state.copyWith(importStatus: ImportStatus.notImported));
+  }
+
   Future<void> handleImport({bool forceReload = false}) async {
+    // Check if we can reopen a hidden preview on the same page (unless forcing a reload)
+    if (!forceReload && state.previewBook != null) {
+      final normCurrent = state.url.toLowerCase().trim().replaceAll(
+        RegExp(r'/+$'),
+        '',
+      );
+      final normPreview = state.previewBook!.url
+          .toLowerCase()
+          .trim()
+          .replaceAll(RegExp(r'/+$'), '');
+      if (normCurrent == normPreview) {
+        emit(state.copyWith(importStatus: ImportStatus.preview));
+        return;
+      }
+    }
+
     emit(
       state.copyWith(
         importStatus: ImportStatus.extracting,
@@ -348,6 +372,7 @@ class WebviewCubit extends Cubit<WebviewState> {
 
     String? origin;
     try {
+      final startingUrl = (await controller.currentUrl()) ?? state.url;
       final originResult = await controller.runJavaScriptReturningResult(
         "(function() {return document.location.origin;})()",
       );
@@ -402,6 +427,16 @@ class WebviewCubit extends Cubit<WebviewState> {
 
       print("${bookData.coverUrl}STUPIDO");
 
+      // Navigate back to the starting URL if the crawler moved us
+      final currentUrl = await controller.currentUrl();
+      if (startingUrl.isNotEmpty && currentUrl != startingUrl) {
+        _pageLoadCompleter = Completer<void>();
+        await controller.loadRequest(Uri.parse(startingUrl));
+        await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
+        _pageLoadCompleter = null;
+        await _injectScanner();
+      }
+
       emit(
         state.copyWith(
           importStatus: ImportStatus.preview,
@@ -437,6 +472,7 @@ class WebviewCubit extends Cubit<WebviewState> {
     );
 
     try {
+      final startingUrl = (await controller.currentUrl()) ?? state.url;
       // Prioritize the last failed URL, then the last successfully accessed URL, or fallback to original book URL
       final startUrl =
           _lastFailedUrl ??
@@ -448,6 +484,16 @@ class WebviewCubit extends Cubit<WebviewState> {
         existingChapters: state.previewBook!.chapters,
         startUrl: startUrl,
       );
+
+      // Navigate back to the starting URL if the crawler moved us
+      final currentUrl = await controller.currentUrl();
+      if (startingUrl.isNotEmpty && currentUrl != startingUrl) {
+        _pageLoadCompleter = Completer<void>();
+        await controller.loadRequest(Uri.parse(startingUrl));
+        await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
+        _pageLoadCompleter = null;
+        await _injectScanner();
+      }
 
       emit(
         state.copyWith(
@@ -564,6 +610,11 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
     }
 
+    // Reset pagination counter only on fresh runs
+    if (existingChapters == null || existingChapters.isEmpty) {
+      _pagesParsed = 0;
+    }
+
     // If starting from a specific continuation URL, load it into the WebView first
     if (startUrl != null && startUrl.isNotEmpty) {
       print("[WebViewCubit] Loading index progression page: $startUrl");
@@ -604,6 +655,8 @@ class WebviewCubit extends Cubit<WebviewState> {
         existingChapters?.map((e) => e.toJson()) ?? [],
       );
       accumulatedChapters.addAll(response['chapters'] ?? []);
+
+      _pagesParsed += (response['pagesParsed'] as num? ?? 0).toInt();
 
       String? currentFailedUrl = response['failedUrl'] as String?;
       String? currentLastSuccessfulUrl =
@@ -663,6 +716,7 @@ class WebviewCubit extends Cubit<WebviewState> {
 
         final List newChapters = nextResponse['chapters'] ?? [];
         accumulatedChapters.addAll(newChapters);
+        _pagesParsed += (nextResponse['pagesParsed'] as num? ?? 0).toInt();
 
         // Update target failed URL (will continue in same-origin fetch unless it runs into a separate boundary)
         currentFailedUrl = nextResponse['failedUrl'] as String?;
