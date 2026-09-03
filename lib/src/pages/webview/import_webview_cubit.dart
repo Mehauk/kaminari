@@ -83,6 +83,9 @@ class WebviewCubit extends Cubit<WebviewState> {
   /// Exposes a reactive boolean identifying if more than one page of chapters was successfully parsed.
   bool get showMissingChapters => _pagesParsed > 1;
 
+  /// Identifies if the parser currently holds active selectors in memory.
+  bool get hasSelectors => _lastSelectors != null;
+
   WebviewCubit({
     required this.extractorBuilder,
     required this.backgroundWebviewCubit,
@@ -296,11 +299,15 @@ class WebviewCubit extends Cubit<WebviewState> {
   }
 
   void resetForNewPage(String url) {
+    _lastSelectors = null;
+    _lastFailedUrl = null;
+    _lastSuccessfulPaginationUrl = null;
+    _pagesParsed = 0;
     emit(
       state.copyWith(
         url: url,
         isLoading: true,
-        importStatus: .notImported,
+        importStatus: ImportStatus.notImported,
         selectedEntry: null,
         previewBook: null,
         importProgress: 0.0,
@@ -330,6 +337,10 @@ class WebviewCubit extends Cubit<WebviewState> {
   }
 
   void cancelImport() {
+    _lastSelectors = null;
+    _lastFailedUrl = null;
+    _lastSuccessfulPaginationUrl = null;
+    _pagesParsed = 0;
     emit(
       state.copyWith(
         importStatus: ImportStatus.notImported,
@@ -447,7 +458,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       );
     } catch (e, stack) {
       print("Extraction Error: $e\n$stack");
-      if (origin != null) {
+      if (_lastSelectors == null && origin != null) {
         await extractorBuilder.clearCacheForOrigin(origin);
       }
       emit(
@@ -459,15 +470,290 @@ class WebviewCubit extends Cubit<WebviewState> {
     }
   }
 
-  /// Continues pulling missing chapters starting from where the previous execution was interrupted.
+  /// Refetches only metadata selectors, reusing existing chapter selectors.
+  Future<void> handleImportMetadata() async {
+    if (state.previewBook == null) return;
+
+    emit(
+      state.copyWith(
+        importStatus: ImportStatus.extracting,
+        importProgress: 0.1,
+        progressMessage: "Minifying web structure...",
+      ),
+    );
+
+    String? origin;
+    try {
+      final originResult = await controller.runJavaScriptReturningResult(
+        "(function() {return document.location.origin;})()",
+      );
+
+      origin = originResult is String
+          ? jsonDecode(originResult) as String
+          : originResult.toString();
+
+      emit(
+        state.copyWith(
+          importProgress: 0.3,
+          progressMessage: "Extracting DOM tree context...",
+        ),
+      );
+
+      final dynamic rawTree = await controller.runJavaScriptReturningResult(
+        minTreeExtFn,
+      );
+      final String miniTree = rawTree as String;
+
+      emit(
+        state.copyWith(
+          importProgress: 0.6,
+          progressMessage: "Consulting AI for revised metadata selectors...",
+        ),
+      );
+
+      final prompt = buildDiscoveryAIPrompt(miniTree);
+
+      final fullResponse = await extractorBuilder.buildBookExtractorSelectors(
+        origin,
+        prompt,
+        forceReload: true, // Forces fresh AI selector generation
+      );
+
+      final selectors = LlmService.extractJsonFromResponse(
+        fullResponse,
+        BookDetailsExtractor.fromJson,
+      );
+
+      _lastSelectors = selectors;
+
+      emit(
+        state.copyWith(
+          importProgress: 0.8,
+          progressMessage: "Extracting metadata from current page...",
+        ),
+      );
+
+      // Execute queries only for metadata fields on the current WebView frame
+      final String metadataJs =
+          """
+        (async () => {
+          try {
+            const selectors = ${jsonEncode(selectors.toJson())};
+            const titleEl = document.querySelector(selectors.title);
+            const authorEl = document.querySelector(selectors.author);
+            const synopsisEl = document.querySelector(selectors.synopsis);
+            
+            let coverUrl = '';
+            if (selectors.coverUrl) {
+              const coverEl = document.querySelector(selectors.coverUrl);
+              if (coverEl) {
+                coverUrl = coverEl.src || coverEl.getAttribute('data-src') || coverEl.href || coverEl.textContent.trim();
+              }
+            }
+
+            let jlptLevel = '';
+            if (selectors.jlptLevel) {
+              const jlptEl = document.querySelector(selectors.jlptLevel);
+              if (jlptEl) {
+                jlptLevel = jlptEl.textContent.trim();
+              }
+            }
+
+            const result = {
+              "title": titleEl ? titleEl.textContent.trim() : '',
+              "author": authorEl ? authorEl.textContent.trim() : '',
+              "synopsis": synopsisEl ? synopsisEl.textContent.trim() : '',
+              "coverUrl": coverUrl,
+              "jlptLevel": jlptLevel
+            };
+            ExtractionChannel.postMessage(JSON.stringify(result));
+          } catch (e) {
+            ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
+          }
+        })()
+      """;
+
+      _extractionCompleter = Completer<String>();
+      await controller.runJavaScript(metadataJs);
+
+      final resultString = await _extractionCompleter!.future.timeout(
+        const Duration(seconds: 30),
+      );
+      _extractionCompleter = null;
+
+      final Map<String, dynamic> response = jsonDecode(resultString);
+      if (response.containsKey('error')) {
+        throw Exception("JS Metadata Query Failed: ${response['error']}");
+      }
+
+      String title = response['title'] ?? '';
+      String author = response['author'] ?? '';
+      String synopsis = response['synopsis'] ?? '';
+      String? coverUrl = response['coverUrl'];
+      String? jlptLevel = response['jlptLevel'];
+
+      if (title.isEmpty) title = state.previewBook!.title;
+      if (author.isEmpty) author = state.previewBook!.author;
+      if (synopsis.isEmpty) synopsis = state.previewBook!.synopsis;
+
+      if (state.previewBook!.language == "ja" &&
+          (jlptLevel == null || jlptLevel.isEmpty)) {
+        jlptLevel = await synopsis.jlptEstimate;
+      }
+
+      final updatedBook = state.previewBook!.copyWith(
+        title: title,
+        author: author,
+        synopsis: synopsis,
+        coverUrl: (coverUrl != null && coverUrl.isNotEmpty)
+            ? coverUrl
+            : state.previewBook!.coverUrl,
+        jlptLevel: (jlptLevel != null && jlptLevel.isNotEmpty)
+            ? jlptLevel
+            : state.previewBook!.jlptLevel,
+      );
+
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.preview,
+          importProgress: 1.0,
+          progressMessage: "Metadata refreshed.",
+          previewBook: updatedBook,
+        ),
+      );
+    } catch (e, stack) {
+      print("Metadata Retry Error: $e\n$stack");
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.failure,
+          progressMessage: "Metadata retry failed: ${e.toString()}",
+        ),
+      );
+    }
+  }
+
+  /// Re-runs the entire extraction process (including metadata and pagination) from scratch but preserves previously verified metadata.
+  Future<void> handleImportChapters() async {
+    if (state.previewBook == null) return;
+
+    // Cache the verified metadata fields locally
+    final originalMetadata = state.previewBook!;
+
+    emit(
+      state.copyWith(
+        importStatus: ImportStatus.extracting,
+        importProgress: 0.1,
+        progressMessage: "Minifying web structure...",
+        previewBook: null, // Loading indicator fallback
+      ),
+    );
+
+    String? origin;
+    try {
+      final startingUrl = (await controller.currentUrl()) ?? state.url;
+      final originResult = await controller.runJavaScriptReturningResult(
+        "(function() {return document.location.origin;})()",
+      );
+
+      origin = originResult is String
+          ? jsonDecode(originResult) as String
+          : originResult.toString();
+
+      emit(
+        state.copyWith(
+          importProgress: 0.3,
+          progressMessage: "Extracting DOM tree context...",
+        ),
+      );
+
+      final dynamic rawTree = await controller.runJavaScriptReturningResult(
+        minTreeExtFn,
+      );
+      final String miniTree = rawTree as String;
+
+      emit(
+        state.copyWith(
+          importProgress: 0.5,
+          progressMessage: "Consulting AI for revised selectors...",
+        ),
+      );
+
+      final prompt = buildDiscoveryAIPrompt(miniTree);
+
+      final fullResponse = await extractorBuilder.buildBookExtractorSelectors(
+        origin,
+        prompt,
+        forceReload: true, // Forces fresh AI selector generation
+      );
+
+      emit(
+        state.copyWith(
+          importProgress: 0.75,
+          progressMessage:
+              "Analyzing pages and compiling chapter directories...",
+        ),
+      );
+
+      final selectors = LlmService.extractJsonFromResponse(
+        fullResponse,
+        BookDetailsExtractor.fromJson,
+      );
+
+      _lastSelectors = selectors; // Save selectors for resuming later
+
+      final freshBook = await _extractBookMetadata(selectors);
+
+      // Navigate back to starting URL if crawler moved
+      final currentUrl = await controller.currentUrl();
+      if (startingUrl.isNotEmpty && currentUrl != startingUrl) {
+        _pageLoadCompleter = Completer<void>();
+        await controller.loadRequest(Uri.parse(startingUrl));
+        await _pageLoadCompleter!.future.timeout(const Duration(seconds: 30));
+        _pageLoadCompleter = null;
+        await _injectScanner();
+      }
+
+      // Merge: Overwrite freshBook's scraped metadata with the previously confirmed metadata
+      final mergedBook = freshBook.copyWith(
+        title: originalMetadata.title,
+        author: originalMetadata.author,
+        synopsis: originalMetadata.synopsis,
+        coverUrl: originalMetadata.coverUrl,
+        jlptLevel: originalMetadata.jlptLevel,
+      );
+
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.preview,
+          importProgress: 1.0,
+          progressMessage: "Chapters refreshed.",
+          previewBook: mergedBook,
+        ),
+      );
+    } catch (e, stack) {
+      print("Chapters Retry Error: $e\n$stack");
+      emit(
+        state.copyWith(
+          importStatus: ImportStatus.failure,
+          progressMessage: "Chapters retry failed: ${e.toString()}",
+        ),
+      );
+    }
+  }
+
+  /// Continues pulling missing chapters starting from where the previous execution was interrupted, while preserving previously verified metadata.
   Future<void> resumeImport() async {
     if (state.previewBook == null || _lastSelectors == null) return;
+
+    // Cache the verified metadata and chapters locally
+    final originalMetadata = state.previewBook!;
 
     emit(
       state.copyWith(
         importStatus: ImportStatus.extracting,
         importProgress: 0.5,
         progressMessage: "Resuming chapter extraction...",
+        previewBook: null, // Loading indicator fallback
       ),
     );
 
@@ -477,11 +763,11 @@ class WebviewCubit extends Cubit<WebviewState> {
       final startUrl =
           _lastFailedUrl ??
           _lastSuccessfulPaginationUrl ??
-          state.previewBook!.url;
+          originalMetadata.url;
 
-      final updatedBook = await _extractBookMetadata(
+      final freshBook = await _extractBookMetadata(
         _lastSelectors!,
-        existingChapters: state.previewBook!.chapters,
+        existingChapters: originalMetadata.chapters,
         startUrl: startUrl,
       );
 
@@ -495,12 +781,22 @@ class WebviewCubit extends Cubit<WebviewState> {
         await _injectScanner();
       }
 
+      // Merge: Overwrite freshBook's scraped metadata with the previously confirmed metadata
+      final mergedBook = freshBook.copyWith(
+        title: originalMetadata.title,
+        author: originalMetadata.author,
+        synopsis: originalMetadata.synopsis,
+        coverUrl: originalMetadata.coverUrl,
+        jlptLevel: originalMetadata.jlptLevel,
+        bookType: originalMetadata.bookType,
+      );
+
       emit(
         state.copyWith(
           importStatus: ImportStatus.preview,
           importProgress: 1.0,
           progressMessage: "Resumed extraction parsed successfully.",
-          previewBook: updatedBook,
+          previewBook: mergedBook,
         ),
       );
     } catch (e) {

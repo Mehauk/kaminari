@@ -61,6 +61,8 @@ class ImportPreviewView extends StatelessWidget {
   final ValueChanged<BookType> onTypeChanged;
   final VoidCallback onConfirm;
   final VoidCallback onRetry;
+  final VoidCallback? onRetryMetadata;
+  final VoidCallback? onRetryChapters;
   final VoidCallback onCancel;
   final VoidCallback? onHide;
   final VoidCallback? onMissingChapters;
@@ -73,6 +75,8 @@ class ImportPreviewView extends StatelessWidget {
     required this.onConfirm,
     required this.onRetry,
     required this.onCancel,
+    this.onRetryMetadata,
+    this.onRetryChapters,
     this.onHide,
     this.onMissingChapters,
     this.showMissingChaptersBtn = false,
@@ -80,6 +84,9 @@ class ImportPreviewView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool showSeparatedRetries =
+        onRetryMetadata != null && onRetryChapters != null;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,23 +198,53 @@ class ImportPreviewView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: onRetry,
-                child: const Text("RETRY AI"),
+        if (showSeparatedRetries) ...[
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onRetryMetadata,
+                  child: const Text("RETRY METADATA AI"),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                onPressed: onConfirm,
-                child: const Text("CONFIRM"),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onRetryChapters,
+                  child: const Text("RETRY CHAPTERS AI"),
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onConfirm,
+              child: const Text("CONFIRM"),
             ),
-          ],
-        ),
+          ),
+        ] else ...[
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onRetry,
+                  child: Text(
+                    book.source == "Local EPUB" ? "RE-SELECT FILE" : "RETRY AI",
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: onConfirm,
+                  child: const Text("CONFIRM"),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 8),
         if (onHide != null)
           Row(
@@ -423,18 +460,25 @@ class ImportSuccessView extends StatelessWidget {
 
 class ImportFailureView extends StatelessWidget {
   final String message;
-  final VoidCallback onRetry;
+  final VoidCallback? onRetry;
+  final VoidCallback? onRetryMetadata;
+  final VoidCallback? onRetryChapters;
   final VoidCallback onCancel;
 
   const ImportFailureView({
     super.key,
     required this.message,
-    required this.onRetry,
     required this.onCancel,
+    this.onRetry,
+    this.onRetryMetadata,
+    this.onRetryChapters,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool showSeparated =
+        onRetryMetadata != null && onRetryChapters != null;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -448,22 +492,36 @@ class ImportFailureView extends StatelessWidget {
         const SizedBox(height: 12),
         CustomText(message, TextType.bodyMedium, alignment: TextAlign.center),
         const SizedBox(height: 32),
-        Row(
-          children: [
-            Expanded(
-              child: TextButton(
-                onPressed: onCancel,
-                child: const Text("ABANDON"),
-              ),
+        if (showSeparated) ...[
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onRetryChapters,
+              child: const Text("RETRY CHAPTER EXTRACTION"),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                onPressed: onRetry,
-                child: const Text("RETRY"),
-              ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: onRetryMetadata,
+              child: const Text("RE-RUN AI SELECTOR SEARCH"),
             ),
-          ],
+          ),
+          const SizedBox(height: 12),
+        ] else if (onRetry != null) ...[
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(onPressed: onRetry, child: const Text("RETRY")),
+          ),
+          const SizedBox(height: 12),
+        ],
+        SizedBox(
+          width: double.infinity,
+          child: TextButton(
+            onPressed: onCancel,
+            child: const Text("ABANDON & CLOSE"),
+          ),
         ),
       ],
     );
