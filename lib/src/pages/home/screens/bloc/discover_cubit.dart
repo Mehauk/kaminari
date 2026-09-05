@@ -81,6 +81,24 @@ class DiscoverCubit extends Cubit<DiscoverState> {
     }
   }
 
+  void invertPreviewChapters() {
+    if (state.epubPreviewBook != null) {
+      final reversedChapters = state.epubPreviewBook!.chapters.reversed
+          .toList();
+      final renumberedChapters = List<ChapterInfo>.generate(
+        reversedChapters.length,
+        (i) => reversedChapters[i].copyWith(number: i),
+      );
+      emit(
+        state.copyWith(
+          epubPreviewBook: state.epubPreviewBook!.copyWith(
+            chapters: renumberedChapters,
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> confirmEpubImport() async {
     if (state.epubPreviewBook == null) return;
     emit(state.copyWith(isImporting: true));

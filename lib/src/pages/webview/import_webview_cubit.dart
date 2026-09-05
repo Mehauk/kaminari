@@ -60,6 +60,7 @@ enum ImportStatus {
 abstract class WebviewState with _$WebviewState {
   const factory WebviewState({
     @Default('') String url,
+    @Default('') String origin,
     @Default('Loading...') String title,
     @Default(true) bool isLoading,
     @Default(ImportStatus.notImported) ImportStatus importStatus,
@@ -510,6 +511,23 @@ class WebviewCubit extends Cubit<WebviewState> {
     }
   }
 
+  void invertPreviewChapters() {
+    if (state.previewBook != null) {
+      final reversedChapters = state.previewBook!.chapters.reversed.toList();
+      final renumberedChapters = List<ChapterInfo>.generate(
+        reversedChapters.length,
+        (i) => reversedChapters[i].copyWith(number: i),
+      );
+      emit(
+        state.copyWith(
+          previewBook: state.previewBook!.copyWith(
+            chapters: renumberedChapters,
+          ),
+        ),
+      );
+    }
+  }
+
   void cancelImport() {
     _lastSelectors = null;
     _lastFailedUrl = null;
@@ -595,6 +613,7 @@ class WebviewCubit extends Cubit<WebviewState> {
 
       emit(
         state.copyWith(
+          origin: origin,
           importProgress: 0.3,
           progressMessage: "Extracting DOM tree context...",
         ),
@@ -1347,5 +1366,9 @@ class WebviewCubit extends Cubit<WebviewState> {
 
   Map<String, Map<String, String>> getCachedExtractors() {
     return extractorBuilder.getCachedExtractors();
+  }
+
+  void clearCachedExtractors() {
+    extractorBuilder.clearCacheForOrigin(state.origin);
   }
 }
