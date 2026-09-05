@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:kaminari/src/data/models/book.dart';
 import 'package:kaminari/src/data/services/local_storage_service.dart';
+import 'package:kaminari/src/ui/widgets/book_cover.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -569,6 +571,38 @@ class DatabaseService {
 
   Future<int> deleteBook(int bookId) async {
     final db = await database;
+
+    try {
+      final List<Map<String, dynamic>> results = await db.query(
+        'BookDetails',
+        columns: ['coverUrl'],
+        where: 'id = ?',
+        whereArgs: [bookId],
+      );
+
+      if (results.isNotEmpty) {
+        final coverUrl = results.first['coverUrl'] as String?;
+        if (coverUrl != null && coverUrl.isNotEmpty) {
+          if (coverUrl.startsWith('http://') ||
+              coverUrl.startsWith('https://')) {
+            // Evict remote cached cover image
+            await BookCoverCacheManager.instance.removeFile(coverUrl);
+          } else if (!coverUrl.startsWith('assets/')) {
+            // Clean up physically stored files (e.g. from local EPUB imports)
+            final cleanPath = coverUrl.startsWith("file://")
+                ? coverUrl.replaceFirst("file://", "")
+                : coverUrl;
+            final file = File(cleanPath);
+            if (await file.exists()) {
+              await file.delete();
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print("[DatabaseService] Error cleaning up cover image files: $e");
+    }
+
     final count = await db.delete(
       'BookDetails',
       where: 'id = ?',
