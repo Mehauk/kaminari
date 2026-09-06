@@ -1,6 +1,7 @@
 - [ ] novelight (The Support Ate it All)
 - [X] operation failed popup is not working proerpy (the buttons inside)
 - [x] invert chapters button in the import view and the details view
+- [ ] retries need to send old/incorrect (all) selectors with retry
 - [ ] auto-update for new chapters
 - [ ] open import chapter webview on error (only for current)
 - [ ] importing sources
@@ -13,15 +14,18 @@
   - [ ] webview: navigation
   - [ ] going back a chapter
 - [ ] discover page changes
-  - [ ] The search bar functions counterintuitively
+  - [ ] the search bar functions counterintuitively
   - [ ] import epub button
   - [ ] The import webview navigation is not good (back button for example)
   - [ ] finder (wrapper around a singular source search?)
+- [ ] performance
+  - [ ] frozen clpi on import (https://lorenovels.com/the-support-ate-it-all/)
+- [ ] icon/splash update
+
 - [ ] manga features
   - [ ] pre download images in chapters
   - [ ] Choose to keep downloaded
   - [ ] make sure that importing both indv. and sources works
-- [ ] icon/splash update
 
 - [ ] persist linebreaks/spacing?
 - [ ] find an actual place to put the archived books
