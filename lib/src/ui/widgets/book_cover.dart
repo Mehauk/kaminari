@@ -23,6 +23,7 @@ class BookCover extends StatelessWidget {
   final double? height;
   final BoxFit fit;
   final Alignment alignment;
+  final bool cacheImage;
 
   const BookCover({
     super.key,
@@ -31,6 +32,7 @@ class BookCover extends StatelessWidget {
     this.height,
     this.fit = BoxFit.cover,
     this.alignment = Alignment.center,
+    this.cacheImage = true,
   });
 
   @override
@@ -43,16 +45,28 @@ class BookCover extends StatelessWidget {
         coverUrl!.startsWith("http://") || coverUrl!.startsWith("https://");
 
     if (isNetworkImage) {
-      return CachedNetworkImage(
-        imageUrl: coverUrl!,
-        cacheManager: BookCoverCacheManager.instance,
-        width: width,
-        height: height,
-        fit: fit,
-        alignment: alignment,
-        placeholder: (_, _) => _buildPlaceholder(),
-        errorWidget: (_, _, _) => _buildPlaceholder(),
-      );
+      if (cacheImage) {
+        return CachedNetworkImage(
+          imageUrl: coverUrl!,
+          cacheManager: BookCoverCacheManager.instance,
+          width: width,
+          height: height,
+          fit: fit,
+          alignment: alignment,
+          placeholder: (_, _) => _buildPlaceholder(),
+          errorWidget: (_, _, _) => _buildPlaceholder(),
+        );
+      } else {
+        // Standard, non-cached transient network render for preview screens
+        return Image.network(
+          coverUrl!,
+          width: width,
+          height: height,
+          fit: fit,
+          alignment: alignment,
+          errorBuilder: (_, _, _) => _buildPlaceholder(),
+        );
+      }
     } else {
       // Cleans virtual prefix schemas if stored in DB
       final cleanPath = coverUrl!.startsWith("file://")
