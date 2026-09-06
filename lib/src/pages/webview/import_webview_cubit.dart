@@ -547,29 +547,53 @@ class WebviewCubit extends Cubit<WebviewState> {
     emit(state.copyWith(importStatus: ImportStatus.notImported));
   }
 
-  List<String> _buildAvoidSelectorsList({bool retryingChapters = false}) {
-    if (_lastSelectors == null) return [];
+  Map<String, String> _buildAvoidSelectorsList({
+    bool retryingChapters = false,
+  }) {
+    if (_lastSelectors == null) return {};
 
-    final avoid = <String>[];
+    final avoid = <String, String>{};
     final last = _lastSelectors!;
+    print("last:$last");
 
-    if (state.unpinnedFields.contains('title')) {
-      avoid.add(last.title);
-    }
-    if (state.unpinnedFields.contains('author')) {
-      avoid.add(last.author);
-    }
-    if (state.unpinnedFields.contains('synopsis')) {
-      avoid.add(last.synopsis);
-    }
-    if (state.unpinnedFields.contains('coverUrl') && last.coverUrl != null) {
-      avoid.add(last.coverUrl!);
-    }
-    if (state.unpinnedFields.contains('jlptLevel') && last.jlptLevel != null) {
-      avoid.add(last.jlptLevel!);
+    // 1. Chapter and Pagination retry
+    if (retryingChapters) {
+      if (last.nextPageUrl != null &&
+          last.nextPageUrl!.isNotEmpty &&
+          last.nextPageUrl!.toLowerCase() != "n/a") {
+        avoid['nextPageUrl'] = last.nextPageUrl!.split(" ").join(",");
+      }
+      // avoid['individualChapterDetails.base'] =
+      //     last.individualChapterDetails.base;
+      // avoid['individualChapterDetails.url'] = last.individualChapterDetails.url;
+      // avoid['individualChapterDetails.title'] =
+      //     last.individualChapterDetails.title;
     }
 
-    return avoid.where((s) => s.isNotEmpty && s != "N/A").toSet().toList();
+    // 2. Unlocked / Unpinned metadata fields when clicking "Fix Incorrect Data"
+    if (state.unpinnedFields.contains('title') && last.title.isNotEmpty) {
+      avoid['title'] = last.title;
+    }
+    if (state.unpinnedFields.contains('author') && last.author.isNotEmpty) {
+      avoid['author'] = last.author;
+    }
+    if (state.unpinnedFields.contains('synopsis') && last.synopsis.isNotEmpty) {
+      avoid['synopsis'] = last.synopsis;
+    }
+    if (state.unpinnedFields.contains('coverUrl') &&
+        last.coverUrl != null &&
+        last.coverUrl!.isNotEmpty &&
+        last.coverUrl!.toLowerCase() != 'n/a') {
+      avoid['coverUrl'] = last.coverUrl!;
+    }
+    if (state.unpinnedFields.contains('jlptLevel') &&
+        last.jlptLevel != null &&
+        last.jlptLevel!.isNotEmpty &&
+        last.jlptLevel!.toLowerCase() != 'n/a') {
+      avoid['jlptLevel'] = last.jlptLevel!;
+    }
+
+    return avoid;
   }
 
   Future<void> handleImport({bool forceReload = false}) async {
@@ -833,25 +857,43 @@ class WebviewCubit extends Cubit<WebviewState> {
         (async () => {
           try {
             const selectors = ${jsonEncode(selectors.toJson())};
-            const titleEl = document.querySelector(selectors.title);
-            const authorEl = document.querySelector(selectors.author);
-            const synopsisEl = document.querySelector(selectors.synopsis);
-            
-            let coverUrl = '';
-            if (selectors.coverUrl) {
-              const coverEl = document.querySelector(selectors.coverUrl);
-              if (coverEl) {
-                coverUrl = coverEl.src || coverEl.getAttribute('data-src') || coverEl.href || coverEl.textContent.trim();
+
+            function safeQuery(root, sel) {
+              if (!root || !sel || typeof sel !== 'string') return null;
+              const s = sel.trim();
+              if (!s || s === 'null' || s.toLowerCase() === 'n/a' || s.toLowerCase() === 'none') return null;
+              try {
+                const containsMatch = s.match(/^(.*?):contains\\(['"]?(.*?)['"]?\\)(.*)\$/i);
+                if (containsMatch) {
+                  const base = (containsMatch[1] + containsMatch[3]).trim() || '*';
+                  const text = containsMatch[2].trim().toLowerCase();
+                  const elements = root.querySelectorAll(base);
+                  for (const el of elements) {
+                    if (el.textContent && el.textContent.toLowerCase().includes(text)) {
+                      return el;
+                    }
+                  }
+                  return null;
+                }
+                return root.querySelector(s);
+              } catch (e) {
+                console.warn("[JS-Metadata] safeQuery error for " + s + ":", e);
+                return null;
               }
             }
 
-            let jlptLevel = '';
-            if (selectors.jlptLevel) {
-              const jlptEl = document.querySelector(selectors.jlptLevel);
-              if (jlptEl) {
-                jlptLevel = jlptEl.textContent.trim();
-              }
+            const titleEl = safeQuery(document, selectors.title);
+            const authorEl = safeQuery(document, selectors.author);
+            const synopsisEl = safeQuery(document, selectors.synopsis);
+            const coverEl = safeQuery(document, selectors.coverUrl);
+            const jlptEl = safeQuery(document, selectors.jlptLevel);
+            
+            let coverUrl = '';
+            if (coverEl) {
+              coverUrl = coverEl.src || coverEl.getAttribute('data-src') || coverEl.href || coverEl.textContent.trim();
             }
+
+            let jlptLevel = jlptEl ? jlptEl.textContent.trim() : '';
 
             const result = {
               "title": titleEl ? titleEl.textContent.trim() : '',
@@ -1188,48 +1230,6 @@ class WebviewCubit extends Cubit<WebviewState> {
     List<ChapterInfo>? existingChapters,
     String? startUrl,
   }) async {
-    final jsonMap = selectors.toJson();
-    final reMap = {};
-
-    final jsonCMap = selectors.individualChapterDetails.toJson();
-    final nextPageSelector = jsonMap["nextPageUrl"] as String?;
-
-    for (var ckey in jsonCMap.keys) {
-      String selector = jsonCMap[ckey] ?? 'null';
-      if (["null", "n/a", "none"].contains(selector.trim().toLowerCase())) {
-        jsonCMap[ckey] = null;
-      }
-    }
-
-    reMap["url"] = "document.location.href";
-    reMap["source"] = "document.location.origin";
-    reMap["language"] =
-        "document.documentElement.lang || document.querySelector('meta[http-equiv=\"content-language\"]')?.content || document.querySelector('meta[name=\"language\"]')?.content || document.querySelector('meta[name=\"lang\"]')?.content || 'en'";
-    for (var key in jsonMap.keys) {
-      if (key == "url") {
-        continue;
-      } else if ([
-        "individualChapterDetails",
-        "nextPageUrl",
-        "firstPageUrl",
-      ].contains(key)) {
-        continue;
-      }
-
-      String selector = jsonMap[key] ?? "null";
-      if (["null", "n/a", "none"].contains(selector.trim().toLowerCase())) {
-        continue;
-      }
-
-      if (key == "coverUrl") {
-        reMap[key] =
-            "(() => { const el = document.body.querySelector('$selector'); return el ? (el.src || el.getAttribute('data-src') || el.href || el.textContent.trim()) : ''; })()";
-      } else {
-        reMap[key] =
-            "(() => { const el = document.body.querySelector('$selector'); return el ? el.textContent.trim() : ''; })()";
-      }
-    }
-
     if (startUrl != null && startUrl.isNotEmpty) {
       print("[WebViewCubit] Loading index progression page: $startUrl");
       _pageLoadCompleter = Completer<void>();
@@ -1242,14 +1242,7 @@ class WebviewCubit extends Cubit<WebviewState> {
 
     final initialIndex = existingChapters?.length ?? 0;
 
-    final js = generateBookExtrationJSPrompt(
-      reMap,
-      chaptersLoadingIIFE(
-        ChapterInfoExtractor.fromJson(jsonCMap),
-        nextPageSelector ?? 'null',
-        initialIndex,
-      ),
-    );
+    final js = generateBookExtrationJSPrompt(selectors, initialIndex);
 
     _extractionCompleter = Completer<String>();
     await controller.runJavaScript(js);
@@ -1296,12 +1289,8 @@ class WebviewCubit extends Cubit<WebviewState> {
         await _injectScanner();
 
         final nextJs = generateBookExtrationJSPrompt(
-          reMap,
-          chaptersLoadingIIFE(
-            ChapterInfoExtractor.fromJson(jsonCMap),
-            nextPageSelector ?? 'null',
-            accumulatedChapters.length,
-          ),
+          selectors,
+          accumulatedChapters.length,
         );
 
         _extractionCompleter = Completer<String>();
