@@ -43,10 +43,10 @@
 - [x] avoid getting rate limited when paginating for chapters
 - [x] scroll opening a new chapt3r should cause downloads
 - [x] hide importer, when import is clicked again fomr the same page, just reopen it in same state
-- [-] separate retying of chapters and retrying of metadata
-- [x] download images directly
+- [x] separate retying of chapters and retrying of metadata
+- [x] retry or re-download should give the old selectors as a comparison
+- [x] download cov images directly
 - [ ] novelight
-- [ ] retry or re-download shold give the old selectors as a comparison
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
 - [ ] double tap on import webview to singletap normal + hold link?
@@ -58,8 +58,8 @@
 - [ ] Pre download images in chapters
 
 - [ ] ui fixes
-  - [ ] select book type in importer overlay
-  - [ ] imprt epub button from discorvery screen
+  - [ ] importer overlay
+  - [ ] import epub button from discorvery screen
   - [ ] import builder loader ui update
 
 - [x] BUG: broken chapter (auto reload when finished downloading)
@@ -81,6 +81,10 @@
       - [x] Ignore words for which reading/meaning cannot be found
     - [x] implement daily streak and words learnt
     - [ ] prep only shows for non english (including in reader)
+
+- [ ] extensions
+  - [ ] adblock (always enabled)
+  - [ ] darkreader (enabled default - add toggle in settings)
 
 - [ ] complete book features
   - [x] eng dict

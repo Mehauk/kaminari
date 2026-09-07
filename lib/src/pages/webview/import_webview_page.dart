@@ -157,6 +157,8 @@ class _ImportingProgressOverlay extends StatelessWidget {
         onHide: onHide,
         onMissingChapters: webviewCubit.resumeImport,
         showMissingChaptersBtn: webviewCubit.showMissingChapters,
+        unpinnedFields: state.unpinnedFields,
+        onTogglePin: webviewCubit.togglePinField,
       ),
       ImportStatus.success => ImportSuccessView(
         bookTitle: state.previewBook?.title,

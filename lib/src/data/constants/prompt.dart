@@ -1,6 +1,14 @@
 import 'package:kaminari/src/data/models/book.dart';
 
-String buildDiscoveryAIPrompt(String miniTree) {
+String buildDiscoveryAIPrompt(
+  String miniTree, {
+  List<String> avoidSelectors = const [],
+}) {
+  String avoid = '';
+  if (avoidSelectors.isNotEmpty) {
+    avoid = "\n4. Avoid these selectors $avoidSelectors";
+  }
+
   return """
 Analyze this minified DOM tree and identify the most likely CSS selectors for book metadata.
 I will use these selectors to run querySelector or querySelectorAll in a browser context.
@@ -8,7 +16,7 @@ I will use these selectors to run querySelector or querySelectorAll in a browser
 Guidelines:
 1. `individualChapterDetails.base` must select the individual chapter rows or container elements (e.g., `li` or chapter wrapper divs), NOT the parent container (like the entire `ul` or list wrapper `div`).
 2. You MUST identify the `nextPageUrl` selector if there is pagination (e.g., next page buttons, page numbers, or dropdown select options). The selector must target the link to the *immediate next page* sequentially (e.g. page 2, then page 3). Do NOT target the "Last" page or "First" page links. If no pagination exists, return "N/A".
-3. `coverUrl` must select the image tag or link containing the book cover image.
+3. `coverUrl` must select the image tag or link containing the book cover image.$avoid
 
 Tree: $miniTree
 
