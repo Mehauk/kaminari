@@ -443,11 +443,6 @@ class WebviewCubit extends Cubit<WebviewState> {
     if (state.unpinnedFields.contains('jlptLevel') && last.jlptLevel != null) {
       avoid.add(last.jlptLevel!);
     }
-    if (state.unpinnedFields.contains('chapters') || retryingChapters) {
-      avoid.add(last.individualChapterDetails.base);
-      avoid.add(last.individualChapterDetails.url);
-      avoid.add(last.individualChapterDetails.title);
-    }
 
     return avoid.where((s) => s.isNotEmpty && s != "N/A").toSet().toList();
   }
