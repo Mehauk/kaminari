@@ -408,9 +408,9 @@ class DatabaseService {
     _notifyChange();
   }
 
-  Future<void> saveBook(BookDetails book) async {
+  Future<int> saveBook(BookDetails book) async {
     final db = await database;
-    await db.transaction((txn) async {
+    final bookId = await db.transaction<int>((txn) async {
       final List<Map<String, dynamic>> existingBooks = await txn.query(
         'BookDetails',
         where: 'title = ? AND source = ? AND author = ? AND bookType = ?',
@@ -450,15 +450,39 @@ class DatabaseService {
         });
       }
 
-      for (var chapter in book.chapters) {
-        final List<Map<String, dynamic>> existingChapters = await txn.query(
-          'ChapterInfo',
-          where: 'book_id = ? AND (url = ? OR chapterNumber = ?)',
-          whereArgs: [bookId, chapter.url, chapter.number],
-        );
+      // 1. Fetch all existing chapters for this book in a single query
+      final List<Map<String, dynamic>> existingChaptersList = await txn.query(
+        'ChapterInfo',
+        columns: ['id', 'url', 'chapterNumber'],
+        where: 'book_id = ?',
+        whereArgs: [bookId],
+      );
 
-        if (existingChapters.isEmpty) {
-          final chapterId = await txn.insert('ChapterInfo', {
+      // 2. Build fast lookup maps in Dart memory
+      final Map<String, int> existingByUrl = {};
+      final Map<int, int> existingByNum = {};
+      for (final row in existingChaptersList) {
+        final id = row['id'] as int;
+        final url = row['url'] as String;
+        final num = row['chapterNumber'] as int;
+        existingByUrl[url] = id;
+        existingByNum[num] = id;
+      }
+
+      // 3. Queue up all operations in a single database batch
+      final batch = txn.batch();
+
+      // Track any chapters that contain content payload (e.g. EPUB imports)
+      // along with their batch operation index to retrieve their IDs later.
+      final List<(ChapterInfo, int)> pendingNewChapterSections = [];
+      int currentBatchOpIndex = 0;
+
+      for (var chapter in book.chapters) {
+        final existingId =
+            existingByUrl[chapter.url] ?? existingByNum[chapter.number];
+
+        if (existingId == null) {
+          batch.insert('ChapterInfo', {
             'book_id': bookId,
             'title': chapter.title,
             'url': chapter.url,
@@ -467,17 +491,12 @@ class DatabaseService {
             'prepReviewedCount': chapter.prepReviewedCount,
           });
 
-          if (chapter.content != null) {
-            for (var section in chapter.content!) {
-              await txn.insert('ChapterSection', {
-                'chapter_id': chapterId,
-                'content': section,
-              });
-            }
+          if (chapter.content != null && chapter.content!.isNotEmpty) {
+            pendingNewChapterSections.add((chapter, currentBatchOpIndex));
           }
+          currentBatchOpIndex++;
         } else {
-          int existingId = existingChapters.first['id'] as int;
-          await txn.update(
+          batch.update(
             'ChapterInfo',
             {
               'title': chapter.title,
@@ -487,25 +506,57 @@ class DatabaseService {
             where: 'id = ?',
             whereArgs: [existingId],
           );
+          currentBatchOpIndex++;
 
-          // Force-save chapter sections if we have content payload
           if (chapter.content != null) {
-            await txn.delete(
+            batch.delete(
               'ChapterSection',
               where: 'chapter_id = ?',
               whereArgs: [existingId],
             );
+            currentBatchOpIndex++;
+
             for (var section in chapter.content!) {
-              await txn.insert('ChapterSection', {
+              batch.insert('ChapterSection', {
                 'chapter_id': existingId,
+                'content': section,
+              });
+              currentBatchOpIndex++;
+            }
+          }
+        }
+      }
+
+      // Commit ChapterInfo structures and existing deletes/updates
+      final List<dynamic> results = await batch.commit();
+
+      // 4. Batch-insert content sections for newly added chapters if any exist
+      if (pendingNewChapterSections.isNotEmpty) {
+        final sectionBatch = txn.batch();
+        for (final pending in pendingNewChapterSections) {
+          final chapter = pending.$1;
+          final batchOpIndex = pending.$2;
+
+          // Fetch the generated Chapter ID from the committed batch results
+          final dynamic result = results[batchOpIndex];
+          if (result is int) {
+            final int chapterId = result;
+            for (var section in chapter.content!) {
+              sectionBatch.insert('ChapterSection', {
+                'chapter_id': chapterId,
                 'content': section,
               });
             }
           }
         }
+        await sectionBatch.commit(noResult: true);
       }
+
+      return bookId;
     });
+
     _notifyChange();
+    return bookId;
   }
 
   Future<int> saveChapterContent(int chapterId, List<String> content) async {

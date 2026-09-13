@@ -118,7 +118,7 @@ class _ImportingProgressOverlay extends StatelessWidget {
                   type: _getBorderType(),
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
-                    child: SingleChildScrollView(child: _buildContent(context)),
+                    child: _buildContent(context),
                   ),
                 ),
               ),
