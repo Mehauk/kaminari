@@ -333,6 +333,8 @@ class _KanjiRow extends StatelessWidget {
       }
     }
 
+    final int total = kanjis.length;
+
     return SizedBox(
       height: 85,
       child: LayoutBuilder(
@@ -354,6 +356,7 @@ class _KanjiRow extends StatelessWidget {
                       entry: e.value,
                       wordReadings: readings,
                       index: e.key,
+                      total: total,
                     ),
                   ),
                 ],
@@ -371,17 +374,19 @@ class _KanjiCard extends StatelessWidget {
     required this.entry,
     required this.wordReadings,
     required this.index,
+    required this.total,
   });
 
   final KanjiEntry entry;
   final List<String> wordReadings;
   final int index;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
     final String reading;
 
-    if (wordReadings.length > index) {
+    if (wordReadings.length > index && wordReadings.length == total) {
       reading = wordReadings[index];
     } else {
       reading = wordReadings.join("");
