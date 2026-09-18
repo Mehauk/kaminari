@@ -77,7 +77,11 @@ class _ImportWebviewPage extends StatelessWidget {
                   onPressed: () => webviewCubit.handleImport(),
                   backgroundColor: webviewState.importStatus.color,
                   icon: Icon(webviewState.importStatus.icon),
-                  label: Text(webviewState.importStatus.label),
+                  label: Text(
+                    webviewState.previewBook != null
+                        ? "Show overlay"
+                        : webviewState.importStatus.label,
+                  ),
                 )
               : null,
         );
