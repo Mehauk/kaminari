@@ -128,6 +128,7 @@
 
 - [x] settings page
   - [x] download over mobile network (default false)
+  - [ ] enable disable eng dict
 
 - [ ] backend/backups
   - [ ] books (ignoring content?)
