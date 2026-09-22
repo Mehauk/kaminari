@@ -1,4 +1,3 @@
-// lib/src/data/repositories/app_settings.dart
 import 'package:kaminari/src/data/services/local_storage_service.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 
@@ -10,6 +9,7 @@ class AppSettings {
   static const _dictOrientationKey = 'pref_dict_orientation';
   static const _kanjiAlignmentKey = 'pref_kanji_alignment';
   static const _downloadOverMobileKey = 'pref_download_over_mobile';
+  static const _darkReaderKey = 'pref_dark_reader';
 
   DictOrientation getDictOrientation() {
     final val = _storage.getData(_dictOrientationKey);
@@ -41,5 +41,14 @@ class AppSettings {
 
   Future<void> setDownloadOverMobile(bool value) async {
     await _storage.saveData(_downloadOverMobileKey, value);
+  }
+
+  bool getDarkReader() {
+    final val = _storage.getData(_darkReaderKey);
+    return val == null ? true : val == true;
+  }
+
+  Future<void> setDarkReader(bool value) async {
+    await _storage.saveData(_darkReaderKey, value);
   }
 }

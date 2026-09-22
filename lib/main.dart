@@ -5,6 +5,7 @@ import 'package:kaminari/src/config/bloc_observers.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/data/services/local_storage_service.dart';
 import 'package:kaminari/src/data/services/stats_service.dart';
+import 'package:kaminari/src/data/services/webview_assets_service.dart';
 
 import 'app.dart';
 
@@ -15,6 +16,7 @@ void main() async {
 
   await StatsService.recordActivity();
   await KanjiService.buildVisitedTable();
+  await WebviewAssetsService().init();
 
   Bloc.observer = DebugBlocObserver();
   runApp(const KaminariApp());

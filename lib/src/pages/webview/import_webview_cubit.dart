@@ -7,10 +7,12 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/constants/prompt.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/data/repositories/app_settings.dart';
 import 'package:kaminari/src/data/repositories/extractor_builder.dart';
 import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/data/services/llm_service.dart';
+import 'package:kaminari/src/data/services/webview_extension_service.dart';
 import 'package:kaminari/src/globals/background_webview_cubit.dart';
 import 'package:kaminari/src/pages/reader/dictionary_view.dart';
 import 'package:kaminari/src/utils/string_extensions.dart';
@@ -72,6 +74,9 @@ abstract class WebviewState with _$WebviewState {
 class WebviewCubit extends Cubit<WebviewState> {
   final ExtractorBuilder extractorBuilder;
   final BackgroundWebviewCubit backgroundWebviewCubit;
+  final AppSettings appSettings;
+
+  late final WebviewExtensionService _extensionService;
   WebViewController controller = WebViewController();
   Completer<String>? _extractionCompleter;
   Completer<void>? _pageLoadCompleter;
@@ -86,13 +91,59 @@ class WebviewCubit extends Cubit<WebviewState> {
   WebviewCubit({
     required this.extractorBuilder,
     required this.backgroundWebviewCubit,
+    required this.appSettings,
     String? initialUrl,
   }) : super(const WebviewState()) {
+    _extensionService = WebviewExtensionService(appSettings);
+
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0xFF15130B)) // Prevents initial flash
       ..setNavigationDelegate(
         NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            final url = request.url.toLowerCase();
+            final blockPatterns = [
+              'doubleclick.net',
+              'googleads',
+              'googlesyndication',
+              'pagead',
+              'adservice',
+              'analytics.google.com',
+              'adnxs',
+              'amazon-adsystem',
+              'criteo.com',
+              'pubmatic.com',
+              'rubiconproject.com',
+              'popads',
+              'popunder',
+              'trafficjunky',
+              'ad-score',
+              'exoclick',
+              'mgid.com',
+              'outbrain',
+              'taboola',
+              'adcolony',
+              'applovin',
+              'unityads',
+            ];
+            if (blockPatterns.any((pattern) => url.contains(pattern))) {
+              print(
+                '[Kaminari-Adblock] Intercepted navigation to ad host: ${request.url}',
+              );
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+          onProgress: (progress) {
+            // Apply high-priority dark styling while parsing to eliminate white screen flashes
+            _extensionService.applyEarlyDarkStyle(controller);
+          },
           onPageStarted: (url) {
+            // Force dark stylesheet immediately as DOM parsing begins
+            _extensionService.applyEarlyDarkStyle(controller);
+            _extensionService.applyExtensions(controller);
+
             if (state.importStatus == ImportStatus.notImported) {
               resetForNewPage(url);
               _injectScanner();
@@ -109,6 +160,9 @@ class WebviewCubit extends Cubit<WebviewState> {
             }
 
             await _injectScanner();
+
+            // Apply loaded plugins / CDN structures
+            await _extensionService.applyExtensions(controller);
 
             updateNavigation(url: url, title: title, isLoading: false);
           },
@@ -527,7 +581,6 @@ class WebviewCubit extends Cubit<WebviewState> {
         BookDetailsExtractor.fromJson,
       );
 
-      // Restore baseline selectors for any field we are NOT retrying
       if (_lastSelectors != null) {
         selectors = selectors.copyWith(
           title: !state.unpinnedFields.contains('title')
@@ -550,7 +603,7 @@ class WebviewCubit extends Cubit<WebviewState> {
               : selectors.individualChapterDetails,
           nextPageUrl: !state.unpinnedFields.contains('chapters')
               ? _lastSelectors!.nextPageUrl
-              : selectors.nextPageUrl, // Preserves working pagination selector
+              : selectors.nextPageUrl,
         );
       }
 
@@ -558,7 +611,6 @@ class WebviewCubit extends Cubit<WebviewState> {
 
       var bookData = await _extractBookMetadata(selectors);
 
-      // Keep the original metadata value if we chose NOT to retry
       if (previousBook != null) {
         bookData = bookData.copyWith(
           title: !state.unpinnedFields.contains('title')
@@ -598,7 +650,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           importProgress: 1.0,
           progressMessage: "Extraction parsed successfully.",
           previewBook: bookData,
-          unpinnedFields: {}, // Lock all fields back up upon preview render
+          unpinnedFields: {},
         ),
       );
     } catch (e, stack) {
@@ -689,10 +741,8 @@ class WebviewCubit extends Cubit<WebviewState> {
           jlptLevel: !state.unpinnedFields.contains('jlptLevel')
               ? _lastSelectors!.jlptLevel
               : selectors.jlptLevel,
-          individualChapterDetails: _lastSelectors!
-              .individualChapterDetails, // Preserves chapters selector
-          nextPageUrl: _lastSelectors!
-              .nextPageUrl, // Preserves working pagination selector
+          individualChapterDetails: _lastSelectors!.individualChapterDetails,
+          nextPageUrl: _lastSelectors!.nextPageUrl,
         );
       }
 
@@ -702,6 +752,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         state.copyWith(
           importProgress: 0.8,
           progressMessage: "Extracting metadata from current page...",
+          unpinnedFields: {},
         ),
       );
 
@@ -800,7 +851,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           importProgress: 1.0,
           progressMessage: "Metadata refreshed.",
           previewBook: updatedBook,
-          unpinnedFields: {}, // Lock back up
+          unpinnedFields: {},
         ),
       );
     } catch (e, stack) {
@@ -859,7 +910,6 @@ class WebviewCubit extends Cubit<WebviewState> {
         ),
       );
 
-      // Force-avoid previous failed chapter selectors
       final avoid = _buildAvoidSelectorsList(retryingChapters: true);
       final prompt = buildDiscoveryAIPrompt(miniTree, avoidSelectors: avoid);
 
@@ -882,7 +932,6 @@ class WebviewCubit extends Cubit<WebviewState> {
         BookDetailsExtractor.fromJson,
       );
 
-      // Lock current metadata selectors exactly as they are; onlyChapters selector will rebuild
       if (_lastSelectors != null) {
         selectors = selectors.copyWith(
           title: _lastSelectors!.title,
@@ -907,9 +956,8 @@ class WebviewCubit extends Cubit<WebviewState> {
         await _injectScanner();
       }
 
-      // Preserves metadata exactly while cleanly replacing chapters
       final mergedBook = freshBook.copyWith(
-        url: originalMetadata.url, // Preserve original root URL here as well
+        url: originalMetadata.url,
         title: originalMetadata.title,
         author: originalMetadata.author,
         synopsis: originalMetadata.synopsis,
@@ -924,7 +972,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           importProgress: 1.0,
           progressMessage: "Chapters refreshed.",
           previewBook: mergedBook,
-          unpinnedFields: {}, // Lock back up
+          unpinnedFields: {},
         ),
       );
     } catch (e, stack) {
@@ -977,8 +1025,7 @@ class WebviewCubit extends Cubit<WebviewState> {
       }
 
       final mergedBook = freshBook.copyWith(
-        url: originalMetadata
-            .url, // Preserve original root URL to keep the hide toggle aligned
+        url: originalMetadata.url,
         title: !state.unpinnedFields.contains('title')
             ? originalMetadata.title
             : freshBook.title,
@@ -994,8 +1041,7 @@ class WebviewCubit extends Cubit<WebviewState> {
         jlptLevel: !state.unpinnedFields.contains('jlptLevel')
             ? originalMetadata.jlptLevel
             : freshBook.jlptLevel,
-        chapters: freshBook
-            .chapters, // Always accept the newly loaded and merged chapters
+        chapters: freshBook.chapters,
         bookType: originalMetadata.bookType,
       );
 
@@ -1005,7 +1051,7 @@ class WebviewCubit extends Cubit<WebviewState> {
           importProgress: 1.0,
           progressMessage: "Resumed extraction parsed successfully.",
           previewBook: mergedBook,
-          unpinnedFields: {}, // Lock all fields back up upon preview render
+          unpinnedFields: {},
         ),
       );
     } catch (e) {
@@ -1033,10 +1079,8 @@ class WebviewCubit extends Cubit<WebviewState> {
       final bookData = state.previewBook!;
       final db = DatabaseService();
 
-      // Complete the save operation quickly with the batched transactions
       final bookId = await db.saveBook(bookData);
 
-      // Load ONLY this specific book directly by ID instead of pulling all books
       final matchingBook = await db.getBook(bookId);
 
       if (matchingBook != null && matchingBook.id != null) {

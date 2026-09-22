@@ -56,7 +56,8 @@
 - [ ] find an actual place to put the archived books
 - [ ] deleting a book should be instant visually
 - [ ] relative scrollbar otherwise its always at the bottom
-- [ ] Pre download images in chapters
+- [ ] pre download images in chapters
+- [ ] disable dict view on the import webview page if the document's language is not ja
 
 - [ ] ui fixes
   - [ ] discovery screen
@@ -88,9 +89,9 @@
     - [x] prep only shows for non english (including in reader)
     - [x] two extra books as history cards underneath?
 
-- [ ] extensions
-  - [ ] adblock (always enabled)
-  - [ ] darkreader (enabled default - add toggle in settings)
+- [x] extensions
+  - [x] adblock (always enabled)
+  - [x] darkreader (enabled default - add toggle in settings)
 
 - [ ] complete book features
   - [x] eng dict
