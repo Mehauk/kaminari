@@ -65,6 +65,8 @@
     - [ ] import epub button from discorvery screen
   - [x] import builder loader ui update
 
+- [ ] manga features
+
 - [x] BUG: clicking missing chapters breaks hide functionality
 - [x] BUG: broken chapter (auto reload when finished downloading)
 - [x] BUG: reloading bug when opening a chapter that is already downloaded
@@ -95,7 +97,6 @@
 
 - [ ] complete book features
   - [x] eng dict
-    - [ ] eng dict not work on some words? mutations??
     - [ ] entymology
   - [x] no jlpt for eng
   - [x] epub/ebook importing
@@ -119,7 +120,6 @@
   - [ ] ai handles figuring out how to navigate the source; tagging and searching.
   - [ ] search bar handles searching inside that source showing the books in app (not webview)
 
-- [ ] manga features
   
 - [ ] use jagger or jptransliterate?
 - [ ] replace ai with heuristical analysis across the board?
