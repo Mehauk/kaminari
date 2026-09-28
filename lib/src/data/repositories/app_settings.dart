@@ -10,6 +10,7 @@ class AppSettings {
   static const _kanjiAlignmentKey = 'pref_kanji_alignment';
   static const _downloadOverMobileKey = 'pref_download_over_mobile';
   static const _darkReaderKey = 'pref_dark_reader';
+  static const _englishDictEnabledKey = 'pref_english_dict_enabled';
 
   DictOrientation getDictOrientation() {
     final val = _storage.getData(_dictOrientationKey);
@@ -50,5 +51,14 @@ class AppSettings {
 
   Future<void> setDarkReader(bool value) async {
     await _storage.saveData(_darkReaderKey, value);
+  }
+
+  bool getEnglishDictEnabled() {
+    final val = _storage.getData(_englishDictEnabledKey);
+    return val == null ? true : val == true;
+  }
+
+  Future<void> setEnglishDictEnabled(bool value) async {
+    await _storage.saveData(_englishDictEnabledKey, value);
   }
 }

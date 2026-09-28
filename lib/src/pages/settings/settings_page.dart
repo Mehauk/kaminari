@@ -18,6 +18,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late bool _downloadOverMobile;
   late bool _darkReader;
+  late bool _englishDictEnabled;
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final settings = context.read<AppSettings>();
     _downloadOverMobile = settings.getDownloadOverMobile();
     _darkReader = settings.getDarkReader();
+    _englishDictEnabled = settings.getEnglishDictEnabled();
   }
 
   @override
@@ -156,6 +158,50 @@ class _SettingsPageState extends State<SettingsPage> {
                             await context.read<AppSettings>().setDarkReader(
                               value,
                             );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                LightningCard(
+                  type: LightningBorderEffectType.thin,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16.0,
+                      horizontal: 16.0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CustomText(
+                                "English Dictionary",
+                                TextType.bodyLarge,
+                                color: KaminariTheme.textPrimary,
+                              ),
+                              const SizedBox(height: 4),
+                              CustomText(
+                                "Enable offline translation lookups for English books",
+                                TextType.labelSmall,
+                                color: KaminariTheme.textSecondary,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _englishDictEnabled,
+                          onChanged: (value) async {
+                            setState(() {
+                              _englishDictEnabled = value;
+                            });
+                            await context
+                                .read<AppSettings>()
+                                .setEnglishDictEnabled(value);
                           },
                         ),
                       ],

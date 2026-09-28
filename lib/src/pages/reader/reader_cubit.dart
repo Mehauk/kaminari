@@ -343,9 +343,15 @@ class ReaderCubit extends Cubit<ReaderState> {
     }
 
     final book = await dbService.getBook(bookId);
+    final isEnglishBook = book?.language.toLowerCase().startsWith('en') == true;
 
     // Leverage the English Dictionary Service
-    if (book?.language.toLowerCase().startsWith('en') == true) {
+    if (isEnglishBook) {
+      if (!settings.getEnglishDictEnabled()) {
+        // English dictionary is disabled globally, cancel lookup
+        return;
+      }
+
       final isAvail = await EnglishDictionaryService().isDictionaryAvailable();
       if (!isAvail) {
         emit(
