@@ -373,32 +373,49 @@ class WebviewCubit extends Cubit<WebviewState> {
           return false;
         };
 
-        let lastTap = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
 
         document.addEventListener('touchstart', function(e) {
-          const now = new Date().getTime();
-          const timesince = now - lastTap;
+          if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = new Date().getTime();
+          }
+        }, {passive: true});
 
-          if (timesince < 300 && timesince > 0) {
-            const touch = e.touches[0];
-            const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
-            
-            if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
-              const container = range.startContainer;
-              const offset = range.startOffset;
+        document.addEventListener('touchend', function(e) {
+          if (e.changedTouches.length === 1) {
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const touchEndTime = new Date().getTime();
+
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const duration = touchEndTime - touchStartTime;
+
+            // Check if the interaction is a quick tap with minimal movement (not a swipe/scroll)
+            if (distance < 10 && duration < 250) {
+              const range = document.caretRangeFromPoint(touchEndX, touchEndY);
               
-              const message = {
-                "text": container.data.substring(offset),
-                "offset": 0
-              };
-              
-              if (window.LookupChannel) {
-                window.LookupChannel.postMessage(JSON.stringify(message));
+              if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+                const container = range.startContainer;
+                const offset = range.startOffset;
+                
+                const message = {
+                  "text": container.data.substring(offset),
+                  "offset": 0
+                };
+                
+                if (window.LookupChannel) {
+                  window.LookupChannel.postMessage(JSON.stringify(message));
+                }
               }
             }
           }
-          lastTap = now;
-        }, {passive: false});
+        }, {passive: true});
       })();
     ''');
   }
