@@ -48,13 +48,13 @@
 - [x] download cov images directly
 - [x] hide -> unhide
 - [x] double tap on import webview to singletap normal + ignore links?
+- [-] deleting a book should be instant visually
 - [ ] novelight
 - [ ] persist linebreaks/spacing?
 - [ ] auto-update for new chapters
 - [ ] open import chapter webview on error (only for current)
 - [ ] icon/splash update
 - [ ] find an actual place to put the archived books
-- [ ] deleting a book should be instant visually
 - [ ] relative scrollbar otherwise its always at the bottom
 - [ ] pre download images in chapters
 - [ ] disable dict view on the import webview page if the document's language is not ja
@@ -107,7 +107,7 @@
 
 - [ ] navigation
   - [ ] reader: chapters dropdown
-  - [ ] discorevery: search bar
+  - [ ] discovery: search ba
   - [ ] webview: navigation
   - [ ] going back a chapter
 
