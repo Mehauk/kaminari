@@ -622,6 +622,7 @@ class DatabaseService {
 
   Future<int> deleteBook(int bookId) async {
     final db = await database;
+    String? coverUrl;
 
     try {
       final List<Map<String, dynamic>> results = await db.query(
@@ -632,35 +633,50 @@ class DatabaseService {
       );
 
       if (results.isNotEmpty) {
-        final coverUrl = results.first['coverUrl'] as String?;
-        if (coverUrl != null && coverUrl.isNotEmpty) {
-          if (coverUrl.startsWith('http://') ||
-              coverUrl.startsWith('https://')) {
-            // Evict remote cached cover image from persistent cache
-            await BookCoverCacheManager.instance.removeFile(coverUrl);
-          } else if (!coverUrl.startsWith('assets/')) {
-            // Clean up physically stored files (e.g. from local EPUB imports)
-            final cleanPath = coverUrl.startsWith("file://")
-                ? coverUrl.replaceFirst("file://", "")
-                : coverUrl;
-            final file = File(cleanPath);
-            if (await file.exists()) {
-              await file.delete();
-            }
-          }
-        }
+        coverUrl = results.first['coverUrl'] as String?;
       }
     } catch (e) {
-      print("[DatabaseService] Error cleaning up cover image files: $e");
+      print("[DatabaseService] Error reading coverUrl for deletion: $e");
     }
 
+    // Delete the database entry immediately
     final count = await db.delete(
       'BookDetails',
       where: 'id = ?',
       whereArgs: [bookId],
     );
+
+    // Notify lists immediately so they refresh while system filesystem is being cleaned
     _notifyChange();
+
+    // Evict files asynchronously in background
+    if (coverUrl != null && coverUrl.isNotEmpty) {
+      _cleanupCoverFileBackground(coverUrl);
+    }
+
     return count;
+  }
+
+  void _cleanupCoverFileBackground(String coverUrl) async {
+    try {
+      if (coverUrl.startsWith('http://') || coverUrl.startsWith('https://')) {
+        // Evict remote cached cover image from persistent cache
+        await BookCoverCacheManager.instance.removeFile(coverUrl);
+      } else if (!coverUrl.startsWith('assets/')) {
+        // Clean up physically stored files (e.g. from local EPUB imports)
+        final cleanPath = coverUrl.startsWith("file://")
+            ? coverUrl.replaceFirst("file://", "")
+            : coverUrl;
+        final file = File(cleanPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+    } catch (e) {
+      print(
+        "[DatabaseService] Error cleaning up cover image files in background: $e",
+      );
+    }
   }
 
   Future<void> saveBookAnalysisCache({

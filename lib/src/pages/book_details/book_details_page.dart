@@ -156,10 +156,12 @@ class _CoverAppBar extends StatelessWidget {
                       if (confirmed != true) return;
                       final bookId = cubit.book.id;
                       if (bookId == null) return;
-                      await cubit.dbService.deleteBook(bookId);
+
                       if (pageContext.mounted) {
                         Navigator.of(pageContext).pop(true);
                       }
+
+                      cubit.dbService.deleteBook(bookId);
                     },
                   ),
                   (
