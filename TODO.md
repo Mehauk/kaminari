@@ -49,6 +49,7 @@
 - [x] hide -> unhide
 - [x] double tap on import webview to singletap normal + ignore links?
 - [-] deleting a book should be instant visually
+- [ ] disable dict view on the import webview page if the document's language is not ja (or is eng?)
 - [ ] auto-update for new chapters
 - [ ] novelight
 - [ ] persist linebreaks/spacing?
@@ -57,7 +58,6 @@
 - [ ] find an actual place to put the archived books
 - [ ] relative scrollbar otherwise its always at the bottom
 - [ ] pre download images in chapters
-- [ ] disable dict view on the import webview page if the document's language is not ja
 
 - [ ] ui fixes
   - [ ] discovery screen
