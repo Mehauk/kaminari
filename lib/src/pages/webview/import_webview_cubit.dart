@@ -68,6 +68,7 @@ abstract class WebviewState with _$WebviewState {
     @Default('') String progressMessage,
     BookDetails? previewBook,
     @Default({}) Set<String> unpinnedFields,
+    @Default('ja') String language,
   }) = _WebviewState;
 }
 
@@ -164,7 +165,30 @@ class WebviewCubit extends Cubit<WebviewState> {
             // Apply loaded plugins / CDN structures
             await _extensionService.applyExtensions(controller);
 
-            updateNavigation(url: url, title: title, isLoading: false);
+            // Detect document language programmatically
+            String docLang = 'en';
+            try {
+              final dynamic
+              langRaw = await controller.runJavaScriptReturningResult(
+                "document.documentElement.lang || document.querySelector('meta[http-equiv=\"content-language\"]')?.content || document.querySelector('meta[name=\"language\"]')?.content || document.querySelector('meta[name=\"lang\"]')?.content || 'en'",
+              );
+              final String parsed =
+                  (langRaw is String ? jsonDecode(langRaw) : langRaw.toString())
+                      .trim()
+                      .toLowerCase();
+              if (parsed.isNotEmpty) {
+                docLang = parsed;
+              }
+            } catch (e) {
+              print('[WebviewCubit] Failed to detect language: $e');
+            }
+
+            updateNavigation(
+              url: url,
+              title: title,
+              isLoading: false,
+              language: docLang,
+            );
           },
         ),
       )
@@ -268,6 +292,11 @@ class WebviewCubit extends Cubit<WebviewState> {
   }
 
   void onWordFound(String message) async {
+    // Prevent dictionary lookups when the current web document is English
+    if (state.language.toLowerCase().startsWith('en')) {
+      return;
+    }
+
     final data = jsonDecode(message);
     final String fullText = data['text'];
     final int tapOffset = data['offset'];
@@ -450,16 +479,23 @@ class WebviewCubit extends Cubit<WebviewState> {
         importProgress: 0.0,
         progressMessage: '',
         unpinnedFields: {},
+        language: 'ja',
       ),
     );
   }
 
-  void updateNavigation({String? url, String? title, bool? isLoading}) {
+  void updateNavigation({
+    String? url,
+    String? title,
+    bool? isLoading,
+    String? language,
+  }) {
     emit(
       state.copyWith(
         url: url ?? state.url,
         title: title ?? state.title,
         isLoading: isLoading ?? state.isLoading,
+        language: language ?? state.language,
       ),
     );
   }
