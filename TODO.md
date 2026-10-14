@@ -50,23 +50,33 @@
 - [x] double tap on import webview to singletap normal + ignore links?
 - [x] deleting a book should be instant visually
 - [x] disable dict view on the import webview page if the document's language is not ja (or is eng?)
+
 - [ ] auto-update for new chapters
 - [ ] novelight
-- [ ] persist linebreaks/spacing?
 - [ ] open import chapter webview on error (only for current)
+- [ ] navigation
+  - [ ] reader: chapters dropdown
+  - [ ] discovery: search ba
+  - [ ] webview: navigation
+  - [ ] going back a chapter
+- [ ] discover page changes
+  - [ ] The search bar functions counterintuitively
+  - [ ] import epub button
+  - [ ] The import webview navigation is not good (back button for example)
+  - [ ] finder (wrapper around a singular source search?)
+- [ ] importing sources
+  - [ ] creates new source card on discovery page, takes you to inner discovery page for that source.
+  - [ ] ai handles figuring out how to navigate the source; tagging and searching.
+  - [ ] search bar handles searching inside that source showing the books in app (not webview)
+- [ ] manga features
+  - [ ] pre download images in chapters
+  - [ ] Choose to keep downloaded
+  - [ ] make sure that importing both indv. and sources works
 - [ ] icon/splash update
+
+- [ ] persist linebreaks/spacing?
 - [ ] find an actual place to put the archived books
 - [ ] relative scrollbar otherwise its always at the bottom
-- [ ] pre download images in chapters
-
-- [ ] ui fixes
-  - [ ] discovery screen
-    - [ ] Navigation and actions
-    - [ ] import epub button from discorvery screen
-  - [x] import builder loader ui updat
-
-- [ ] manga features
-  - [ ] Choose to keep downloaded
 
 - [x] BUG: clicking missing chapters breaks hide functionality
 - [x] BUG: broken chapter (auto reload when finished downloading)
@@ -106,29 +116,12 @@
   - [ ] additional language features?
   - [ ] paragraphg transliteration/translation?
 
-- [ ] navigation
-  - [ ] reader: chapters dropdown
-  - [ ] discovery: search ba
-  - [ ] webview: navigation
-  - [ ] going back a chapter
-
 - [ ] performance
   - [ ] reader scrolling
   - [ ] reader opening
 
-- [ ] importing sources
-  - [ ] creates new source card on discovery page, takes you to inner discovery page for that source.
-  - [ ] ai handles figuring out how to navigate the source; tagging and searching.
-  - [ ] search bar handles searching inside that source showing the books in app (not webview)
-
-  
-- [ ] use jagger or jptransliterate?
 - [ ] replace ai with heuristical analysis across the board?
-
-- [ ] discover page changes
-  - [ ] The search bar functions counterintuitively
-  - [ ] The import webview navigation is not good (back button for example)
-  - [ ] finder (wrapper around a singular source search?)
+- [ ] use jagger or jptransliterate?
 
 - [x] settings page
   - [x] download over mobile network (default false)
