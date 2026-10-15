@@ -1,59 +1,10 @@
-- [x] cache selector scripts to reuse -> fallback to gemini on fail
-- [x] cache last read book and chapter
-- [x] cache/restore scroll position
-- [x] clickable kanji cards (more info)
-- [x] h-b-p, t-d, k-g, s-z/j
-- [x] implement history
-- [x] handle reimport same book
-- [x] prefetch next chapters
-- [x] images
-- [x] delete book
-- [x] dictionary view for webview
-- [x] implement favoriting and favorites tab on history page
-- [x] empty states (favorites, history, discover (filtered/unfiltered))
-- [x] failed import should delete extractor cache
-- [x] make a queue, with limitaions per 5 minutes on downloads (opening a chapter skips limit)
-- [x] prioritize opened chapter downloading over the others
-- [x] show downloading indicator on opened chapter without content
-- [x] importing indicators update
-- [x] heuristics to check japanese level
-- [x] character count of first page * pages
-- [x] change dictionary close action to bottom of display
-- [x] responsive home tabs
-- [x] fix JLPT estimator
-- [x] show scroll progress/bar
-- [x] add language (use meta tags?)
-- [x] handle offline mode
-- [x] fix readings matcher for dict view
-- [x] chiisai tsu
-- [x] reading line indicator
-- [x] double tap highlight word webview
-- [x] next page from end of page
-- [x] chapter title clickability
-- [x] dict view bottom/top depending on click position (so as to not cover clicked word)
-- [x] dict view swipe to close (additionally)
-- [x] injecter starts earlier
-- [x] reading progress fix (+1 if accessedDate not null)
-- [x] match longest match first (dict)
-- [x] chiisai tsu (not working?)
-- [x] dict view kanji card start alignment
-- [x] import builder loader update (with type selection)
-- [x] move the first three chapter downloading to the background cubit
-- [x] history's -> status, set reading if opened. (unread, reading, read, reading_haiatus, trashed)
-- [x] avoid getting rate limited when paginating for chapters
-- [x] scroll opening a new chapt3r should cause downloads
-- [x] hide importer, when import is clicked again fomr the same page, just reopen it in same state
-- [x] separate retying of chapters and retrying of metadata
-- [x] retry or re-download should give the old selectors as a comparison
-- [x] download cov images directly
-- [x] hide -> unhide
-- [x] double tap on import webview to singletap normal + ignore links?
-- [x] deleting a book should be instant visually
-- [x] disable dict view on the import webview page if the document's language is not ja (or is eng?)
-
-- [ ] auto-update for new chapters
 - [ ] novelight
+- [ ] auto-update for new chapters
 - [ ] open import chapter webview on error (only for current)
+- [ ] importing sources
+  - [ ] creates new source card on discovery page, takes you to inner discovery page for that source.
+  - [ ] ai handles figuring out how to navigate the source; tagging and searching.
+  - [ ] search bar handles searching inside that source showing the books in app (not webview)
 - [ ] navigation
   - [ ] reader: chapters dropdown
   - [ ] discovery: search ba
@@ -64,10 +15,6 @@
   - [ ] import epub button
   - [ ] The import webview navigation is not good (back button for example)
   - [ ] finder (wrapper around a singular source search?)
-- [ ] importing sources
-  - [ ] creates new source card on discovery page, takes you to inner discovery page for that source.
-  - [ ] ai handles figuring out how to navigate the source; tagging and searching.
-  - [ ] search bar handles searching inside that source showing the books in app (not webview)
 - [ ] manga features
   - [ ] pre download images in chapters
   - [ ] Choose to keep downloaded
@@ -78,42 +25,9 @@
 - [ ] find an actual place to put the archived books
 - [ ] relative scrollbar otherwise its always at the bottom
 
-- [x] BUG: clicking missing chapters breaks hide functionality
-- [x] BUG: broken chapter (auto reload when finished downloading)
-- [x] BUG: reloading bug when opening a chapter that is already downloaded
-- [x] BUG: bottom nav covered by native nav bar
-- [x] BUG: inf linearprog on import webview
-- [x] BUG: import webview url not showing
-- [x] BUG: first three chapters not autmatic?  
-- [x] BUG: unopened progress should be 0  
-- [x] BUG: scrolling upwards in reader is janky sometimes (near top of page usually)
-
-- [x] implement home screen functionality
-  - [x] prereading kanji anki type shii
-    - [x] cache training data (for quicker reload)
-    - [x] preload training data for next chapter when reaching end of current chapter (non blocking)
-    - [x] fix card back still showing when next pressed (reconstruct instead of reset)
-    - [x] open prep screen from top of chapter?
-    - [x] remember prep + 0/100 impl
-    - [x] kanji/word level
-    - [x] calculate show order (considering kanji level)
-      - [x] Ignore words for which reading/meaning cannot be found
-    - [x] implement daily streak and words learnt
-    - [x] prep only shows for non english (including in reader)
-    - [x] two extra books as history cards underneath?
-
-- [x] extensions
-  - [x] adblock (always enabled)
-  - [x] darkreader (enabled default - add toggle in settings)
-
 - [ ] complete book features
-  - [x] eng dict
-    - [ ] entymology
-  - [x] no jlpt for eng
-  - [x] epub/ebook importing
-    - [x] all my web imported books are not showing on disc page anymore (neither is the new epub)
-    - [x] chapters have no content; just showing in download que
-  - [ ] additional language features?
+  - [ ] eng word entymology
+  - [ ] additional language features? (chinese, korean, ...)
   - [ ] paragraphg transliteration/translation?
 
 - [ ] performance
@@ -122,10 +36,6 @@
 
 - [ ] replace ai with heuristical analysis across the board?
 - [ ] use jagger or jptransliterate?
-
-- [x] settings page
-  - [x] download over mobile network (default false)
-  - [x] enable disable eng dict
 
 - [ ] backend/backups
   - [ ] books (ignoring content?)
