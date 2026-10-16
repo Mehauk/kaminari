@@ -1,4 +1,6 @@
-- [ ] novelight
+- [ ] novelight (The Support Ate it All)
+- [ ] operation failed popup is not working proerpy (the buttons inside)
+- [ ] invert chapters button in the import view and the details view
 - [ ] auto-update for new chapters
 - [ ] open import chapter webview on error (only for current)
 - [ ] importing sources

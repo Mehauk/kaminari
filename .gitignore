@@ -56,3 +56,4 @@ app.*.map.json
 .env
 
 temp.py
+repomix-output.xml
