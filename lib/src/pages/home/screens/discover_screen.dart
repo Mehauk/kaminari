@@ -166,6 +166,8 @@ class DiscoverScreen extends StatelessWidget {
                                     onConfirm: cubit.confirmEpubImport,
                                     onRetry: () => _pickEpubFile(context),
                                     onCancel: cubit.cancelEpubImport,
+                                    onInvertChapters:
+                                        cubit.invertPreviewChapters,
                                   ),
                                 ),
                               ),

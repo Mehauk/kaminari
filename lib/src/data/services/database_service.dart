@@ -408,6 +408,72 @@ class DatabaseService {
     _notifyChange();
   }
 
+  /// Reverses the chapter order of an already-imported book in the database,
+  /// preserving all ID relationships, content, caches, and relative scroll position.
+  Future<void> invertBookChapters(int bookId) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final List<Map<String, dynamic>> chapters = await txn.query(
+        'ChapterInfo',
+        columns: ['id', 'chapterNumber'],
+        where: 'book_id = ?',
+        orderBy: 'chapterNumber ASC',
+      );
+
+      if (chapters.isEmpty) return;
+
+      final int total = chapters.length;
+
+      // 1. Shift to unique negative numbers to avoid duplicate positive values during transaction
+      for (int i = 0; i < total; i++) {
+        final int id = chapters[i]['id'] as int;
+        final int newNumber = total - 1 - i;
+        await txn.update(
+          'ChapterInfo',
+          {'chapterNumber': -1 - newNumber},
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+      }
+
+      // 2. Set the final positive reversed index values
+      for (int i = 0; i < total; i++) {
+        final int id = chapters[i]['id'] as int;
+        final int newNumber = total - 1 - i;
+        await txn.update(
+          'ChapterInfo',
+          {'chapterNumber': newNumber},
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+      }
+
+      // 3. Shift the currentChapterIndex of the book so progress remains on the matching chapter
+      final List<Map<String, dynamic>> bookRows = await txn.query(
+        'BookDetails',
+        columns: ['currentChapterIndex'],
+        where: 'id = ?',
+        whereArgs: [bookId],
+      );
+      if (bookRows.isNotEmpty) {
+        final int currentIndex =
+            bookRows.first['currentChapterIndex'] as int? ?? 0;
+        final int newCurrentIndex = (total - 1 - currentIndex).clamp(
+          0,
+          total - 1,
+        );
+        await txn.update(
+          'BookDetails',
+          {'currentChapterIndex': newCurrentIndex},
+          where: 'id = ?',
+          whereArgs: [bookId],
+        );
+      }
+    });
+
+    _notifyChange();
+  }
+
   Future<int> saveBook(BookDetails book) async {
     final db = await database;
     final bookId = await db.transaction<int>((txn) async {

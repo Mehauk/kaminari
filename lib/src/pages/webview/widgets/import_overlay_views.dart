@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaminari/src/config/theme.dart';
 import 'package:kaminari/src/data/models/book.dart';
+import 'package:kaminari/src/pages/webview/import_webview_cubit.dart';
 import 'package:kaminari/src/ui/units/text.dart';
 import 'package:kaminari/src/ui/widgets/book_cover.dart';
 
@@ -101,6 +103,7 @@ class ChapterSequenceSection extends StatelessWidget {
   final VoidCallback? onRetryChapters;
   final VoidCallback? onMissingChapters;
   final bool showMissingChaptersBtn;
+  final VoidCallback? onInvertChapters; // Added field
 
   const ChapterSequenceSection({
     super.key,
@@ -108,6 +111,7 @@ class ChapterSequenceSection extends StatelessWidget {
     this.onRetryChapters,
     this.onMissingChapters,
     this.showMissingChaptersBtn = false,
+    this.onInvertChapters, // Added field
   });
 
   @override
@@ -121,10 +125,38 @@ class ChapterSequenceSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        CustomText(
-          "Chapters: ${book.chapters.length}",
-          TextType.labelSmall,
-          color: KaminariTheme.textTitle,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            CustomText(
+              "Chapters: ${book.chapters.length}",
+              TextType.labelSmall,
+              color: KaminariTheme.textTitle,
+            ),
+            if (onInvertChapters != null)
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 4,
+                    horizontal: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: onInvertChapters,
+                icon: const Icon(
+                  Icons.swap_vert,
+                  size: 14,
+                  color: KaminariTheme.cyan,
+                ),
+                label: const CustomText(
+                  "INVERT ORDER",
+                  TextType.labelSmall,
+                  color: KaminariTheme.cyan,
+                  fontSize: 11,
+                ),
+              ),
+          ],
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -214,6 +246,7 @@ class ImportPreviewView extends StatefulWidget {
   final bool showMissingChaptersBtn;
   final Set<String>? unpinnedFields;
   final ValueChanged<String>? onTogglePin;
+  final VoidCallback? onInvertChapters;
 
   const ImportPreviewView({
     super.key,
@@ -229,8 +262,8 @@ class ImportPreviewView extends StatefulWidget {
     this.showMissingChaptersBtn = false,
     this.unpinnedFields,
     this.onTogglePin,
+    this.onInvertChapters,
   });
-
   @override
   State<ImportPreviewView> createState() => _ImportPreviewViewState();
 }
@@ -462,6 +495,7 @@ class _ImportPreviewViewState extends State<ImportPreviewView> {
                   onRetryChapters: widget.onRetryChapters,
                   onMissingChapters: widget.onMissingChapters,
                   showMissingChaptersBtn: widget.showMissingChaptersBtn,
+                  onInvertChapters: widget.onInvertChapters, // Passed down
                 ),
 
                 const SizedBox(height: 20),
@@ -726,37 +760,17 @@ class ImportFailureView extends StatelessWidget {
         CustomText(message, TextType.bodyMedium, alignment: TextAlign.center),
         const SizedBox(height: 32),
 
-        // Retry Chapters and Metadata Actions
-        if (showSeparated) ...[
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onRetryChapters,
-              child: const Text("RETRY CHAPTER EXTRACTION"),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: onRetryMetadata,
-              child: const Text("RE-RUN AI SELECTOR SEARCH"),
-            ),
-          ),
-        ] else if (onRetry != null)
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(onPressed: onRetry, child: const Text("RETRY")),
-          ),
-
         // Cancel / Abandon action
         if (onCancel != null) ...[
           if (showSeparated || onRetry != null) const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: TextButton(
-              onPressed: onCancel,
-              child: const Text("ABANDON & CLOSE"),
+              onPressed: () {
+                context.read<WebviewCubit>().clearCachedExtractors();
+                onCancel!();
+              },
+              child: const Text("CLOSE"),
             ),
           ),
         ],

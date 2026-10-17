@@ -51,4 +51,10 @@ class BookDetailsCubit extends Cubit<BookDetailsState> {
     book = book.copyWith(isFavorite: updatedFavorite);
     emit(state.copyWith(isFavorite: updatedFavorite));
   }
+
+  Future<void> invertChapters() async {
+    if (book.id == null) return;
+    await dbService.invertBookChapters(book.id!);
+    await refreshProgress();
+  }
 }

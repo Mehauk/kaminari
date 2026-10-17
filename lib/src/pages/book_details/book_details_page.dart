@@ -548,6 +548,27 @@ class _ChapterListHeader extends StatelessWidget {
             const SizedBox(width: 8),
             CustomText('Chapters', .headlineMedium, fontSize: 16),
             const Spacer(),
+            TextButton.icon(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () =>
+                  context.read<BookDetailsCubit>().invertChapters(),
+              icon: const Icon(
+                Icons.swap_vert,
+                size: 16,
+                color: KaminariTheme.cyan,
+              ),
+              label: const CustomText(
+                'Invert',
+                .labelSmall,
+                color: KaminariTheme.cyan,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(width: 8),
             CustomText('${cubit.book.chapters.length} total', .labelSmall),
           ],
         ),
