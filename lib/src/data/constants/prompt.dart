@@ -1,12 +1,22 @@
+import 'dart:convert';
+
 import 'package:kaminari/src/data/models/book.dart';
 
 String buildDiscoveryAIPrompt(
   String miniTree, {
-  List<String> avoidSelectors = const [],
+  Map<String, String> avoidSelectors = const {},
 }) {
   String avoid = '';
   if (avoidSelectors.isNotEmpty) {
-    avoid = "\n4. Avoid these selectors $avoidSelectors";
+    final buffer = StringBuffer(
+      '\n4. PREVIOUSLY FAILED SELECTORS (DO NOT REUSE):',
+    );
+    avoidSelectors.forEach((field, selector) {
+      buffer.write(
+        '\n   - For "$field", do NOT use any "$selector" (they were tested and failed or produced incorrect results). Choose an alternative selector.',
+      );
+    });
+    avoid = buffer.toString();
   }
 
   return """
@@ -16,7 +26,8 @@ I will use these selectors to run querySelector or querySelectorAll in a browser
 Guidelines:
 1. `individualChapterDetails.base` must select the individual chapter rows or container elements (e.g., `li` or chapter wrapper divs), NOT the parent container (like the entire `ul` or list wrapper `div`).
 2. You MUST identify the `nextPageUrl` selector if there is pagination (e.g., next page buttons, page numbers, or dropdown select options). The selector must target the link to the *immediate next page* sequentially (e.g. page 2, then page 3). Do NOT target the "Last" page or "First" page links. If no pagination exists, return "N/A".
-3. `coverUrl` must select the image tag or link containing the book cover image.$avoid
+3. `coverUrl` must select the image tag or link containing the book cover image.
+4. All selectors MUST be standard valid CSS selectors compatible with document.querySelector. Do NOT use non-standard jQuery pseudo-classes like :contains(), :eq(), :first, or :last. To target pagination links, use standard class, attribute, or structural selectors (e.g. `.pagination .next`, `a.next`, `div.page > a:last-of-type`, etc.).$avoid
 
 Tree: $miniTree
 
@@ -31,8 +42,9 @@ JSON:
 String buildChapterExtractionAIPrompt(String miniTree) {
   return """
 Analyze this minified DOM tree and identify the most likely CSS selectors in proper format for the chapter's content. 
-Ensure that no data is lost form choosing too narrow.
-Ensure that nothing is added because you were not specigfic enough.
+Ensure that no data is lost from choosing too narrow.
+Ensure that nothing is added because you were not specific enough.
+Selectors MUST be standard valid CSS selectors suitable for document.querySelectorAll (do NOT use :contains or other jQuery pseudo-classes).
 
 Tree: $miniTree
 
@@ -42,6 +54,264 @@ ${ChapterExtractor.schema}
 JSON:
 """;
 }
+
+String generateBookExtrationJSPrompt(
+  BookDetailsExtractor selectors,
+  int startIndex,
+) {
+  final selectorsJson = jsonEncode(selectors.toJson());
+  return """
+  (async () => {
+    try {
+      const selectors = $selectorsJson;
+      const startIndex = $startIndex;
+
+      function safeQuery(root, sel) {
+        if (!root || !sel || typeof sel !== 'string') return null;
+        const s = sel.trim();
+        if (!s || s === 'null' || s.toLowerCase() === 'n/a' || s.toLowerCase() === 'none') return null;
+        try {
+          const containsMatch = s.match(/^(.*?):contains\\(['"]?(.*?)['"]?\\)(.*)\$/i);
+          if (containsMatch) {
+            const base = (containsMatch[1] + containsMatch[3]).trim() || '*';
+            const text = containsMatch[2].trim().toLowerCase();
+            const elements = root.querySelectorAll(base);
+            for (const el of elements) {
+              if (el.textContent && el.textContent.toLowerCase().includes(text)) {
+                return el;
+              }
+            }
+            return null;
+          }
+          return root.querySelector(s);
+        } catch (e) {
+          console.warn("[JS-Extractor] safeQuery error for " + s + ":", e);
+          return null;
+        }
+      }
+
+      function safeQueryAll(root, sel) {
+        if (!root || !sel || typeof sel !== 'string') return [];
+        const s = sel.trim();
+        if (!s || s === 'null' || s.toLowerCase() === 'n/a' || s.toLowerCase() === 'none') return [];
+        try {
+          const containsMatch = s.match(/^(.*?):contains\\(['"]?(.*?)['"]?\\)(.*)\$/i);
+          if (containsMatch) {
+            const base = (containsMatch[1] + containsMatch[3]).trim() || '*';
+            const text = containsMatch[2].trim().toLowerCase();
+            const elements = root.querySelectorAll(base);
+            return Array.from(elements).filter(el => el.textContent && el.textContent.toLowerCase().includes(text));
+          }
+          return Array.from(root.querySelectorAll(s));
+        } catch (e) {
+          console.warn("[JS-Extractor] safeQueryAll error for " + s + ":", e);
+          return [];
+        }
+      }
+
+      const titleEl = safeQuery(document.body, selectors.title);
+      const authorEl = safeQuery(document.body, selectors.author);
+      const synopsisEl = safeQuery(document.body, selectors.synopsis);
+      const coverEl = safeQuery(document.body, selectors.coverUrl);
+      const jlptEl = safeQuery(document.body, selectors.jlptLevel);
+
+      const docLang = document.documentElement.lang ||
+        document.querySelector('meta[http-equiv="content-language"]')?.content ||
+        document.querySelector('meta[name="language"]')?.content ||
+        document.querySelector('meta[name="lang"]')?.content ||
+        'en';
+
+      const data = {
+        url: document.location.href,
+        source: document.location.origin,
+        language: docLang,
+        title: titleEl ? titleEl.textContent.trim() : '',
+        author: authorEl ? authorEl.textContent.trim() : '',
+        synopsis: synopsisEl ? synopsisEl.textContent.trim() : '',
+        coverUrl: coverEl ? (coverEl.src || coverEl.getAttribute('data-src') || coverEl.href || coverEl.textContent.trim()) : '',
+        jlptLevel: jlptEl ? jlptEl.textContent.trim() : '',
+      };
+
+      const chDetails = selectors.individualChapterDetails || {};
+      const nextPageSelector = selectors.nextPageUrl;
+
+      console.log("[JS-Extractor] Initializing chapter extraction starting at index " + startIndex + "...");
+      let chapters = [];
+      let i = startIndex - 1;
+      let nextUrl = document.location.href;
+      let lastSuccessfulUrl = nextUrl;
+      let pagesParsed = 0;
+
+      while (nextUrl) {
+        console.log("[JS-Extractor] Processing URL: " + nextUrl);
+        let doc;
+
+        if (i === startIndex - 1) {
+          console.log("[JS-Extractor] Using initial document DOM.");
+          doc = document;
+        } else {
+          try {
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const response = await fetch(nextUrl, {
+              method: 'GET',
+              credentials: 'include',
+              headers: { 'Accept': 'text/html' },
+            });
+
+            if (!response.ok) throw new Error("HTTP Status " + response.status);
+
+            let html = await response.text();
+            doc = new DOMParser().parseFromString(html, 'text/html');
+            console.log("[JS-Extractor] Successfully fetched and parsed remote page.");
+          } catch (e) {
+            console.error("[JS-Extractor] Fetch failed for: " + nextUrl, e);
+            data.chapters = chapters;
+            data.failedUrl = nextUrl;
+            data.lastSuccessfulUrl = lastSuccessfulUrl;
+            data.pagesParsed = pagesParsed;
+            ExtractionChannel.postMessage(JSON.stringify(data));
+            return;
+          }
+        }
+
+        const elements = safeQueryAll(doc, chDetails.base);
+        console.log("[JS-Extractor] Found " + elements.length + " chapter elements on page.");
+
+        const pageChapters = [];
+        for (const e of elements) {
+          i += 1;
+          const urlEl = safeQuery(e, chDetails.url);
+          const titleEl = safeQuery(e, chDetails.title);
+          const dateEl = safeQuery(e, chDetails.updatedDate);
+
+          let chUrl = urlEl ? (urlEl.href || urlEl.getAttribute('href')) : null;
+          if (!chUrl && e.tagName && e.tagName.toLowerCase() === 'a') {
+            chUrl = e.href || e.getAttribute('href');
+          }
+          if (chUrl && !chUrl.startsWith('http://') && !chUrl.startsWith('https://')) {
+            try {
+              chUrl = new URL(chUrl, nextUrl).href;
+            } catch (_) {}
+          }
+
+          const chTitle = (titleEl ? titleEl.textContent : (e ? e.textContent : ''))?.trim() || ('Chapter ' + (i + 1));
+          const chDate = dateEl ? dateEl.textContent.trim() : null;
+
+          pageChapters.push({
+            url: chUrl,
+            title: chTitle,
+            updatedDate: chDate,
+            number: i
+          });
+        }
+
+        chapters = chapters.concat(pageChapters);
+        lastSuccessfulUrl = nextUrl;
+        pagesParsed++;
+
+        if (typeof ProgressChannel !== 'undefined') {
+          ProgressChannel.postMessage(JSON.stringify({ "count": chapters.length }));
+        }
+
+        let currentUrl = nextUrl;
+        nextUrl = null;
+
+        try {
+          const nextBtn = safeQuery(doc, nextPageSelector);
+          if (nextBtn) {
+            let candidateHref = nextBtn.href || nextBtn.getAttribute('href');
+            if (candidateHref && candidateHref !== 'javascript:;' && !candidateHref.startsWith('#')) {
+              try {
+                candidateHref = new URL(candidateHref, currentUrl).href;
+              } catch (_) {}
+              if (candidateHref !== currentUrl) {
+                nextUrl = candidateHref;
+                console.log("[JS-Extractor] Next page found: " + nextUrl);
+              }
+            }
+          }
+          if (!nextUrl) {
+            console.log("[JS-Extractor] No next page link detected. Finishing.");
+          }
+        } catch (e) {
+          console.warn("[JS-Extractor] Error parsing next selector:", e);
+          nextUrl = null;
+        }
+      }
+
+      console.log("[JS-Extractor] Extraction complete. Total chapters: " + chapters.length);
+      data.chapters = chapters;
+      data.failedUrl = null;
+      data.lastSuccessfulUrl = lastSuccessfulUrl;
+      data.pagesParsed = pagesParsed;
+      ExtractionChannel.postMessage(JSON.stringify(data));
+    } catch (e) {
+      ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
+    }
+  })()
+  """;
+}
+
+String generateContentExtractionJSPrompt(String selector) =>
+    """
+      (async () => {
+        try {
+          const selector = $selector;
+          const results = [];
+          
+          function safeQueryAll(root, sel) {
+            if (!sel || typeof sel !== 'string') return [];
+            const s = sel.trim();
+            if (!s || s === 'null' || s.toLowerCase() === 'n/a' || s.toLowerCase() === 'none') return [];
+            try {
+              const containsMatch = s.match(/^(.*?):contains\\(['"]?(.*?)['"]?\\)(.*)\$/i);
+              if (containsMatch) {
+                const base = (containsMatch[1] + containsMatch[3]).trim() || '*';
+                const text = containsMatch[2].trim().toLowerCase();
+                const elements = root.querySelectorAll(base);
+                return Array.from(elements).filter(el => el.textContent && el.textContent.toLowerCase().includes(text));
+              }
+              return Array.from(root.querySelectorAll(s));
+            } catch (e) {
+              console.warn("[JS-Extractor] safeQueryAll error:", e);
+              return [];
+            }
+          }
+
+          let doc = document;
+          const containers = safeQueryAll(doc, selector);
+          let lines = [];
+          
+          for (const el of containers) {
+            const children = Array.from(el.children);
+            if (children.length > 0) {
+              const childrenLines = children
+                .map(function(c) {
+                  let text = c.textContent.trim();
+                  if ((text?.length ?? 0) > 0) return text;
+                  try {
+                    return c.querySelector('img')?.src ?? "";
+                  } catch {
+                    return "";
+                  }
+                })
+                .filter(t => t.length > 0);
+              lines = lines.concat(childrenLines);
+            } else {
+              const text = el.textContent.trim();
+              if (text.length > 0) {
+                lines.push(text);
+              }
+            }
+          }
+          results.push(lines);
+          ExtractionChannel.postMessage(JSON.stringify({ "contents": results }));
+        } catch (e) {
+          ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
+        }
+      })()
+    """;
 
 String chaptersLoadingIIFE(
   ChapterInfoExtractor detailsSelector,
@@ -245,7 +515,7 @@ const minTreeExtFn = '''
 
             // E. Clean dynamic IDs
             if (el.id) {
-                if (/^Ld+\$/.test(el.id) || /^[a-f0-9]{32,}\$/i.test(el.id)) {
+                if (/^d+\$/.test(el.id) || /^[a-f0-9]{32,}\$/i.test(el.id)) {
                     el.removeAttribute('id');
                 }
             }
@@ -276,6 +546,22 @@ const minTreeExtFn = '''
         if (classes.length > 0) {
             label += `.\${classes.join('.')}`;
         }
+
+        // Direct text extraction (collapses whitespace, max 10 characters + ellipsis if longer)
+        const directText = Array.from(el.childNodes)
+            .filter(n => n.nodeType === 3)
+            .map(n => n.nodeValue)
+            .join(' ')
+            .replace(/s+/g, ' ')
+            .trim();
+
+        if (directText.length > 0) {
+            const truncated = directText.length > 10 
+                ? directText.slice(0, 10) + '...' 
+                : directText;
+            label += `"\${truncated.replace(/"/g, '\\"')}"`;
+        }
+
         return { label, children: Array.from(el.children).map(serialize) };
     }
 
@@ -318,68 +604,3 @@ const minTreeExtFn = '''
     return result;
 })()
 ''';
-
-String generateBookExtrationJSPrompt(Map reMap, String iIFE) =>
-    """
-    (async () => {
-      try {
-        const data = $reMap;
-        const result = await $iIFE;
-        data.chapters = result.chapters;
-        data.failedUrl = result.failedUrl;
-        data.lastSuccessfulUrl = result.lastSuccessfulUrl;
-        data.pagesParsed = result.pagesParsed;
-        ExtractionChannel.postMessage(JSON.stringify(data));
-      } catch (e) {
-        ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
-      }
-    })()
-  """;
-
-String generateContentExtractionJSPrompt(String selector) =>
-    """
-      (async () => {
-        try {
-          const selector = $selector;
-          const results = [];
-          
-          const normUrl = (u) => {
-            let s = u.toLowerCase().trim();
-            if (s.endsWith("/")) s = s.slice(0, -1);
-            return s;
-          };
-
-          let doc = document;
-          
-          const containers = Array.from(doc.querySelectorAll(selector));
-          let lines = [];
-          
-          for (const el of containers) {
-            const children = Array.from(el.children);
-            if (children.length > 0) {
-              const childrenLines = children
-                .map(function(c) {
-                  let text = c.textContent.trim();
-                  if ((text?.length ?? 0) > 0) return text;
-                  try {
-                    return c.querySelector('img')?.src ?? "";
-                  } catch {
-                    return "";
-                  }
-                })
-                .filter(t => t.length > 0);
-              lines = lines.concat(childrenLines);
-            } else {
-              const text = el.textContent.trim();
-              if (text.length > 0) {
-                lines.push(text);
-              }
-            }
-          }
-          results.push(lines);
-          ExtractionChannel.postMessage(JSON.stringify({ "contents": results }));
-        } catch (e) {
-          ExtractionChannel.postMessage(JSON.stringify({ "error": e.toString() }));
-        }
-      })()
-    """;
