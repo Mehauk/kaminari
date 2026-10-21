@@ -22,6 +22,7 @@
 - [X] operation failed popup is not working proerpy (the buttons inside)
 - [x] invert chapters button in the import view and the details view
 - [x] retries need to send old/incorrect (all) selectors with retry
+- [ ] epub not working, file open with
 - [ ] auto-update for new chapters
 - [ ] open import chapter webview on error (only for current)
 - [ ] importing sources
