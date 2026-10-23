@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kaminari/src/config/bloc_observers.dart';
+import 'package:kaminari/src/data/services/database_service.dart';
 import 'package:kaminari/src/data/services/kanji_service.dart';
 import 'package:kaminari/src/data/services/local_storage_service.dart';
 import 'package:kaminari/src/data/services/stats_service.dart';
@@ -17,6 +18,7 @@ void main() async {
   await StatsService.recordActivity();
   await KanjiService.buildVisitedTable();
   await WebviewAssetsService().init();
+  await DatabaseService().cleanupDeletedBooks();
 
   Bloc.observer = DebugBlocObserver();
   runApp(const KaminariApp());

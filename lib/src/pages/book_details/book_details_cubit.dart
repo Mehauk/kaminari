@@ -57,4 +57,9 @@ class BookDetailsCubit extends Cubit<BookDetailsState> {
     await dbService.invertBookChapters(book.id!);
     await refreshProgress();
   }
+
+  Future<void> deleteBook() async {
+    if (book.id == null) return;
+    await dbService.deleteBook(book.id!);
+  }
 }

@@ -7,16 +7,13 @@
   - [ ] save this script per source
   - [ ] parse data into object
   
-- [ ] handle book deletion properly 
-  - [ ] delete from view immediately (book meta data only) (no cascade)
-  - [ ] delete the chapters and other related data
-  - [ ] OR
-  - [ ] delete from view immediately (optimistic delete) (soft delete)
-  - [ ] delete book + chapters in one go asynhronously
-  - [ ] ensure that if the app closes before the full delete goes through that
-    - [ ] the book does not get partially deleted
-    - [ ] the book is marked for delete (soft delete) so it doesnt show
-    - [ ] AND a cleanup job is triggered the next time the app is opened
+- [x] handle book deletion properly 
+  - [x] delete from view immediately (optimistic delete) (soft delete)
+  - [x] delete book + chapters in one go asynchronously
+  - [x] ensure that if the app closes before the full delete goes through that
+    - [x] the book does not get partially deleted
+    - [x] the book is marked for delete (soft delete) so it doesnt show
+    - [x] AND a cleanup job is triggered the next time the app is opened
 
 - [ ] novelight (The Support Ate it All)
 - [X] operation failed popup is not working proerpy (the buttons inside)

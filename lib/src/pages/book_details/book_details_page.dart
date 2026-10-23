@@ -25,7 +25,7 @@ class BookDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => BookDetailsCubit(book, dbService: context.read()),
-      child: _BookDetailsView(),
+      child: const _BookDetailsView(),
     );
   }
 }
@@ -68,7 +68,7 @@ class _BookDetailsViewState extends State<_BookDetailsView> with RouteAware {
       backgroundColor: KaminariTheme.background,
       body: CustomScrollView(
         slivers: [
-          _CoverAppBar(),
+          const _CoverAppBar(),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverList(
@@ -151,7 +151,7 @@ class _CoverAppBar extends StatelessWidget {
                       Navigator.of(context).pop();
                       final confirmed = await showDialog<bool>(
                         context: pageContext,
-                        builder: (context) => ConfirmationDialog(),
+                        builder: (context) => const ConfirmationDialog(),
                       );
                       if (confirmed != true) return;
                       final bookId = cubit.book.id;
@@ -161,7 +161,7 @@ class _CoverAppBar extends StatelessWidget {
                         Navigator.of(pageContext).pop(true);
                       }
 
-                      cubit.dbService.deleteBook(bookId);
+                      cubit.deleteBook();
                     },
                   ),
                   (
@@ -246,20 +246,24 @@ class _BookHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<BookDetailsCubit>();
     return Column(
-      crossAxisAlignment: .start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CustomText(cubit.book.title, .titleMedium, fontSize: 22),
+        CustomText(cubit.book.title, TextType.titleMedium, fontSize: 22),
         const SizedBox(height: 8),
         Row(
           children: [
-            Icon(
+            const Icon(
               CupertinoIcons.person_fill,
               size: 14,
               color: KaminariTheme.textSecondary,
             ),
             const SizedBox(width: 6),
             Expanded(
-              child: CustomText(cubit.book.author, .bodyMedium, fontSize: 14),
+              child: CustomText(
+                cubit.book.author,
+                TextType.bodyMedium,
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -301,7 +305,7 @@ class _JlptBadge extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         child: CustomText(
           'JLPT $level',
-          .labelSmall,
+          TextType.labelSmall,
           color: KaminariTheme.cyan,
         ),
       ),
@@ -326,10 +330,10 @@ class _ProgressSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                CustomText('READING PROGRESS', .labelSmall),
+                const CustomText('READING PROGRESS', TextType.labelSmall),
                 CustomText(
                   '${(progress * 100).toStringAsFixed(0)}%',
-                  .labelSmall,
+                  TextType.labelSmall,
                   color: KaminariTheme.textTitle,
                 ),
               ],
@@ -339,7 +343,7 @@ class _ProgressSection extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(
+                const Icon(
                   CupertinoIcons.book_fill,
                   size: 13,
                   color: KaminariTheme.textSecondary,
@@ -348,7 +352,7 @@ class _ProgressSection extends StatelessWidget {
                 Expanded(
                   child: CustomText(
                     cubit.book.chapters[cubit.state.currentChapter].title,
-                    .bodyMedium,
+                    TextType.bodyMedium,
                     fontSize: 13,
                   ),
                 ),
@@ -357,7 +361,7 @@ class _ProgressSection extends StatelessWidget {
             const SizedBox(height: 4),
             CustomText(
               'Chapter ${cubit.state.currentChapter + 1} of ${cubit.book.chapters.length}',
-              .labelSmall,
+              TextType.labelSmall,
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -448,14 +452,14 @@ class _StatTile extends StatelessWidget {
               const SizedBox(height: 6),
               CustomText(
                 value,
-                .headlineMedium,
+                TextType.headlineMedium,
                 fontSize: 18,
                 color: valueColor ?? KaminariTheme.textTitle,
-                alignment: .center,
+                alignment: TextAlign.center,
                 maxLines: 1,
               ),
               const SizedBox(height: 2),
-              CustomText(label, .labelSmall, fontSize: 11, maxLines: 1),
+              CustomText(label, TextType.labelSmall, fontSize: 11, maxLines: 1),
             ],
           ),
         ),
@@ -474,21 +478,20 @@ class _SynopsisSection extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.read<BookDetailsCubit>().toggleSynopsis(),
       child: LightningCard(
-        type: .striking,
-        child: Padding(
+        type: .striking,        child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                children: [
+                children: const [
                   Icon(
                     Icons.menu_book_rounded,
                     size: 16,
                     color: KaminariTheme.textTitle,
                   ),
-                  const SizedBox(width: 8),
-                  CustomText('Synopsis', .headlineMedium, fontSize: 16),
+                  SizedBox(width: 8),
+                  CustomText('Synopsis', TextType.headlineMedium, fontSize: 16),
                 ],
               ),
               const SizedBox(height: 12),
@@ -508,7 +511,7 @@ class _SynopsisSection extends StatelessWidget {
                 children: [
                   CustomText(
                     state.synopsisExpanded ? 'Show less' : 'Show more',
-                    .labelSmall,
+                    TextType.labelSmall,
                     color: KaminariTheme.textTitle,
                   ),
                   const SizedBox(width: 4),
@@ -536,17 +539,17 @@ class _ChapterListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<BookDetailsCubit>();
     return Column(
-      crossAxisAlignment: .start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(
+            const Icon(
               Icons.list_alt_rounded,
               size: 16,
               color: KaminariTheme.textTitle,
             ),
             const SizedBox(width: 8),
-            CustomText('Chapters', .headlineMedium, fontSize: 16),
+            const CustomText('Chapters', TextType.headlineMedium, fontSize: 16),
             const Spacer(),
             TextButton.icon(
               style: TextButton.styleFrom(
@@ -563,13 +566,16 @@ class _ChapterListHeader extends StatelessWidget {
               ),
               label: const CustomText(
                 'Invert',
-                .labelSmall,
+                TextType.labelSmall,
                 color: KaminariTheme.cyan,
                 fontSize: 12,
               ),
             ),
             const SizedBox(width: 8),
-            CustomText('${cubit.book.chapters.length} total', .labelSmall),
+            CustomText(
+              '${cubit.book.chapters.length} total',
+              TextType.labelSmall,
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -610,7 +616,7 @@ class _ChapterTile extends StatelessWidget {
               width: 36,
               child: CustomText(
                 '${chapter.number + 1}'.padLeft(2, '0'),
-                .labelSmall,
+                TextType.labelSmall,
                 color: isCurrent
                     ? KaminariTheme.textTitle
                     : KaminariTheme.textSecondary.withAlpha(120),
@@ -621,7 +627,7 @@ class _ChapterTile extends StatelessWidget {
             Expanded(
               child: CustomText(
                 chapter.title,
-                .bodyMedium,
+                TextType.bodyMedium,
                 fontSize: 14,
                 color: isCurrent ? KaminariTheme.textPrimary : null,
                 maxLines: 1,
@@ -629,7 +635,7 @@ class _ChapterTile extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             if (isCurrent)
-              Icon(Icons.circle, size: 16, color: KaminariTheme.textTitle)
+              const Icon(Icons.circle, size: 16, color: KaminariTheme.textTitle)
             else if (chapter.number < current)
               Icon(
                 Icons.check_circle_rounded,

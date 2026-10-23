@@ -31,7 +31,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 11, // Upgraded from 10
+      version: 12, // Upgraded from 11 to 12
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async {
@@ -82,11 +82,9 @@ class DatabaseService {
       ''');
     }
     if (oldVersion < 11) {
-      // 1. Add prepReviewedCount column to ChapterInfo
       await db.execute(
         'ALTER TABLE ChapterInfo ADD COLUMN prepReviewedCount INTEGER DEFAULT 0',
       );
-      // 2. Recreate BookAnalysisCache to fix its primary key constraint (chapter_id should be PK)
       await db.execute('DROP TABLE IF EXISTS BookAnalysisCache');
       await db.execute('''
         CREATE TABLE BookAnalysisCache (
@@ -97,6 +95,11 @@ class DatabaseService {
           FOREIGN KEY (book_id) REFERENCES BookDetails (id) ON DELETE CASCADE
         )
       ''');
+    }
+    if (oldVersion < 12) {
+      await db.execute(
+        'ALTER TABLE BookDetails ADD COLUMN isDeleted INTEGER DEFAULT 0',
+      );
     }
   }
 
@@ -118,6 +121,7 @@ class DatabaseService {
         currentChapterIndex INTEGER DEFAULT 0,
         firstChapterCharCount INTEGER DEFAULT 0,
         isFavorite INTEGER DEFAULT 0,
+        isDeleted INTEGER DEFAULT 0,
         UNIQUE(title, source, author, bookType)
       )
     ''');
@@ -165,6 +169,7 @@ class DatabaseService {
              c.chapterNumber AS ch_number, c.scrollPosition, c.prepReviewedCount AS ch_prepReviewedCount
       FROM BookDetails b
       LEFT JOIN ChapterInfo c ON b.id = c.book_id
+      WHERE (b.isDeleted IS NULL OR b.isDeleted = 0)
       ORDER BY b.id, c.chapterNumber ASC
     ''');
 
@@ -216,7 +221,7 @@ class DatabaseService {
              c.chapterNumber AS ch_number, c.scrollPosition, c.prepReviewedCount AS ch_prepReviewedCount
       FROM BookDetails b
       LEFT JOIN ChapterInfo c ON b.id = c.book_id
-      WHERE b.accessedDate IS NOT NULL
+      WHERE b.accessedDate IS NOT NULL AND (b.isDeleted IS NULL OR b.isDeleted = 0)
       ORDER BY b.accessedDate DESC
     ''');
 
@@ -285,7 +290,7 @@ class DatabaseService {
     final db = await database;
     final rows = await db.rawQuery('''
       SELECT *, currentChapterIndex AS currentChapter FROM BookDetails
-      WHERE accessedDate IS NOT NULL
+      WHERE accessedDate IS NOT NULL AND (isDeleted IS NULL OR isDeleted = 0)
       ORDER BY accessedDate DESC
     ''');
 
@@ -357,7 +362,7 @@ class DatabaseService {
              c.chapterNumber AS ch_number, c.scrollPosition, c.prepReviewedCount AS ch_prepReviewedCount
       FROM BookDetails b
       LEFT JOIN ChapterInfo c ON b.id = c.book_id
-      WHERE b.id = ?
+      WHERE b.id = ? AND (b.isDeleted IS NULL OR b.isDeleted = 0)
       ORDER BY c.chapterNumber ASC
     ''',
       [bookId],
@@ -496,6 +501,7 @@ class DatabaseService {
             'language': book.language,
             'updatedDate': book.updatedDate,
             'firstChapterCharCount': book.firstChapterCharCount,
+            'isDeleted': 0, // Restore if previously soft deleted
           },
           where: 'id = ?',
           whereArgs: [bookId],
@@ -513,6 +519,7 @@ class DatabaseService {
           'bookType': book.bookType.name,
           'firstChapterCharCount': book.firstChapterCharCount,
           'isFavorite': book.isFavorite ? 1 : 0,
+          'isDeleted': 0,
         });
       }
 
@@ -686,50 +693,114 @@ class DatabaseService {
     return rows.map((row) => ChapterInfo.fromJson(row)).toList();
   }
 
-  Future<int> deleteBook(int bookId) async {
+  /// Optimistically soft-deletes the book so it disappears immediately from all views,
+  /// then asynchronously purges the book, its chapters, and associated files in one atomic transaction.
+  Future<void> deleteBook(int bookId) async {
     final db = await database;
-    String? coverUrl;
 
+    // 1. Soft-delete immediately to hide from all queries and UI
+    await db.update(
+      'BookDetails',
+      {'isDeleted': 1},
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+
+    // 2. Notify all views immediately so the item vanishes without blocking
+    _notifyChange();
+
+    // 3. Perform hard deletion asynchronously in the background
+    unawaited(_purgeBookAsync(bookId));
+  }
+
+  /// Permanently removes a book and all related chapters and caches in a single atomic transaction.
+  Future<void> _purgeBookAsync(int bookId) async {
     try {
+      final db = await database;
+
+      // Extract file paths before deleting database records
+      String? coverUrl;
+      String? bookUrl;
       final List<Map<String, dynamic>> results = await db.query(
         'BookDetails',
-        columns: ['coverUrl'],
+        columns: ['url', 'coverUrl'],
         where: 'id = ?',
         whereArgs: [bookId],
       );
 
       if (results.isNotEmpty) {
         coverUrl = results.first['coverUrl'] as String?;
+        bookUrl = results.first['url'] as String?;
       }
+
+      // Hard-delete all related data atomically in one transaction
+      await db.transaction((txn) async {
+        await txn.delete(
+          'ChapterSection',
+          where: 'chapter_id IN (SELECT id FROM ChapterInfo WHERE book_id = ?)',
+          whereArgs: [bookId],
+        );
+        await txn.delete(
+          'ChapterInfo',
+          where: 'book_id = ?',
+          whereArgs: [bookId],
+        );
+        await txn.delete(
+          'BookAnalysisCache',
+          where: 'book_id = ?',
+          whereArgs: [bookId],
+        );
+        await txn.delete('BookDetails', where: 'id = ?', whereArgs: [bookId]);
+      });
+
+      // Evict files in background
+      if (coverUrl != null && coverUrl.isNotEmpty) {
+        _cleanupCoverFileBackground(coverUrl);
+      }
+      if (bookUrl != null && bookUrl.isNotEmpty) {
+        _cleanupBookFilesBackground(bookUrl);
+      }
+
+      // Remove archive preference flags
+      await LocalStorageService().removeData('archived_$bookId');
     } catch (e) {
-      print("[DatabaseService] Error reading coverUrl for deletion: $e");
+      print(
+        "[DatabaseService] Error during async hard purge for book $bookId: $e",
+      );
     }
+  }
 
-    // Delete the database entry immediately
-    final count = await db.delete(
-      'BookDetails',
-      where: 'id = ?',
-      whereArgs: [bookId],
-    );
+  /// Cleanup job to be called at application startup.
+  /// Hard-deletes any books marked with `isDeleted = 1` that were interrupted by an app termination.
+  Future<void> cleanupDeletedBooks() async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> rows = await db.query(
+        'BookDetails',
+        columns: ['id'],
+        where: 'isDeleted = 1',
+      );
 
-    // Notify lists immediately so they refresh while system filesystem is being cleaned
-    _notifyChange();
+      if (rows.isEmpty) return;
 
-    // Evict files asynchronously in background
-    if (coverUrl != null && coverUrl.isNotEmpty) {
-      _cleanupCoverFileBackground(coverUrl);
+      print(
+        "[DatabaseService] Running startup cleanup for ${rows.length} pending deleted books...",
+      );
+      for (final row in rows) {
+        final bookId = row['id'] as int;
+        await _purgeBookAsync(bookId);
+      }
+      _notifyChange();
+    } catch (e) {
+      print("[DatabaseService] Error running cleanupDeletedBooks: $e");
     }
-
-    return count;
   }
 
   void _cleanupCoverFileBackground(String coverUrl) async {
     try {
       if (coverUrl.startsWith('http://') || coverUrl.startsWith('https://')) {
-        // Evict remote cached cover image from persistent cache
         await BookCoverCacheManager.instance.removeFile(coverUrl);
       } else if (!coverUrl.startsWith('assets/')) {
-        // Clean up physically stored files (e.g. from local EPUB imports)
         final cleanPath = coverUrl.startsWith("file://")
             ? coverUrl.replaceFirst("file://", "")
             : coverUrl;
@@ -742,6 +813,23 @@ class DatabaseService {
       print(
         "[DatabaseService] Error cleaning up cover image files in background: $e",
       );
+    }
+  }
+
+  void _cleanupBookFilesBackground(String? bookUrl) async {
+    if (bookUrl == null || bookUrl.isEmpty) return;
+    try {
+      if (!bookUrl.startsWith('http://') && !bookUrl.startsWith('https://')) {
+        final cleanPath = bookUrl.startsWith("file://")
+            ? bookUrl.replaceFirst("file://", "")
+            : bookUrl;
+        final file = File(cleanPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+    } catch (e) {
+      print("[DatabaseService] Error cleaning up book file in background: $e");
     }
   }
 
