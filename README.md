@@ -1,2 +1,2 @@
 # Kaminari
-book reader
+book reader and transliterator
