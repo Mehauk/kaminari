@@ -8,7 +8,8 @@
   - [ ] parse data into object
 
 - [ ] novelight (The Support Ate it All)
-- [ ] epub not working, file open with
+- [ ] epub not working
+- [ ] handle file open with
 - [ ] auto-update for new chapters
 - [ ] open import chapter webview on error (only for current)
 - [ ] importing sources
