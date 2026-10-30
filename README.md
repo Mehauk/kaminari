@@ -1,4 +1,4 @@
-# Kaminari (WIP)
+# Kaminari
 
 ## Features
 - Epub/Ebook reader
