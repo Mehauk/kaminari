@@ -1,13 +1,6 @@
-- [ ] importing rework and simplification
-  - [ ] provide the data type you are expecting
-  - [ ] provide uncompressed html (with some classes/ads removed)
-  - [ ] wait for an exact js script to return data and pagination
-  - [ ] go to first chapter page and use the pagination form previous step as we do currently to;
-  - [ ] extract all chapters in order
-  - [ ] save this script per source
-  - [ ] parse data into object
-
-- [ ] novelight (The Support Ate it All)
+- [-] novelight (The Support Ate it All) not importing correctly. do not break the following imports
+  - any novel from noveltrust
+  - any novel from any sysetu website
 - [ ] epub not working
 - [ ] handle file open with
 - [ ] auto-update for new chapters
