@@ -858,47 +858,47 @@ class WebviewCubit extends Cubit<WebviewState> {
           try {
             const selectors = ${jsonEncode(selectors.toJson())};
 
-            function safeQuery(root, sel) {
-              if (!root || !sel || typeof sel !== 'string') return null;
-              const s = sel.trim();
-              if (!s || s === 'null' || s.toLowerCase() === 'n/a' || s.toLowerCase() === 'none') return null;
-              try {
-                const containsMatch = s.match(/^(.*?):contains\\(['"]?(.*?)['"]?\\)(.*)\$/i);
-                if (containsMatch) {
-                  const base = (containsMatch[1] + containsMatch[3]).trim() || '*';
-                  const text = containsMatch[2].trim().toLowerCase();
-                  const elements = root.querySelectorAll(base);
-                  for (const el of elements) {
-                    if (el.textContent && el.textContent.toLowerCase().includes(text)) {
-                      return el;
-                    }
-                  }
-                  return null;
-                }
-                return root.querySelector(s);
-              } catch (e) {
-                console.warn("[JS-Metadata] safeQuery error for " + s + ":", e);
-                return null;
-              }
-            }
+            $jsExtractorHelpers
 
-            const titleEl = safeQuery(document, selectors.title);
-            const authorEl = safeQuery(document, selectors.author);
-            const synopsisEl = safeQuery(document, selectors.synopsis);
-            const coverEl = safeQuery(document, selectors.coverUrl);
+            const titleEl = queryLoose(document, selectors.title);
+            const authorEl = queryLoose(document, selectors.author);
+            const synopsisEls = dedupeNested(queryAllLoose(document, selectors.synopsis));
+            const coverEl = queryLoose(document, selectors.coverUrl);
             const jlptEl = safeQuery(document, selectors.jlptLevel);
-            
-            let coverUrl = '';
-            if (coverEl) {
-              coverUrl = coverEl.src || coverEl.getAttribute('data-src') || coverEl.href || coverEl.textContent.trim();
-            }
+
+            const coverUrl = resolveCover(coverEl);
 
             let jlptLevel = jlptEl ? jlptEl.textContent.trim() : '';
 
+            let title = titleEl ? titleEl.textContent.trim() : '';
+            let author = authorEl ? authorEl.textContent.trim() : '';
+            let synopsis = synopsisEls.map(el => el.textContent.trim()).filter(t => t.length > 0).join("\\n\\n");
+
+            // Deterministic salvage for fields the AI selectors missed or mis-aimed.
+            const listAnchorEl = selectors.individualChapterDetails
+                ? (chapterListItems(document, document.location.href, selectors.individualChapterDetails.base)[0] || null)
+                : null;
+
+            if (!title || isLabelValue(title)) {
+              const alt = salvageLabelled('title|書名|タイトル') || salvageTitle();
+              if (alt && !isLabelValue(alt)) title = alt;
+            }
+            author = cleanAuthor(author);
+            if (!author || isLabelValue(author)) {
+              const byline = metaContent('article:author') || metaContent('author') || salvageLabelled('author|作者|作家|著者|by');
+              if (byline && !isLabelValue(byline)) author = byline;
+            }
+            if (!synopsis) {
+              synopsis = salvageSynopsis(listAnchorEl);
+            } else {
+              const wider = widenSynopsis(listAnchorEl, synopsisEls, synopsis);
+              if (wider) synopsis = wider;
+            }
+
             const result = {
-              "title": titleEl ? titleEl.textContent.trim() : '',
-              "author": authorEl ? authorEl.textContent.trim() : '',
-              "synopsis": synopsisEl ? synopsisEl.textContent.trim() : '',
+              "title": title,
+              "author": author,
+              "synopsis": synopsis,
               "coverUrl": coverUrl,
               "jlptLevel": jlptLevel
             };
@@ -1288,29 +1288,62 @@ class WebviewCubit extends Cubit<WebviewState> {
         await _waitForPageToSettle();
         await _injectScanner();
 
-        final nextJs = generateBookExtrationJSPrompt(
-          selectors,
-          accumulatedChapters.length,
-        );
+        // A resumed page that yields no rows is a protection interstitial still
+        // painting, not an empty index page — we only navigated here because
+        // more chapters were due. Re-read the same page until it produces them,
+        // bounded so a site that blocks us outright degrades to the chapters
+        // already collected instead of hanging.
+        final resumeDeadline = DateTime.now().add(const Duration(seconds: 45));
+        Map<String, dynamic> nextResponse = const {};
+        while (true) {
+          List resumedChapters = const [];
+          try {
+            final nextJs = generateBookExtrationJSPrompt(
+              selectors,
+              accumulatedChapters.length,
+            );
 
-        _extractionCompleter = Completer<String>();
-        await controller.runJavaScript(nextJs);
+            _extractionCompleter = Completer<String>();
+            await controller.runJavaScript(nextJs);
 
-        final nextResultString = await _extractionCompleter!.future.timeout(
-          const Duration(minutes: 5),
-        );
-        _extractionCompleter = null;
+            final nextResultString =
+                await _extractionCompleter!.future.timeout(
+              const Duration(minutes: 2),
+            );
+            _extractionCompleter = null;
 
-        final Map<String, dynamic> nextResponse = jsonDecode(nextResultString);
+            nextResponse = jsonDecode(nextResultString);
 
-        if (nextResponse.containsKey('error')) {
-          throw Exception(
-            "JS Extraction Error on resume: ${nextResponse['error']}",
+            if (nextResponse.containsKey('error')) {
+              throw Exception(
+                "JS Extraction Error on resume: ${nextResponse['error']}",
+              );
+            }
+
+            resumedChapters = nextResponse['chapters'] ?? [];
+          } on TimeoutException {
+            // A protection interstitial reloads the page once it passes, which
+            // takes the running extraction script down with it.
+            _extractionCompleter = null;
+            print(
+              "[WebViewCubit] Resumed page reloaded mid-extraction; re-reading it...",
+            );
+          }
+
+          if (resumedChapters.isNotEmpty ||
+              DateTime.now().isAfter(resumeDeadline)) {
+            break;
+          }
+
+          print(
+            "[WebViewCubit] Resumed index page has no chapters yet; waiting for it and re-reading...",
           );
+          await Future.delayed(const Duration(seconds: 3));
+          await _waitForPageToSettle();
+          await _injectScanner();
         }
 
-        final List newChapters = nextResponse['chapters'] ?? [];
-        accumulatedChapters.addAll(newChapters);
+        accumulatedChapters.addAll(nextResponse['chapters'] ?? []);
 
         currentFailedUrl = nextResponse['failedUrl'] as String?;
         if (nextResponse['lastSuccessfulUrl'] != null) {

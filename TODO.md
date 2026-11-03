@@ -1,4 +1,4 @@
-- [-] novelight (The Support Ate it All) not importing correctly. do not break the following imports
+- [x] novelight (The Support Ate it All) not importing correctly. do not break the following imports
   - any novel from noveltrust
   - any novel from any sysetu website
 - [ ] epub not working
@@ -59,3 +59,7 @@
     - [x] the book does not get partially deleted
     - [x] the book is marked for delete (soft delete) so it doesnt show
     - [x] AND a cleanup job is triggered the next time the app is opened
+
+Questions
+1. what happens if reimport book
+2. what happens if import same book? how are conflicts managed?
