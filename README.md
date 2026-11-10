@@ -1,4 +1,5 @@
 # Kaminari
+Manga, lightnovel, and ebook reader
 
 ## Features
 - Epub/Ebook reader
@@ -9,4 +10,4 @@
 ## planned Features
 - Manga/Manwa/Manhua/Webtoon (comics) reader
 - Comic importing and opt in offline reading
-- Opt in image scanning + language detection for transliterating comics (with kanji breakdown for language learners
+- Opt in image scanning + language detection for transliterating comics (with kanji breakdown for language learners)
