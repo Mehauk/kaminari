@@ -1,6 +1,6 @@
 - [x] novelight (The Support Ate it All) not importing correctly. do not break the following imports
   - any novel from noveltrust
-  - any novel from any sysetu website
+  - any novel from any syosetu website
 - [ ] epub not working
 - [ ] handle file open with
 - [ ] auto-update for new chapters
